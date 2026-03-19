@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK, daysSinceGenesis } from "../engine/constants.js";
@@ -7,15 +7,31 @@ import Toggle from "../components/Toggle";
 
 export default function PowerLaw({ d, derived }) {
   const { t } = useTheme();
+  const containerRef = useRef(null);
+  const [dims, setDims] = useState({ w: 1200, h: 500 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const { width } = entries[0].contentRect;
+      if (width > 0) {
+        const h = Math.max(360, window.innerHeight - 220);
+        setDims({ w: Math.round(width), h: Math.round(h) });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const chart = useMemo(() => {
     if (!d || !derived) return null;
     const { a, b, t0, S0, resMean, resStd, resFloor, ransac, sigmaChart, lastDate } = d;
     const { supportPrice } = derived;
 
-    // ── SVG layout ──
-    const W = 800, H = 440;
-    const pad = { top: 30, right: 20, bottom: 70, left: 60 };
+    // ── SVG layout — uses actual container dimensions ──
+    const W = dims.w, H = dims.h;
+    const pad = { top: 30, right: 20, bottom: 70, left: 70 };
     const cw = W - pad.left - pad.right;
     const ch = H - pad.top - pad.bottom;
 
@@ -149,7 +165,7 @@ export default function PowerLaw({ d, derived }) {
       supportLabelY: bands.support[fairLabelIdx]?.[1] || 320,
       plToday: plPrice(a, b, t0),
     };
-  }, [d, derived]);
+  }, [d, derived, dims]);
 
   if (!d || !derived || !chart) return null;
 
@@ -159,7 +175,7 @@ export default function PowerLaw({ d, derived }) {
   return (
     <>
       {/* Title + BTC Price */}
-      <div style={{ padding: "32px 24px 0" }}>
+      <div className="page-pad" style={{ padding: "32px 24px 0" }}>
         <h1 className="hero-title" style={{
           fontFamily: bd, fontSize: 36, fontWeight: 700,
           color: t.cream, letterSpacing: "-0.04em",
@@ -191,14 +207,14 @@ export default function PowerLaw({ d, derived }) {
         </div>
       </div>
 
-      {/* Chart — full width, full viewport height */}
-      <div style={{ margin: "24px 0 0", height: "calc(100vh - 220px)", minHeight: 360 }}>
+      {/* Chart — full width, fills viewport */}
+      <div ref={containerRef} style={{ margin: "24px 0 0", height: `calc(100vh - 220px)`, minHeight: 360 }}>
+        {chart && (
         <svg
           viewBox={`0 0 ${chart.W} ${chart.H}`}
-          width="100%"
-          height="100%"
-          preserveAspectRatio="none"
-          style={{ display: "block" }}
+          width={chart.W}
+          height={chart.H}
+          style={{ display: "block", width: "100%", height: "100%" }}
         >
           {/* Axes */}
           <line x1={chart.pad.left} y1={chart.pad.top} x2={chart.pad.left} y2={chart.H - chart.pad.bottom} stroke={t.border} strokeWidth="0.5" />
@@ -310,10 +326,11 @@ export default function PowerLaw({ d, derived }) {
           <text x={chart.fv3yX} y={chart.H - chart.pad.bottom + 40} fill={t.ghost}
             fontSize={9} fontFamily="monospace" textAnchor="middle">3 YEARS</text>
         </svg>
+        )}
       </div>
 
       {/* Horizons strip */}
-      <div style={{ padding: "0 24px" }}>
+      <div className="page-pad" style={{ padding: "0 24px" }}>
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
         borderTop: `1px solid ${t.border}`,
