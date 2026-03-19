@@ -14,16 +14,20 @@ export default function Lite({ d, derived, setTab }) {
 
   return (
     <>
-      {/* Title question with price */}
-      <div style={{ padding: "32px 0 0" }}>
-        <h1 className="hero-title" style={{
-          fontFamily: bd, fontSize: 36, fontWeight: 700,
+      {/* ── Full-viewport statement ── */}
+      <div style={{
+        minHeight: "calc(100vh - 60px)",
+        display: "flex", flexDirection: "column",
+        justifyContent: "center",
+      }}>
+        <h1 style={{
+          fontFamily: bd, fontSize: "clamp(36px, 7.5vw, 120px)", fontWeight: 700,
           color: t.cream, letterSpacing: "-0.04em",
-          lineHeight: 1.05, margin: 0,
+          lineHeight: 1.0, margin: 0,
         }}>
-          Should I buy<br />Bitcoin today<br />at {fmtK(S0)}?
+          Should I buy Bitcoin<br />today at {fmtK(S0)}?
         </h1>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 14 }}>
           <div style={{
             width: 6, height: 6, borderRadius: "50%",
             background: "#27AE60",
@@ -31,38 +35,36 @@ export default function Lite({ d, derived, setTab }) {
           }} />
           <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
         </div>
-      </div>
 
-      {/* Big answer */}
-      <div style={{ padding: "48px 0 0" }}>
-        <div className="verdict-num" style={{
-          fontFamily: bd, fontSize: 80, fontWeight: 800,
-          color: t.cream, letterSpacing: "-0.04em",
-          lineHeight: 0.85, margin: 0,
-        }}>
-          {verdict.answer}
+        <div style={{ paddingTop: 56 }}>
+          <div className="verdict-num" style={{
+            fontFamily: bd, fontSize: "clamp(80px, 12vw, 180px)", fontWeight: 800,
+            color: t.cream, letterSpacing: "-0.05em",
+            lineHeight: 0.8, margin: 0,
+          }}>
+            {verdict.answer}
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <span style={{ fontFamily: bd, fontSize: 17, fontWeight: 500, color: t.cream }}>
+              {verdict.subtitle}
+            </span>
+            <span style={{ fontFamily: bd, fontSize: 17, color: t.faint, marginLeft: 10 }}>
+              — Confidence {verdict.confidence}
+            </span>
+          </div>
         </div>
-        <div style={{ marginTop: 16 }}>
-          <span style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>
-            {verdict.subtitle}
-          </span>
-          <span style={{ fontFamily: bd, fontSize: 15, color: t.faint, marginLeft: 8 }}>
-            — Confidence {verdict.confidence}
-          </span>
+
+        <div style={{ paddingTop: 40, maxWidth: 640 }}>
+          <p style={{
+            fontFamily: bd, fontSize: 19, fontWeight: 400,
+            color: t.dim, lineHeight: 1.7, margin: 0,
+          }}>
+            {verdict.answerSub}
+          </p>
         </div>
       </div>
 
-      {/* Summary paragraph */}
-      <div style={{ padding: "40px 0 32px", maxWidth: 540 }}>
-        <p style={{
-          fontFamily: bd, fontSize: 19, fontWeight: 400,
-          color: t.cream, lineHeight: 1.7, margin: 0,
-        }}>
-          {verdict.answerSub}
-        </p>
-      </div>
-
-      {/* Switch to Pro bar */}
+      {/* ── Switch to Pro bar ── */}
       <div
         onClick={() => setTab && setTab("pro")}
         style={{
@@ -83,8 +85,8 @@ export default function Lite({ d, derived, setTab }) {
         </div>
       </div>
 
-      {/* Why? toggle */}
-      <Toggle label="Why?" section="Explanation" textOnly>
+      {/* ── Why? toggle — open by default ── */}
+      <Toggle label="Why?" section="Explanation" textOnly defaultOpen>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {paras.map((p, i) => (
             <p key={i} style={{
