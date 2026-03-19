@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
 
-export default function Header({ tab, setTab }) {
+export default function Header({ tab, setTab, r2 }) {
   const { t, mode, toggle } = useTheme();
   const [mobileMenu, setMobileMenu] = useState(false);
 
@@ -50,7 +50,7 @@ export default function Header({ tab, setTab }) {
           borderLeft: `1px solid ${t.border}`,
         }}>
           <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>
-            R² 0.914
+            R² {r2 ? r2.toFixed(3) : "0.914"}
           </span>
         </div>
 
@@ -162,7 +162,7 @@ export default function Header({ tab, setTab }) {
             display: "flex", justifyContent: "space-between", alignItems: "center",
           }}>
             <span style={{ fontFamily: mn, fontSize: 10, color: t.faint }}>
-              R² 0.914
+              R² {r2 ? r2.toFixed(3) : "0.914"}
             </span>
             <div
               style={{
