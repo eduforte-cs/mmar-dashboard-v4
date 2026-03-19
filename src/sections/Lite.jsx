@@ -24,35 +24,34 @@ export default function Lite({ d, derived, setTab }) {
         height: "calc(100vh - 56px)",
         display: "flex", flexDirection: "column",
         overflow: "hidden",
-        paddingTop: 32,
       }}>
-        {/* Title */}
-        <h1 style={{
-          fontFamily: bd, fontSize: "clamp(32px, 8vw, 140px)", fontWeight: 700,
-          color: t.cream, letterSpacing: "-0.04em",
-          lineHeight: 0.95, margin: 0,
-        }}>
-          Should I buy Bitcoin today at {fmtK(S0)}?
-        </h1>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
-          <div style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: "#27AE60",
-            animation: "fi 2s ease-in-out infinite alternate",
-          }} />
-          <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
-        </div>
-
-        {/* YES — fills available space */}
+        {/* Title + YES + summary — one block, centered vertically */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <h1 style={{
+            fontFamily: bd, fontSize: "clamp(32px, 8vw, 140px)", fontWeight: 700,
+            color: t.cream, letterSpacing: "-0.04em",
+            lineHeight: 0.95, margin: 0,
+          }}>
+            Should I buy Bitcoin today at {fmtK(S0)}?
+          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+            <div style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: "#27AE60",
+              animation: "fi 2s ease-in-out infinite alternate",
+            }} />
+            <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
+          </div>
+
           <div className="verdict-num" style={{
             fontFamily: bd, fontSize: "clamp(80px, 18vw, 260px)", fontWeight: 800,
             color: t.cream, letterSpacing: "-0.05em",
             lineHeight: 0.75, margin: 0,
+            marginTop: "clamp(20px, 3vw, 48px)",
           }}>
             {verdict.answer}
           </div>
-          <div style={{ marginTop: "clamp(8px, 1.5vw, 16px)" }}>
+          <div style={{ marginTop: "clamp(8px, 1vw, 16px)" }}>
             <span style={{ fontFamily: bd, fontSize: "clamp(14px, 1.2vw, 18px)", fontWeight: 500, color: t.cream }}>
               {verdict.subtitle}
             </span>
@@ -63,14 +62,14 @@ export default function Lite({ d, derived, setTab }) {
           <p style={{
             fontFamily: bd, fontSize: "clamp(14px, 1.3vw, 19px)", fontWeight: 400,
             color: t.faint, lineHeight: 1.6,
-            margin: "clamp(10px, 1.5vw, 20px) 0 0",
+            margin: "clamp(10px, 1vw, 20px) 0 0",
           }}>
             {verdict.answerSub}
           </p>
         </div>
 
-        {/* Bottom bars */}
-        <div style={{ flexShrink: 0 }}>
+        {/* Bottom bars — with breathing room below */}
+        <div style={{ flexShrink: 0, paddingBottom: "clamp(16px, 2vh, 32px)" }}>
           <div
             onClick={() => setTab && setTab("pro")}
             style={{
