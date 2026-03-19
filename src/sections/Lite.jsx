@@ -28,7 +28,7 @@ export default function Lite({ d, derived, setTab }) {
         {/* Title + YES + summary — starts from top */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", paddingTop: "clamp(24px, 6vh, 80px)" }}>
           <h1 style={{
-            fontFamily: bd, fontSize: "clamp(32px, 8vw, 140px)", fontWeight: 700,
+            fontFamily: bd, fontSize: "clamp(42px, 12vw, 140px)", fontWeight: 700,
             color: t.cream, letterSpacing: "-0.04em",
             lineHeight: 0.95, margin: 0,
           }}>
@@ -44,7 +44,7 @@ export default function Lite({ d, derived, setTab }) {
           </div>
 
           <div className="verdict-num" style={{
-            fontFamily: bd, fontSize: "clamp(80px, 18vw, 260px)", fontWeight: 800,
+            fontFamily: bd, fontSize: "clamp(100px, 25vw, 260px)", fontWeight: 800,
             color: t.cream, letterSpacing: "-0.05em",
             lineHeight: 0.75, margin: 0,
             marginTop: "clamp(20px, 3vw, 48px)",
