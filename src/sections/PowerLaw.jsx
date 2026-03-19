@@ -159,7 +159,7 @@ export default function PowerLaw({ d, derived }) {
   return (
     <>
       {/* Title + BTC Price */}
-      <div style={{ padding: "32px 0 0" }}>
+      <div style={{ padding: "32px 24px 0" }}>
         <h1 className="hero-title" style={{
           fontFamily: bd, fontSize: 36, fontWeight: 700,
           color: t.cream, letterSpacing: "-0.04em",
@@ -191,12 +191,13 @@ export default function PowerLaw({ d, derived }) {
         </div>
       </div>
 
-      {/* Chart — full width */}
-      <div style={{ margin: "24px -24px 0" }}>
+      {/* Chart — full width, full viewport height */}
+      <div style={{ margin: "24px 0 0", height: "calc(100vh - 220px)", minHeight: 360 }}>
         <svg
           viewBox={`0 0 ${chart.W} ${chart.H}`}
           width="100%"
-          preserveAspectRatio="xMidYMid meet"
+          height="100%"
+          preserveAspectRatio="none"
           style={{ display: "block" }}
         >
           {/* Axes */}
@@ -312,6 +313,7 @@ export default function PowerLaw({ d, derived }) {
       </div>
 
       {/* Horizons strip */}
+      <div style={{ padding: "0 24px" }}>
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
         borderTop: `1px solid ${t.border}`,
@@ -402,6 +404,7 @@ export default function PowerLaw({ d, derived }) {
           </p>
         </div>
       </Toggle>
+      </div>
     </>
   );
 }
