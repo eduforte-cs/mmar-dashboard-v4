@@ -164,6 +164,13 @@ export default function PowerLaw({ d, derived }) {
       bubbleLabelY: bands.bubble[fairLabelIdx]?.[1] || 100,
       supportLabelY: bands.support[fairLabelIdx]?.[1] || 320,
       plToday: plPrice(a, b, t0),
+      // Crosshair helpers
+      tStart, totalDays, t0, a, b, resMean, resStd, resFloor, ransac, tx, ty,
+      histLookup: (sigmaChart || []).map(p => {
+        const pDate = new Date(p.fullDate || p.date);
+        const pT = (pDate.getTime() - genesisMs) / dayMs;
+        return { tDay: pT, price: p.price };
+      }).filter(h => h.tDay >= tStart && h.tDay <= t0 && h.price > 0),
     };
   }, [d, derived, dims]);
 
@@ -171,6 +178,57 @@ export default function PowerLaw({ d, derived }) {
 
   const { S0 } = d;
   const { supportPrice } = derived;
+
+  // ── Crosshair state ──
+  const [hover, setHover] = useState(null);
+  const svgRef = useRef(null);
+
+  const handleMouseMove = (e) => {
+    const svg = svgRef.current;
+    if (!svg || !chart) return;
+    const rect = svg.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) / rect.width * chart.W;
+    const mouseY = (e.clientY - rect.top) / rect.height * chart.H;
+
+    // Out of chart area?
+    if (mouseX < chart.pad.left || mouseX > chart.W - chart.pad.right ||
+        mouseY < chart.pad.top || mouseY > chart.H - chart.pad.bottom) {
+      setHover(null); return;
+    }
+
+    // X → tDay
+    const tDay = chart.tStart + ((mouseX - chart.pad.left) / (chart.W - chart.pad.left - chart.pad.right)) * chart.totalDays;
+
+    // Date
+    const genesisMs = new Date("2009-01-03").getTime();
+    const date = new Date(genesisMs + tDay * 86400000);
+    const dateStr = date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+
+    // PL values at this tDay
+    const isFuture = tDay > chart.t0;
+    const plV = plPrice(chart.a, chart.b, Math.max(tDay, 1));
+    const fair = plV;
+    const bubble = Math.exp(Math.log(plV) + chart.resMean + 2 * chart.resStd);
+    const ceiling = Math.exp(Math.log(plV) + chart.resMean + chart.resStd);
+    const sup = chart.ransac
+      ? Math.exp(chart.ransac.a + chart.ransac.b * Math.log(Math.max(tDay, 1)) + chart.ransac.floor)
+      : Math.exp(Math.log(plV) + chart.resFloor);
+
+    // Historical price (nearest)
+    let actualPrice = null;
+    if (!isFuture && chart.histLookup.length > 0) {
+      let closest = chart.histLookup[0];
+      let minD = Math.abs(closest.tDay - tDay);
+      for (const h of chart.histLookup) {
+        const dd = Math.abs(h.tDay - tDay);
+        if (dd < minD) { closest = h; minD = dd; }
+      }
+      if (minD < 30) actualPrice = closest.price;
+    }
+
+    const x = chart.tx(tDay);
+    setHover({ x, dateStr, isFuture, fair, bubble, ceiling, sup, actualPrice });
+  };
 
   return (
     <>
@@ -211,10 +269,13 @@ export default function PowerLaw({ d, derived }) {
       <div ref={containerRef} style={{ margin: "24px 0 0", height: `calc(100vh - 220px)`, minHeight: 360 }}>
         {chart && (
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${chart.W} ${chart.H}`}
           width={chart.W}
           height={chart.H}
-          style={{ display: "block", width: "100%", height: "100%" }}
+          style={{ display: "block", width: "100%", height: "100%", cursor: "crosshair" }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setHover(null)}
         >
           {/* Axes */}
           <line x1={chart.pad.left} y1={chart.pad.top} x2={chart.pad.left} y2={chart.H - chart.pad.bottom} stroke={t.border} strokeWidth="0.5" />
@@ -325,6 +386,73 @@ export default function PowerLaw({ d, derived }) {
             fontSize={9} fontFamily="monospace" textAnchor="middle">1 YEAR</text>
           <text x={chart.fv3yX} y={chart.H - chart.pad.bottom + 40} fill={t.ghost}
             fontSize={9} fontFamily="monospace" textAnchor="middle">3 YEARS</text>
+
+          {/* ── Crosshair ── */}
+          {hover && (
+            <g>
+              {/* Vertical line */}
+              <line x1={hover.x} y1={chart.pad.top} x2={hover.x} y2={chart.H - chart.pad.bottom}
+                stroke={t.cream} strokeWidth={0.5} opacity={0.3} />
+
+              {/* Dots on bands */}
+              <circle cx={hover.x} cy={chart.ty(hover.fair)} r={3} fill={t.cream} opacity={0.7} />
+              <circle cx={hover.x} cy={chart.ty(hover.sup)} r={2.5} fill={t.faint} opacity={0.5} />
+              <circle cx={hover.x} cy={chart.ty(hover.bubble)} r={2.5} fill={t.faint} opacity={0.5} />
+              {hover.actualPrice && (
+                <circle cx={hover.x} cy={chart.ty(hover.actualPrice)} r={3.5} fill={t.cream} />
+              )}
+
+              {/* Tooltip panel */}
+              {(() => {
+                const tipW = 150, tipH = hover.actualPrice ? 110 : 88;
+                const flipX = hover.x > chart.W * 0.65;
+                const tipX = flipX ? hover.x - tipW - 16 : hover.x + 16;
+                const tipY = Math.max(chart.pad.top + 10, Math.min(chart.H - chart.pad.bottom - tipH - 10, chart.ty(hover.fair) - tipH / 2));
+                return (
+                  <g>
+                    <rect x={tipX} y={tipY} width={tipW} height={tipH} rx={4}
+                      fill={t.bg} stroke={t.border} strokeWidth={0.5} opacity={0.95} />
+
+                    {/* Date */}
+                    <text x={tipX + 12} y={tipY + 18} fill={t.faint} fontSize={10} fontFamily={bd}>
+                      {hover.dateStr}{hover.isFuture ? " · projected" : ""}
+                    </text>
+
+                    {/* Actual price (historical only) */}
+                    {hover.actualPrice && (
+                      <text x={tipX + 12} y={tipY + 36} fill={t.cream} fontSize={12} fontFamily="monospace" fontWeight={500}>
+                        BTC {fmtK(hover.actualPrice)}
+                      </text>
+                    )}
+
+                    {/* Fair value */}
+                    <text x={tipX + 12} y={tipY + (hover.actualPrice ? 56 : 40)} fill={t.faint} fontSize={9} fontFamily={bd}>
+                      Fair value
+                    </text>
+                    <text x={tipX + tipW - 12} y={tipY + (hover.actualPrice ? 56 : 40)} fill={t.cream} fontSize={11} fontFamily="monospace" textAnchor="end">
+                      {fmtK(hover.fair)}
+                    </text>
+
+                    {/* Bubble */}
+                    <text x={tipX + 12} y={tipY + (hover.actualPrice ? 74 : 58)} fill={t.faint} fontSize={9} fontFamily={bd}>
+                      Bubble zone
+                    </text>
+                    <text x={tipX + tipW - 12} y={tipY + (hover.actualPrice ? 74 : 58)} fill={t.faint} fontSize={11} fontFamily="monospace" textAnchor="end">
+                      {fmtK(hover.bubble)}
+                    </text>
+
+                    {/* Support */}
+                    <text x={tipX + 12} y={tipY + (hover.actualPrice ? 92 : 76)} fill={t.faint} fontSize={9} fontFamily={bd}>
+                      Support
+                    </text>
+                    <text x={tipX + tipW - 12} y={tipY + (hover.actualPrice ? 92 : 76)} fill={t.faint} fontSize={11} fontFamily="monospace" textAnchor="end">
+                      {fmtK(hover.sup)}
+                    </text>
+                  </g>
+                );
+              })()}
+            </g>
+          )}
         </svg>
         )}
       </div>
