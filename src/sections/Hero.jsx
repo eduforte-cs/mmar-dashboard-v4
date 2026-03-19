@@ -1,27 +1,18 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
+import { fmtK } from "../engine/constants.js";
 import Gauge from "../components/Gauge";
 
-// Placeholder data — will be replaced by engine results
-const MOCK = {
-  answer: "YES",
-  subtitle: "Buy · Confidence moderate",
-  price: "$84,432",
-  priceDelta: "+1.8% 24h",
-  sigma: -0.38,
-  sigmaLabel: "Mild discount",
-  fairValue: "$91,200",
-  fairSub: "Power Law WLS",
-  support: "$48,900",
-  supportSub: "RANSAC −1.8σ",
-  summary:
-    "The odds are in your favor. Both the structural and probabilistic picture support entry. Bitcoin at $84K is 7% below fair value — right in the sweet spot where historical returns have been strongest.",
-};
-
-export default function Hero({ data = MOCK }) {
+export default function Hero({ d, derived }) {
   const { t } = useTheme();
-  const d = data;
+  if (!d || !derived) return null;
+
+  const { S0, sigmaFromPL: sigma, plToday, r2 } = d;
+  const { verdict, supportPrice, deviationPct } = derived;
+
+  const sigmaLabel = sigma < -1.0 ? "Deep discount" : sigma < -0.5 ? "Discount"
+    : sigma < 0.5 ? "Near fair value" : sigma < 1.0 ? "Premium" : "Overheated";
 
   return (
     <>
@@ -51,10 +42,10 @@ export default function Hero({ data = MOCK }) {
               fontFamily: bd, fontSize: 56, fontWeight: 700,
               color: t.cream, lineHeight: 0.85, letterSpacing: "-0.05em",
             }}>
-              {d.answer}
+              {verdict.answer}
             </div>
             <div style={{ fontFamily: bd, fontSize: 14, color: t.dim, marginTop: 8 }}>
-              {d.subtitle}
+              {verdict.subtitle} · Confidence {verdict.confidence}
             </div>
           </div>
         </div>
@@ -66,10 +57,10 @@ export default function Hero({ data = MOCK }) {
         borderBottom: `1px solid ${t.border}`,
       }}>
         {[
-          { l: "Price", v: d.price, s: d.priceDelta },
-          { l: "σ from fair value", v: `${d.sigma >= 0 ? "+" : ""}${d.sigma.toFixed(2)}σ`, s: d.sigmaLabel },
-          { l: "Fair value", v: d.fairValue, s: d.fairSub },
-          { l: "Support floor", v: d.support, s: d.supportSub },
+          { l: "Price", v: fmtK(S0), s: `${d.source?.split("(")[0] || "Live"}` },
+          { l: "σ from fair value", v: `${sigma >= 0 ? "+" : ""}${sigma.toFixed(2)}σ`, s: sigmaLabel },
+          { l: "Fair value", v: fmtK(plToday), s: `Power Law WLS · R² ${r2.toFixed(3)}` },
+          { l: "Support floor", v: fmtK(supportPrice), s: `RANSAC ${d.resFloorSigma?.toFixed(1) || ""}σ` },
         ].map((item, i) => (
           <div key={item.l} style={{
             padding: "20px 0",
@@ -98,7 +89,7 @@ export default function Hero({ data = MOCK }) {
       </div>
 
       {/* Gauge */}
-      <Gauge sigma={d.sigma} />
+      <Gauge sigma={sigma} />
 
       {/* Summary */}
       <div style={{ padding: "24px 0 28px", borderBottom: `1px solid ${t.border}` }}>
@@ -106,7 +97,7 @@ export default function Hero({ data = MOCK }) {
           fontFamily: bd, fontSize: 16, fontWeight: 300,
           color: t.dim, lineHeight: 1.7, margin: 0, maxWidth: 640,
         }}>
-          {d.summary}
+          {verdict.answerSub}
         </p>
       </div>
     </>
