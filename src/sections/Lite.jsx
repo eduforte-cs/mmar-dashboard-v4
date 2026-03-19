@@ -21,20 +21,20 @@ export default function Lite({ d, derived, setTab }) {
     <>
       {/* ── Viewport statement ── */}
       <div style={{
-        minHeight: "calc(100vh - 56px)",
+        height: "calc(100vh - 56px)",
         display: "flex", flexDirection: "column",
-        padding: 0,
+        overflow: "hidden",
       }}>
-        {/* Content — centered vertically */}
+        {/* Content — centered vertically, fills space */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <h1 style={{
-            fontFamily: bd, fontSize: "clamp(32px, 6vw, 90px)", fontWeight: 700,
+            fontFamily: bd, fontSize: "clamp(36px, 7.5vw, 130px)", fontWeight: 700,
             color: t.cream, letterSpacing: "-0.04em",
-            lineHeight: 1.0, margin: 0,
+            lineHeight: 0.95, margin: 0,
           }}>
             Should I buy Bitcoin today at {fmtK(S0)}?
           </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: "clamp(8px, 1vw, 14px)" }}>
             <div style={{
               width: 6, height: 6, borderRadius: "50%",
               background: "#27AE60",
@@ -43,34 +43,34 @@ export default function Lite({ d, derived, setTab }) {
             <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
           </div>
 
-          <div style={{ marginTop: 40 }}>
+          <div style={{ marginTop: "clamp(24px, 3vw, 48px)" }}>
             <div className="verdict-num" style={{
-              fontFamily: bd, fontSize: "clamp(64px, 10vw, 140px)", fontWeight: 800,
+              fontFamily: bd, fontSize: "clamp(72px, 13vw, 200px)", fontWeight: 800,
               color: t.cream, letterSpacing: "-0.05em",
               lineHeight: 0.8, margin: 0,
             }}>
               {verdict.answer}
             </div>
-            <div style={{ marginTop: 14 }}>
-              <span style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>
+            <div style={{ marginTop: "clamp(10px, 1.5vw, 20px)" }}>
+              <span style={{ fontFamily: bd, fontSize: "clamp(14px, 1.2vw, 18px)", fontWeight: 500, color: t.cream }}>
                 {verdict.subtitle}
               </span>
-              <span style={{ fontFamily: bd, fontSize: 15, color: t.faint, marginLeft: 10 }}>
+              <span style={{ fontFamily: bd, fontSize: "clamp(14px, 1.2vw, 18px)", color: t.faint, marginLeft: 10 }}>
                 — Confidence {verdict.confidence}
               </span>
             </div>
             <p style={{
-              fontFamily: bd, fontSize: 17, fontWeight: 400,
+              fontFamily: bd, fontSize: "clamp(15px, 1.3vw, 20px)", fontWeight: 400,
               color: t.faint, lineHeight: 1.6,
-              margin: "20px 0 0", maxWidth: 580,
+              margin: "clamp(14px, 1.5vw, 24px) 0 0", maxWidth: "60vw",
             }}>
               {verdict.answerSub}
             </p>
           </div>
         </div>
 
-        {/* Bottom bars — anchored to viewport bottom */}
-        <div>
+        {/* Bottom bars — pinned to viewport bottom */}
+        <div style={{ flexShrink: 0 }}>
           {/* Switch to Pro */}
           <div
             onClick={() => setTab && setTab("pro")}
@@ -80,12 +80,12 @@ export default function Lite({ d, derived, setTab }) {
               cursor: "pointer",
             }}
           >
-            <div style={{ padding: "18px 0", fontFamily: bd, fontSize: 16, color: t.dim }}>
+            <div style={{ padding: "16px 0", fontFamily: bd, fontSize: 15, color: t.dim }}>
               Want the full picture?
             </div>
             <div style={{
-              padding: "18px 24px", borderLeft: `1px solid ${t.border}`,
-              fontFamily: bd, fontSize: 16, fontWeight: 500, color: t.cream,
+              padding: "16px 24px", borderLeft: `1px solid ${t.border}`,
+              fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream,
             }}>
               Switch to Pro
             </div>
@@ -96,17 +96,17 @@ export default function Lite({ d, derived, setTab }) {
             onClick={scrollToWhy}
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "18px 0",
+              padding: "16px 0",
               borderTop: `1px solid ${t.border}`,
               borderBottom: `1px solid ${t.border}`,
               cursor: "pointer",
             }}
           >
             <div>
-              <div style={{ fontFamily: bd, fontSize: 16, fontWeight: 500, color: t.cream }}>
+              <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>
                 The simple explanation
               </div>
-              <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 3 }}>
+              <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 2 }}>
                 Plain English, no jargon, 15 second read
               </div>
             </div>
@@ -132,7 +132,7 @@ export default function Lite({ d, derived, setTab }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {paras.map((p, i) => (
             <p key={i} style={{
-              fontFamily: bd, fontSize: "clamp(17px, 2vw, 22px)", fontWeight: 400,
+              fontFamily: bd, fontSize: "clamp(17px, 2vw, 24px)", fontWeight: 400,
               color: t.cream, lineHeight: 1.7, margin: 0,
             }}>
               {p}
