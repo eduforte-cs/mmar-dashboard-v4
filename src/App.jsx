@@ -7,6 +7,7 @@ import Hero from "./sections/Hero";
 import Lite from "./sections/Lite";
 import Pro from "./sections/Pro";
 import Faq from "./sections/Faq";
+import PowerLaw from "./sections/PowerLaw";
 import Footer from "./sections/Footer";
 
 function Loading({ msg }) {
@@ -79,13 +80,20 @@ function Dashboard() {
       <Header tab={tab} setTab={setTab} r2={d?.r2} />
 
       <div className="page-pad" style={{ padding: "0 24px" }}>
-        <Hero d={d} derived={derived} />
-
-        <div style={{ animation: "fi 0.3s ease" }}>
-          {tab === "lite" && <Lite d={d} derived={derived} />}
-          {tab === "pro" && <Pro d={d} derived={derived} />}
-          {tab === "faq" && <Faq />}
-        </div>
+        {tab === "pl" ? (
+          <div style={{ animation: "fi 0.3s ease" }}>
+            <PowerLaw d={d} derived={derived} />
+          </div>
+        ) : (
+          <>
+            <Hero d={d} derived={derived} />
+            <div style={{ animation: "fi 0.3s ease" }}>
+              {tab === "lite" && <Lite d={d} derived={derived} />}
+              {tab === "pro" && <Pro d={d} derived={derived} />}
+              {tab === "faq" && <Faq />}
+            </div>
+          </>
+        )}
 
         <Footer lastRefresh={lastRefresh} />
       </div>
