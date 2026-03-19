@@ -35,25 +35,24 @@ export default function PowerLaw({ d, derived }) {
     const cw = W - pad.left - pad.right;
     const ch = H - pad.top - pad.bottom;
 
-    // ── Time range: ~2 years back, ~4 years forward ──
-    const daysBack = 365 * 2;
-    const daysForward = 365 * 4;
+    // ── Time range: ~1.5 years back, ~3.5 years forward ──
+    const daysBack = Math.round(365 * 1.5);
+    const daysForward = Math.round(365 * 3.5);
     const totalDays = daysBack + daysForward;
     const tStart = t0 - daysBack;
     const tEnd = t0 + daysForward;
 
     const tx = (tDay) => pad.left + ((tDay - tStart) / totalDays) * cw;
 
-    // ── Price axis: log10 scale — tight range around visible corridor ──
-    // Focus on: support at t0 (bottom) to ceiling at tEnd (top), with some padding
+    // ── Price axis: log10 scale — tight range for drama ──
     const plNow = plPrice(a, b, t0);
     const plEnd = plPrice(a, b, tEnd);
-    const ceilingEnd = Math.exp(Math.log(plEnd) + resMean + 1.5 * resStd);
+    const ceilingEnd = Math.exp(Math.log(plEnd) + resMean + 1.2 * resStd);
     const supportNow = ransac
       ? Math.exp(ransac.a + ransac.b * Math.log(Math.max(tStart, 1)) + ransac.floor)
       : Math.exp(Math.log(plPrice(a, b, Math.max(tStart, 1))) + resFloor);
-    const lowestVisible = Math.min(S0, supportNow) * 0.7;
-    const highestVisible = ceilingEnd * 1.2;
+    const lowestVisible = Math.min(S0, supportNow) * 0.8;
+    const highestVisible = ceilingEnd * 1.1;
     const logMin = Math.log10(lowestVisible);
     const logMax = Math.log10(highestVisible);
 
@@ -243,19 +242,19 @@ export default function PowerLaw({ d, derived }) {
           ))}
 
           {/* Corridor fill */}
-          <path d={chart.corridorFill} fill={t.cream} opacity={0.02} />
+          <path d={chart.corridorFill} fill={t.cream} opacity={0.05} />
 
           {/* Band lines */}
-          <path d={chart.toPath(chart.bands.bubble)} stroke={t.faint} strokeWidth={0.5} fill="none" strokeDasharray="3 3" opacity={0.3} />
-          <path d={chart.toPath(chart.bands.ceiling)} stroke={t.faint} strokeWidth={0.5} fill="none" strokeDasharray="3 3" opacity={0.25} />
-          <path d={chart.toPath(chart.bands.fair)} stroke={t.cream} strokeWidth={1} fill="none" opacity={0.35} />
-          <path d={chart.toPath(chart.bands.discount)} stroke={t.faint} strokeWidth={0.5} fill="none" strokeDasharray="3 3" opacity={0.25} />
-          <path d={chart.toPath(chart.bands.support)} stroke={t.faint} strokeWidth={0.5} fill="none" strokeDasharray="3 3" opacity={0.3} />
+          <path d={chart.toPath(chart.bands.bubble)} stroke={t.faint} strokeWidth={1} fill="none" strokeDasharray="6 4" opacity={0.5} />
+          <path d={chart.toPath(chart.bands.ceiling)} stroke={t.faint} strokeWidth={0.8} fill="none" strokeDasharray="5 3" opacity={0.4} />
+          <path d={chart.toPath(chart.bands.fair)} stroke={t.cream} strokeWidth={1.5} fill="none" opacity={0.6} />
+          <path d={chart.toPath(chart.bands.discount)} stroke={t.faint} strokeWidth={0.8} fill="none" strokeDasharray="5 3" opacity={0.4} />
+          <path d={chart.toPath(chart.bands.support)} stroke={t.faint} strokeWidth={1} fill="none" strokeDasharray="6 4" opacity={0.5} />
 
           {/* Band labels */}
-          <text x={chart.fairLabelX} y={chart.fairLabelY - 8} fill={t.cream} fontSize={9} fontFamily={bd} opacity={0.2}>Fair value</text>
-          <text x={chart.fairLabelX} y={chart.bubbleLabelY - 8} fill={t.faint} fontSize={9} fontFamily={bd} opacity={0.15}>Bubble zone</text>
-          <text x={chart.fairLabelX} y={chart.supportLabelY + 14} fill={t.faint} fontSize={9} fontFamily={bd} opacity={0.15}>Support</text>
+          <text x={chart.fairLabelX} y={chart.fairLabelY - 8} fill={t.cream} fontSize={10} fontFamily={bd} opacity={0.4}>Fair value</text>
+          <text x={chart.fairLabelX} y={chart.bubbleLabelY - 8} fill={t.faint} fontSize={10} fontFamily={bd} opacity={0.35}>Bubble zone</text>
+          <text x={chart.fairLabelX} y={chart.supportLabelY + 14} fill={t.faint} fontSize={10} fontFamily={bd} opacity={0.35}>Support</text>
 
           {/* Historical price */}
           {chart.histPathStr && (
@@ -267,55 +266,55 @@ export default function PowerLaw({ d, derived }) {
             stroke={t.faint} strokeWidth={0.5} strokeDasharray="1 3" opacity={0.4} />
 
           {/* Today dot */}
-          <circle cx={chart.todayX} cy={chart.todayY} r={5} fill={t.cream} />
+          <circle cx={chart.todayX} cy={chart.todayY} r={6} fill={t.cream} />
 
           {/* YOU'RE HERE label */}
-          <text x={chart.todayX} y={chart.todayY - 22} fill={t.cream}
-            fontSize={9} fontFamily={bd} fontWeight={700} textAnchor="middle" letterSpacing="0.1em">
+          <text x={chart.todayX} y={chart.todayY - 26} fill={t.cream}
+            fontSize={11} fontFamily={bd} fontWeight={700} textAnchor="middle" letterSpacing="0.1em">
             YOU'RE HERE
           </text>
-          <text x={chart.todayX} y={chart.todayY - 10} fill={t.cream}
-            fontSize={11} fontFamily="monospace" fontWeight={500} textAnchor="middle" opacity={0.7}>
+          <text x={chart.todayX} y={chart.todayY - 12} fill={t.cream}
+            fontSize={13} fontFamily="monospace" fontWeight={500} textAnchor="middle" opacity={0.7}>
             {fmtK(S0)}
           </text>
 
           {/* Fan lines — 1Y */}
           <line x1={chart.todayX} y1={chart.todayY} x2={chart.fv1yX} y2={chart.fv1yY}
-            stroke={t.cream} strokeWidth={1.5} opacity={0.7} />
+            stroke={t.cream} strokeWidth={2} opacity={0.85} />
           <line x1={chart.todayX} y1={chart.todayY} x2={chart.wc1yX} y2={chart.wc1yY}
-            stroke={t.faint} strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
+            stroke={t.faint} strokeWidth={1.2} strokeDasharray="5 4" opacity={0.6} />
 
           {/* Fan lines — 3Y */}
           <line x1={chart.todayX} y1={chart.todayY} x2={chart.fv3yX} y2={chart.fv3yY}
-            stroke={t.cream} strokeWidth={1.5} opacity={0.7} />
+            stroke={t.cream} strokeWidth={2} opacity={0.85} />
           <line x1={chart.todayX} y1={chart.todayY} x2={chart.wc3yX} y2={chart.wc3yY}
-            stroke={t.faint} strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
+            stroke={t.faint} strokeWidth={1.2} strokeDasharray="5 4" opacity={0.6} />
 
           {/* Endpoint dots + labels — 1Y FV */}
-          <circle cx={chart.fv1yX} cy={chart.fv1yY} r={4} fill="none" stroke={t.cream} strokeWidth={1.5} />
-          <text x={chart.fv1yX} y={chart.fv1yY - 10} fill={t.cream}
-            fontSize={11} fontFamily="monospace" fontWeight={500} textAnchor="middle">
+          <circle cx={chart.fv1yX} cy={chart.fv1yY} r={5} fill="none" stroke={t.cream} strokeWidth={2} />
+          <text x={chart.fv1yX} y={chart.fv1yY - 12} fill={t.cream}
+            fontSize={13} fontFamily="monospace" fontWeight={500} textAnchor="middle">
             {fmtK(chart.fv1y)}
           </text>
 
           {/* 1Y Worst */}
-          <circle cx={chart.wc1yX} cy={chart.wc1yY} r={3.5} fill="none" stroke={t.faint} strokeWidth={1} />
-          <text x={chart.wc1yX} y={chart.wc1yY + 16} fill={t.faint}
-            fontSize={10} fontFamily="monospace" textAnchor="middle">
+          <circle cx={chart.wc1yX} cy={chart.wc1yY} r={4} fill="none" stroke={t.faint} strokeWidth={1.5} />
+          <text x={chart.wc1yX} y={chart.wc1yY + 18} fill={t.faint}
+            fontSize={12} fontFamily="monospace" textAnchor="middle">
             {fmtK(chart.wc1y)}
           </text>
 
           {/* 3Y FV */}
-          <circle cx={chart.fv3yX} cy={chart.fv3yY} r={4} fill="none" stroke={t.cream} strokeWidth={1.5} />
-          <text x={chart.fv3yX} y={chart.fv3yY - 10} fill={t.cream}
-            fontSize={11} fontFamily="monospace" fontWeight={500} textAnchor="middle">
+          <circle cx={chart.fv3yX} cy={chart.fv3yY} r={5} fill="none" stroke={t.cream} strokeWidth={2} />
+          <text x={chart.fv3yX} y={chart.fv3yY - 12} fill={t.cream}
+            fontSize={13} fontFamily="monospace" fontWeight={500} textAnchor="middle">
             {fmtK(chart.fv3y)}
           </text>
 
           {/* 3Y Worst */}
-          <circle cx={chart.wc3yX} cy={chart.wc3yY} r={3.5} fill="none" stroke={t.faint} strokeWidth={1} />
-          <text x={chart.wc3yX} y={chart.wc3yY + 16} fill={t.faint}
-            fontSize={10} fontFamily="monospace" textAnchor="middle">
+          <circle cx={chart.wc3yX} cy={chart.wc3yY} r={4} fill="none" stroke={t.faint} strokeWidth={1.5} />
+          <text x={chart.wc3yX} y={chart.wc3yY + 18} fill={t.faint}
+            fontSize={12} fontFamily="monospace" textAnchor="middle">
             {fmtK(chart.wc3y)}
           </text>
 
