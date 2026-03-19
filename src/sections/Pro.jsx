@@ -12,6 +12,7 @@ import HurstRegime from "./pro/HurstRegime";
 import { KeyLevels, ForwardProjections, RiskMatrix } from "./pro/DataTables";
 import { MCChart, SigmaChart, MCHorizonTable } from "./pro/Charts";
 import PowerLawChart from "./pro/PowerLawChart";
+import ValidationPanel from "./pro/ValidationPanel";
 
 function TextPlaceholder({ text }) {
   const { t } = useTheme();
@@ -152,22 +153,7 @@ export default function Pro({ d, derived }) {
       </Toggle>
 
       <Toggle label="Has this worked in the past?">
-        {bt ? (
-          <>
-            <p style={{ fontFamily: bd, fontSize: 17, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: "0 0 20px" }}>
-              Tested against every point in Bitcoin's history since 2016. When the model said buy, the price was higher 12 months later {bt.precision}% of the time. Bitcoin goes up in any random 12-month period {bt.baseRate}% of the time — so the signal adds +{(parseFloat(bt.precision) - parseFloat(bt.baseRate)).toFixed(0)}pp.
-            </p>
-            <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderTop: `1px solid ${t.borderFaint}` }}>
-              {btMetrics.map((dm, i) => (
-                <div key={dm.l} style={{ padding: "14px 0", borderBottom: `1px solid ${t.borderFaint}`, borderRight: (i % 2 === 0) ? `1px solid ${t.borderFaint}` : "none", paddingRight: (i % 2 === 0) ? 20 : 0, paddingLeft: (i % 2 === 1) ? 20 : 0 }}>
-                  <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{dm.l}</div>
-                  <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: t.cream }}>{dm.v}</div>
-                  <div style={{ fontFamily: bd, fontSize: 10, color: t.faint, marginTop: 2 }}>{dm.s}</div>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : <TextPlaceholder text="Backtest data not available." />}
+        <ValidationPanel bt={bt} calibratedWeights={d.calibratedWeights} />
       </Toggle>
 
       {/* ═══ MARKET ═══ */}
