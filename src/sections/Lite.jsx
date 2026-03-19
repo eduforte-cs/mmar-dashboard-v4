@@ -1,96 +1,137 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
-import Toggle from "../components/Toggle";
+import Chevron from "../components/Chevron";
 
 export default function Lite({ d, derived, setTab }) {
   const { t } = useTheme();
+  const whyRef = useRef(null);
   if (!d || !derived) return null;
 
   const { S0 } = d;
   const { verdict } = derived;
   const paras = verdict.paras || [];
 
+  const scrollToWhy = () => {
+    whyRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <>
-      {/* ── Full-viewport statement ── */}
+      {/* ── Viewport-height statement ── */}
       <div style={{
-        minHeight: "calc(100vh - 60px)",
+        minHeight: "calc(100vh - 56px)",
         display: "flex", flexDirection: "column",
-        justifyContent: "center",
+        justifyContent: "space-between",
+        paddingTop: 32,
+        paddingBottom: 0,
       }}>
-        <h1 style={{
-          fontFamily: bd, fontSize: "clamp(36px, 7.5vw, 120px)", fontWeight: 700,
-          color: t.cream, letterSpacing: "-0.04em",
-          lineHeight: 1.0, margin: 0,
-        }}>
-          Should I buy Bitcoin<br />today at {fmtK(S0)}?
-        </h1>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 14 }}>
-          <div style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: "#27AE60",
-            animation: "fi 2s ease-in-out infinite alternate",
-          }} />
-          <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
+        {/* Top: question + answer */}
+        <div>
+          <h1 style={{
+            fontFamily: bd, fontSize: "clamp(32px, 6vw, 90px)", fontWeight: 700,
+            color: t.cream, letterSpacing: "-0.04em",
+            lineHeight: 1.0, margin: 0,
+          }}>
+            Should I buy Bitcoin{"\n"}today at {fmtK(S0)}?
+          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+            <div style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: "#27AE60",
+              animation: "fi 2s ease-in-out infinite alternate",
+            }} />
+            <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
+          </div>
         </div>
 
-        <div style={{ paddingTop: 56 }}>
+        {/* Middle: YES + subtitle + summary */}
+        <div style={{ paddingTop: 32 }}>
           <div className="verdict-num" style={{
-            fontFamily: bd, fontSize: "clamp(80px, 12vw, 180px)", fontWeight: 800,
+            fontFamily: bd, fontSize: "clamp(64px, 10vw, 140px)", fontWeight: 800,
             color: t.cream, letterSpacing: "-0.05em",
             lineHeight: 0.8, margin: 0,
           }}>
             {verdict.answer}
           </div>
-          <div style={{ marginTop: 20 }}>
-            <span style={{ fontFamily: bd, fontSize: 17, fontWeight: 500, color: t.cream }}>
+          <div style={{ marginTop: 16 }}>
+            <span style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>
               {verdict.subtitle}
             </span>
-            <span style={{ fontFamily: bd, fontSize: 17, color: t.faint, marginLeft: 10 }}>
+            <span style={{ fontFamily: bd, fontSize: 15, color: t.faint, marginLeft: 10 }}>
               — Confidence {verdict.confidence}
             </span>
           </div>
+          <div style={{ paddingTop: 24, maxWidth: 640 }}>
+            <p style={{
+              fontFamily: bd, fontSize: 17, fontWeight: 400,
+              color: t.dim, lineHeight: 1.7, margin: 0,
+            }}>
+              {verdict.answerSub}
+            </p>
+          </div>
         </div>
 
-        <div style={{ paddingTop: 40, maxWidth: 640 }}>
-          <p style={{
-            fontFamily: bd, fontSize: 19, fontWeight: 400,
-            color: t.dim, lineHeight: 1.7, margin: 0,
-          }}>
-            {verdict.answerSub}
-          </p>
+        {/* Bottom: Pro bar + Why button — anchored to bottom of viewport */}
+        <div style={{ paddingTop: 32 }}>
+          {/* Switch to Pro */}
+          <div
+            onClick={() => setTab && setTab("pro")}
+            style={{
+              display: "grid", gridTemplateColumns: "1fr auto",
+              borderTop: `1px solid ${t.border}`,
+              borderBottom: `1px solid ${t.border}`,
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ padding: "14px 0", fontFamily: bd, fontSize: 14, color: t.faint }}>
+              Want the full picture?
+            </div>
+            <div style={{
+              padding: "14px 24px", borderLeft: `1px solid ${t.border}`,
+              fontFamily: bd, fontSize: 14, fontWeight: 400, color: t.cream,
+            }}>
+              Switch to Pro
+            </div>
+          </div>
+
+          {/* Why? — click to scroll */}
+          <div
+            onClick={scrollToWhy}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "14px 0",
+              borderBottom: `1px solid ${t.border}`,
+              cursor: "pointer",
+            }}
+          >
+            <span style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>
+              Why?
+            </span>
+            <Chevron size={14} color={t.faint} />
+          </div>
         </div>
       </div>
 
-      {/* ── Switch to Pro bar ── */}
-      <div
-        onClick={() => setTab && setTab("pro")}
-        style={{
-          display: "grid", gridTemplateColumns: "1fr auto",
-          borderTop: `1px solid ${t.border}`,
-          borderBottom: `1px solid ${t.border}`,
-          cursor: "pointer",
-        }}
-      >
-        <div style={{ padding: "16px 0", fontFamily: bd, fontSize: 14, color: t.faint }}>
-          Want the full picture?
-        </div>
+      {/* ── Full-screen Why? explanation ── */}
+      <div ref={whyRef} style={{
+        minHeight: "100vh",
+        display: "flex", flexDirection: "column",
+        justifyContent: "center",
+        paddingTop: 48, paddingBottom: 48,
+      }}>
         <div style={{
-          padding: "16px 24px", borderLeft: `1px solid ${t.border}`,
-          fontFamily: bd, fontSize: 14, fontWeight: 400, color: t.cream,
+          fontFamily: bd, fontSize: 9, color: t.faint,
+          textTransform: "uppercase", letterSpacing: "0.08em",
+          marginBottom: 24,
         }}>
-          Switch to Pro
+          Explanation
         </div>
-      </div>
-
-      {/* ── Why? toggle — open by default ── */}
-      <Toggle label="Why?" section="Explanation" textOnly defaultOpen>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {paras.map((p, i) => (
             <p key={i} style={{
-              fontFamily: bd, fontSize: 17, fontWeight: 400,
+              fontFamily: bd, fontSize: "clamp(17px, 2vw, 22px)", fontWeight: 400,
               color: t.cream, lineHeight: 1.7, margin: 0,
             }}>
               {p}
@@ -98,12 +139,12 @@ export default function Lite({ d, derived, setTab }) {
           ))}
           <p style={{
             fontFamily: bd, fontSize: 12, color: t.faint,
-            fontStyle: "italic", marginTop: 8,
+            fontStyle: "italic", marginTop: 16,
           }}>
             Generated from Power Law + MMAR + Monte Carlo. Walk-forward validated against every 30-day point since 2016.
           </p>
         </div>
-      </Toggle>
+      </div>
     </>
   );
 }
