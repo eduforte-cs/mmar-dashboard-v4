@@ -85,9 +85,9 @@ function Dashboard() {
         </div>
       ) : (
         <div className="page-pad" style={{ padding: "0 24px" }}>
-          <Hero d={d} derived={derived} />
+          {tab !== "lite" && <Hero d={d} derived={derived} />}
           <div style={{ animation: "fi 0.3s ease" }}>
-            {tab === "lite" && <Lite d={d} derived={derived} />}
+            {tab === "lite" && <Lite d={d} derived={derived} setTab={setTab} />}
             {tab === "pro" && <Pro d={d} derived={derived} />}
             {tab === "faq" && <Faq />}
           </div>
