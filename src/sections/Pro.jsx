@@ -11,6 +11,7 @@ import MarketRegime from "./pro/MarketRegime";
 import HurstRegime from "./pro/HurstRegime";
 import { KeyLevels, ForwardProjections, RiskMatrix } from "./pro/DataTables";
 import { MCChart, SigmaChart, MCHorizonTable } from "./pro/Charts";
+import PowerLawChart from "./pro/PowerLawChart";
 
 function TextPlaceholder({ text }) {
   const { t } = useTheme();
@@ -224,7 +225,7 @@ export default function Pro({ d, derived }) {
       <CatLabel label="Models" />
 
       <Toggle label="Power Law Model">
-        <TextPlaceholder text="Log-log chart with σ bands. Coming in next iteration." />
+        <PowerLawChart d={d} />
       </Toggle>
 
       <Toggle label="Key Price Levels">
