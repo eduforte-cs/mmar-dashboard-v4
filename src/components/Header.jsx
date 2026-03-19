@@ -26,22 +26,25 @@ export default function Header({ tab, setTab, r2 }) {
           </span>
         </div>
 
-        {["Lite", "Pro", "FAQ"].map(n => (
+        {["Lite", "Pro", "PL", "FAQ"].map(n => {
+          const tabKey = n === "PL" ? "pl" : n.toLowerCase();
+          return (
           <button
             key={n}
-            onClick={() => setTab(n.toLowerCase())}
+            onClick={() => setTab(tabKey)}
             style={{
               padding: "0 32px", border: "none",
               borderRight: `1px solid ${t.border}`,
               cursor: "pointer", fontFamily: bd, fontSize: 14, fontWeight: 400,
-              color: tab === n.toLowerCase() ? t.cream : t.faint,
-              background: tab === n.toLowerCase() ? t.bgAlt : "transparent",
+              color: tab === tabKey ? t.cream : t.faint,
+              background: tab === tabKey ? t.bgAlt : "transparent",
               transition: "all 0.2s",
             }}
           >
             {n}
           </button>
-        ))}
+          );
+        })}
 
         <div style={{ flex: 1 }} />
 
@@ -91,23 +94,26 @@ export default function Header({ tab, setTab, r2 }) {
           </span>
         </div>
 
-        {["Lite", "Pro"].map(n => (
+        {["Lite", "Pro", "PL"].map(n => {
+          const tabKey = n === "PL" ? "pl" : n.toLowerCase();
+          return (
           <button
             key={n}
-            onClick={() => { setTab(n.toLowerCase()); setMobileMenu(false); }}
+            onClick={() => { setTab(tabKey); setMobileMenu(false); }}
             style={{
               padding: "0 16px", border: "none",
               cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 500,
-              color: tab === n.toLowerCase() ? t.cream : t.faint,
-              background: tab === n.toLowerCase() ? t.bgAlt : "transparent",
-              borderBottom: tab === n.toLowerCase()
+              color: tab === tabKey ? t.cream : t.faint,
+              background: tab === tabKey ? t.bgAlt : "transparent",
+              borderBottom: tab === tabKey
                 ? `2px solid ${t.cream}`
                 : "2px solid transparent",
             }}
           >
             {n}
           </button>
-        ))}
+          );
+        })}
 
         <div style={{ flex: 1 }} />
 
