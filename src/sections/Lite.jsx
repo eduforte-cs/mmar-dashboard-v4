@@ -25,8 +25,8 @@ export default function Lite({ d, derived, setTab }) {
         display: "flex", flexDirection: "column",
         overflow: "hidden",
       }}>
-        {/* Title + YES + summary — one block, centered vertically */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        {/* Title + YES + summary — starts from top */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", paddingTop: "clamp(24px, 6vh, 80px)" }}>
           <h1 style={{
             fontFamily: bd, fontSize: "clamp(32px, 8vw, 140px)", fontWeight: 700,
             color: t.cream, letterSpacing: "-0.04em",
