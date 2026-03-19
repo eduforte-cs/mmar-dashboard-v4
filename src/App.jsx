@@ -79,24 +79,21 @@ function Dashboard() {
     }}>
       <Header tab={tab} setTab={setTab} r2={d?.r2} />
 
-      <div className="page-pad" style={{ padding: "0 24px" }}>
-        {tab === "pl" ? (
+      {tab === "pl" ? (
+        <div style={{ animation: "fi 0.3s ease" }}>
+          <PowerLaw d={d} derived={derived} />
+        </div>
+      ) : (
+        <div className="page-pad" style={{ padding: "0 24px" }}>
+          <Hero d={d} derived={derived} />
           <div style={{ animation: "fi 0.3s ease" }}>
-            <PowerLaw d={d} derived={derived} />
+            {tab === "lite" && <Lite d={d} derived={derived} />}
+            {tab === "pro" && <Pro d={d} derived={derived} />}
+            {tab === "faq" && <Faq />}
           </div>
-        ) : (
-          <>
-            <Hero d={d} derived={derived} />
-            <div style={{ animation: "fi 0.3s ease" }}>
-              {tab === "lite" && <Lite d={d} derived={derived} />}
-              {tab === "pro" && <Pro d={d} derived={derived} />}
-              {tab === "faq" && <Faq />}
-            </div>
-          </>
-        )}
-
-        <Footer lastRefresh={lastRefresh} />
-      </div>
+          <Footer lastRefresh={lastRefresh} />
+        </div>
+      )}
     </div>
   );
 }
