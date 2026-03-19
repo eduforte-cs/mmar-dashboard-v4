@@ -1,0 +1,39 @@
+/* ── Font imports ── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+
+@font-face { font-family: 'Switzer'; font-weight: 300; src: url('https://cdn.fontshare.com/wf/YXKVCZHSWFYDTFPNWL5ALGJV2ZWNW4HW/MGZGOJQHIRGVQIHKSQF7WOKQFP4OEJQJ/QNMH4NLNQRPBFPJ7WLQJW7RN6KA6DQLE.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 400; src: url('https://cdn.fontshare.com/wf/BPJWBY4ZHFQYRGB23HLSCXK3VLBPJAYS/KAL5QYG5OFCG66JFDRTDQPMZZWF57MSK/GXRSRSQCHB3KPJLXICD2AHPHWF2IDZWH.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 500; src: url('https://cdn.fontshare.com/wf/QK5GAZDDNPNXVCBJPB2STVI7O6BPH2KJ/QVB7A2VWBJIQALX6XETBFWDG6GFJUFOT/FT3KBYWIKGP47IWK4PPPIPFIWX5GLLFC.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 600; src: url('https://cdn.fontshare.com/wf/MMHCVP4ZGEERDWETL7JHPIMPCQZ2A6K7/YVQOIKFDRK5FPH5NKCJKUXBMQJODOPWL/5HMX3MJWUVSAHZMZ3HJ3DXSCIXOAL2A7.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 700; src: url('https://cdn.fontshare.com/wf/UY5BMTPUDEJB6GHXL7MEKC7BI4YIX3JD/AJYLTQPMJVJIPVJB3PCFZ7XDPJPQN3KM/2GXPPIGKXPIWFIQFR3UPZRVDDX7QOA7V.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 800; src: url('https://cdn.fontshare.com/wf/UY5BMTPUDEJB6GHXL7MEKC7BI4YIX3JD/AJYLTQPMJVJIPVJB3PCFZ7XDPJPQN3KM/2GXPPIGKXPIWFIQFR3UPZRVDDX7QOA7V.woff2') format('woff2'); }
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+body { margin: 0; }
+
+/* ── Animations ── */
+@keyframes fi { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Responsive: mobile-first ── */
+.header-desktop { display: none !important; }
+.header-mobile  { display: flex !important; }
+
+@media (min-width: 768px) {
+  .header-desktop  { display: flex !important; }
+  .header-mobile   { display: none !important; }
+  .footer-row      { flex-direction: row !important; gap: 0 !important; }
+  .footer-bottom   { flex-direction: row !important; gap: 0 !important; align-items: center !important; }
+  .data-grid-4     { grid-template-columns: repeat(4, 1fr) !important; }
+  .data-grid-2     { grid-template-columns: 1fr 1fr !important; }
+  .horizon-grid    { grid-template-columns: 1fr 1fr !important; }
+  .inner-grid      { grid-template-columns: 1fr 1fr !important; }
+  .faq-expanded    { grid-template-columns: 1fr 2fr !important; gap: 40px !important; }
+}
+
+@media (min-width: 1100px) {
+  .page-pad      { padding-left: 64px !important; padding-right: 64px !important; }
+  .hero-title    { font-size: 64px !important; }
+  .verdict-num   { font-size: 96px !important; }
+  .faq-expanded  { grid-template-columns: 1fr 2fr !important; gap: 64px !important; }
+}
