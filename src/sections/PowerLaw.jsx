@@ -44,17 +44,18 @@ export default function PowerLaw({ d, derived }) {
 
     const tx = (tDay) => pad.left + ((tDay - tStart) / totalDays) * cw;
 
-    // ── Price axis: log10 scale ──
-    const pricePoints = [
-      Math.exp(Math.log(plPrice(a, b, tEnd)) + resMean + 2 * resStd),
-      ransac ? Math.exp(ransac.a + ransac.b * Math.log(Math.max(tStart, 1)) + ransac.floor) : plPrice(a, b, Math.max(tStart, 1)) * 0.3,
-      S0,
-    ];
-    // Add historical prices for proper ranging
-    const histPrices = (sigmaChart || []).map(p => p.price).filter(p => p > 0);
-    const allP = [...pricePoints, ...histPrices];
-    const logMin = Math.floor(Math.log10(Math.min(...allP) * 0.6) * 2) / 2;
-    const logMax = Math.ceil(Math.log10(Math.max(...allP) * 1.5) * 2) / 2;
+    // ── Price axis: log10 scale — tight range around visible corridor ──
+    // Focus on: support at t0 (bottom) to ceiling at tEnd (top), with some padding
+    const plNow = plPrice(a, b, t0);
+    const plEnd = plPrice(a, b, tEnd);
+    const ceilingEnd = Math.exp(Math.log(plEnd) + resMean + 1.5 * resStd);
+    const supportNow = ransac
+      ? Math.exp(ransac.a + ransac.b * Math.log(Math.max(tStart, 1)) + ransac.floor)
+      : Math.exp(Math.log(plPrice(a, b, Math.max(tStart, 1))) + resFloor);
+    const lowestVisible = Math.min(S0, supportNow) * 0.7;
+    const highestVisible = ceilingEnd * 1.2;
+    const logMin = Math.log10(lowestVisible);
+    const logMax = Math.log10(highestVisible);
 
     const ty = (price) => {
       const lp = Math.log10(Math.max(price, 1));
@@ -133,7 +134,7 @@ export default function PowerLaw({ d, derived }) {
     }).filter(yt => yt.x >= pad.left && yt.x <= W - pad.right);
 
     // ── Price ticks on Y axis ──
-    const priceTicks = [10000, 50000, 100000, 200000, 500000, 1000000]
+    const priceTicks = [5000, 10000, 20000, 30000, 50000, 75000, 100000, 150000, 200000, 300000, 500000, 750000, 1000000]
       .filter(p => Math.log10(p) >= logMin && Math.log10(p) <= logMax)
       .map(p => ({ price: p, y: ty(p), label: fmtK(p) }));
 
