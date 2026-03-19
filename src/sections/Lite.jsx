@@ -24,54 +24,53 @@ export default function Lite({ d, derived, setTab }) {
         height: "calc(100vh - 56px)",
         display: "flex", flexDirection: "column",
         overflow: "hidden",
+        paddingTop: 32,
       }}>
-        {/* Content — centered vertically, fills space */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <h1 style={{
-            fontFamily: bd, fontSize: "clamp(36px, 7.5vw, 130px)", fontWeight: 700,
-            color: t.cream, letterSpacing: "-0.04em",
-            lineHeight: 0.95, margin: 0,
-          }}>
-            Should I buy Bitcoin today at {fmtK(S0)}?
-          </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: "clamp(8px, 1vw, 14px)" }}>
-            <div style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: "#27AE60",
-              animation: "fi 2s ease-in-out infinite alternate",
-            }} />
-            <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
-          </div>
-
-          <div style={{ marginTop: "clamp(24px, 3vw, 48px)" }}>
-            <div className="verdict-num" style={{
-              fontFamily: bd, fontSize: "clamp(72px, 13vw, 200px)", fontWeight: 800,
-              color: t.cream, letterSpacing: "-0.05em",
-              lineHeight: 0.8, margin: 0,
-            }}>
-              {verdict.answer}
-            </div>
-            <div style={{ marginTop: "clamp(10px, 1.5vw, 20px)" }}>
-              <span style={{ fontFamily: bd, fontSize: "clamp(14px, 1.2vw, 18px)", fontWeight: 500, color: t.cream }}>
-                {verdict.subtitle}
-              </span>
-              <span style={{ fontFamily: bd, fontSize: "clamp(14px, 1.2vw, 18px)", color: t.faint, marginLeft: 10 }}>
-                — Confidence {verdict.confidence}
-              </span>
-            </div>
-            <p style={{
-              fontFamily: bd, fontSize: "clamp(15px, 1.3vw, 20px)", fontWeight: 400,
-              color: t.faint, lineHeight: 1.6,
-              margin: "clamp(14px, 1.5vw, 24px) 0 0", maxWidth: "60vw",
-            }}>
-              {verdict.answerSub}
-            </p>
-          </div>
+        {/* Title */}
+        <h1 style={{
+          fontFamily: bd, fontSize: "clamp(32px, 8vw, 140px)", fontWeight: 700,
+          color: t.cream, letterSpacing: "-0.04em",
+          lineHeight: 0.95, margin: 0,
+        }}>
+          Should I buy Bitcoin today at {fmtK(S0)}?
+        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: "50%",
+            background: "#27AE60",
+            animation: "fi 2s ease-in-out infinite alternate",
+          }} />
+          <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
         </div>
 
-        {/* Bottom bars — pinned to viewport bottom */}
+        {/* YES — fills available space */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div className="verdict-num" style={{
+            fontFamily: bd, fontSize: "clamp(80px, 18vw, 260px)", fontWeight: 800,
+            color: t.cream, letterSpacing: "-0.05em",
+            lineHeight: 0.75, margin: 0,
+          }}>
+            {verdict.answer}
+          </div>
+          <div style={{ marginTop: "clamp(8px, 1.5vw, 16px)" }}>
+            <span style={{ fontFamily: bd, fontSize: "clamp(14px, 1.2vw, 18px)", fontWeight: 500, color: t.cream }}>
+              {verdict.subtitle}
+            </span>
+            <span style={{ fontFamily: bd, fontSize: "clamp(14px, 1.2vw, 18px)", color: t.faint, marginLeft: 10 }}>
+              — Confidence {verdict.confidence}
+            </span>
+          </div>
+          <p style={{
+            fontFamily: bd, fontSize: "clamp(14px, 1.3vw, 19px)", fontWeight: 400,
+            color: t.faint, lineHeight: 1.6,
+            margin: "clamp(10px, 1.5vw, 20px) 0 0",
+          }}>
+            {verdict.answerSub}
+          </p>
+        </div>
+
+        {/* Bottom bars */}
         <div style={{ flexShrink: 0 }}>
-          {/* Switch to Pro */}
           <div
             onClick={() => setTab && setTab("pro")}
             style={{
@@ -90,8 +89,6 @@ export default function Lite({ d, derived, setTab }) {
               Switch to Pro
             </div>
           </div>
-
-          {/* The simple explanation */}
           <div
             onClick={scrollToWhy}
             style={{
