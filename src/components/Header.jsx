@@ -51,6 +51,7 @@ export default function Header({ tab, setTab, r2 }) {
       <header className="header-desktop" style={{
         borderBottom: `1px solid ${t.border}`,
         display: "flex", alignItems: "stretch",
+        height: 64,
       }}>
         {/* Brand */}
         <div style={{
@@ -59,7 +60,7 @@ export default function Header({ tab, setTab, r2 }) {
           display: "flex", alignItems: "center",
         }}>
           <span style={{
-            fontFamily: bd, fontSize: 14, fontWeight: 700,
+            fontFamily: bd, fontSize: 16, fontWeight: 700,
             color: t.cream, letterSpacing: "-0.02em",
           }}>
             CommonSense
@@ -79,7 +80,7 @@ export default function Header({ tab, setTab, r2 }) {
             style={{
               padding: "0 18px", border: "none",
               borderLeft: `1px solid ${t.border}`,
-              cursor: "pointer", fontFamily: bd, fontSize: 12, fontWeight: 400,
+              cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 400,
               color: tab === n.key ? t.cream : t.faint,
               background: tab === n.key ? t.bgAlt : "transparent",
               borderBottom: tab === n.key ? `2px solid ${t.cream}` : "2px solid transparent",
@@ -127,15 +128,16 @@ export default function Header({ tab, setTab, r2 }) {
         borderBottom: `1px solid ${t.border}`,
         background: t.bg,
         display: "flex", alignItems: "stretch",
+        height: 52,
       }}>
         {/* Brand */}
         <div style={{
-          padding: "0 14px",
+          padding: "0 16px",
           borderRight: `1px solid ${t.border}`,
           display: "flex", alignItems: "center",
         }}>
           <span style={{
-            fontFamily: bd, fontSize: 14, fontWeight: 700,
+            fontFamily: bd, fontSize: 16, fontWeight: 700,
             color: t.cream, letterSpacing: "-0.02em",
           }}>
             CommonSense
@@ -178,7 +180,7 @@ export default function Header({ tab, setTab, r2 }) {
       {/* ═══ MOBILE MENU DROPDOWN ═══ */}
       {mobileMenu && (
         <div className="header-mobile" style={{
-          position: "sticky", top: 49, zIndex: 99,
+          position: "sticky", top: 52, zIndex: 99,
           background: t.bg, borderBottom: `1px solid ${t.border}`,
           display: "flex", flexDirection: "column",
         }}>
