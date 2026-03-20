@@ -280,24 +280,50 @@ export default function MonteCarlo({ d, derived }) {
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
               Hold 1 year
             </div>
-            <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
-              There's a <span style={{ fontFamily: mn, fontWeight: 700, color: t.cream, fontSize: 15 }}>{chart.loss1y.toFixed(0)}%</span> chance you lose money.
-            </div>
-            <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
-              In the worst case, your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#EB5757", fontSize: 14 }}>{fmtK(chart.worst1y)}</span>
-            </div>
+            {chart.worst1y >= S0 ? (
+              <>
+                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
+                  Even in the worst 5% of scenarios, you're in profit.
+                </div>
+                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
+                  Worst case: your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#27AE60", fontSize: 14 }}>{fmtK(chart.worst1y)}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
+                  There's a <span style={{ fontFamily: mn, fontWeight: 700, color: t.cream, fontSize: 15 }}>{chart.loss1y.toFixed(0)}%</span> chance you lose money.
+                </div>
+                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
+                  In the worst case, your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#EB5757", fontSize: 14 }}>{fmtK(chart.worst1y)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           <div style={{ padding: "24px 20px", borderRight: `1px solid ${t.border}` }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
               Hold 3 years
             </div>
-            <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
-              There's a <span style={{ fontFamily: mn, fontWeight: 700, color: "#27AE60", fontSize: 15 }}>{chart.loss3y.toFixed(0)}%</span> chance you lose money.
-            </div>
-            <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
-              In the worst case, your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#EB5757", fontSize: 14 }}>{fmtK(chart.worst3y)}</span>
-            </div>
+            {chart.worst3y >= S0 ? (
+              <>
+                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
+                  Even in the worst 5% of scenarios, you're in profit.
+                </div>
+                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
+                  Worst case: your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#27AE60", fontSize: 14 }}>{fmtK(chart.worst3y)}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
+                  There's a <span style={{ fontFamily: mn, fontWeight: 700, color: "#27AE60", fontSize: 15 }}>{chart.loss3y.toFixed(0)}%</span> chance you lose money.
+                </div>
+                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
+                  In the worst case, your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#EB5757", fontSize: 14 }}>{fmtK(chart.worst3y)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           <div style={{ padding: "24px 20px" }}>
