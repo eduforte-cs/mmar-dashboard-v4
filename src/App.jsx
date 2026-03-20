@@ -80,7 +80,6 @@ function Dashboard() {
   if (showLanding) {
     return (
       <div style={{ background: t.bg, minHeight: "100vh" }}>
-        <Header tab={null} setTab={() => {}} r2={d?.r2} />
         <div className="page-pad" style={{ padding: "0 24px" }}>
           <Landing d={d} onAuth={(method, email) => console.log("Auth:", method, email)} />
         </div>
