@@ -20,47 +20,21 @@ export default function Header({ tab, setTab, r2 }) {
   const { t, mode, toggle } = useTheme();
   const [mobileMenu, setMobileMenu] = useState(false);
 
-  const tabBtn = (n, isMobile = false) => {
-    const isActive = tab === n.key;
-    return (
-      <button
-        key={n.key}
-        onClick={() => { setTab(n.key); setMobileMenu(false); }}
-        style={{
-          padding: isMobile ? "0 14px" : "0 20px",
-          border: "none",
-          borderRight: `1px solid ${t.border}`,
-          cursor: "pointer",
-          fontFamily: bd,
-          fontSize: isMobile ? 13 : 13,
-          fontWeight: 400,
-          color: isActive ? t.cream : t.faint,
-          background: isActive ? t.bgAlt : "transparent",
-          borderBottom: isActive ? `2px solid ${t.cream}` : "2px solid transparent",
-          transition: "all 0.2s",
-        }}
-      >
-        {n.label}
-      </button>
-    );
-  };
-
   return (
     <>
       {/* ═══ DESKTOP HEADER ═══ */}
       <header className="header-desktop" style={{
         borderBottom: `1px solid ${t.border}`,
         display: "flex", alignItems: "stretch",
-        height: 64,
       }}>
         {/* Brand */}
         <div style={{
-          padding: "0 24px",
+          padding: "20px 28px",
           borderRight: `1px solid ${t.border}`,
           display: "flex", alignItems: "center",
         }}>
           <span style={{
-            fontFamily: bd, fontSize: 16, fontWeight: 700,
+            fontFamily: bd, fontSize: 18, fontWeight: 700,
             color: t.cream, letterSpacing: "-0.02em",
           }}>
             CommonSense
@@ -68,32 +42,54 @@ export default function Header({ tab, setTab, r2 }) {
         </div>
 
         {/* Left tabs: Lite Pro PL MC */}
-        {LEFT_TABS.map(n => tabBtn(n))}
+        {LEFT_TABS.map(n => {
+          const isActive = tab === n.key;
+          return (
+            <button
+              key={n.key}
+              onClick={() => setTab(n.key)}
+              style={{
+                padding: "0 28px", border: "none",
+                borderRight: `1px solid ${t.border}`,
+                cursor: "pointer", fontFamily: bd, fontSize: 14, fontWeight: 400,
+                color: isActive ? t.cream : t.faint,
+                background: isActive ? t.bgAlt : "transparent",
+                borderBottom: isActive ? `2px solid ${t.cream}` : "2px solid transparent",
+                transition: "all 0.2s",
+              }}
+            >
+              {n.label}
+            </button>
+          );
+        })}
 
         <div style={{ flex: 1 }} />
 
         {/* Right tabs: Backtest FAQ Whitepaper About */}
-        {RIGHT_TABS.map(n => (
-          <button
-            key={n.key}
-            onClick={() => setTab(n.key)}
-            style={{
-              padding: "0 18px", border: "none",
-              borderLeft: `1px solid ${t.border}`,
-              cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 400,
-              color: tab === n.key ? t.cream : t.faint,
-              background: tab === n.key ? t.bgAlt : "transparent",
-              borderBottom: tab === n.key ? `2px solid ${t.cream}` : "2px solid transparent",
-              transition: "all 0.2s",
-            }}
-          >
-            {n.label}
-          </button>
-        ))}
+        {RIGHT_TABS.map(n => {
+          const isActive = tab === n.key;
+          return (
+            <button
+              key={n.key}
+              onClick={() => setTab(n.key)}
+              style={{
+                padding: "0 22px", border: "none",
+                borderLeft: `1px solid ${t.border}`,
+                cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 400,
+                color: isActive ? t.cream : t.faint,
+                background: isActive ? t.bgAlt : "transparent",
+                borderBottom: isActive ? `2px solid ${t.cream}` : "2px solid transparent",
+                transition: "all 0.2s",
+              }}
+            >
+              {n.label}
+            </button>
+          );
+        })}
 
         {/* R² */}
         <div style={{
-          padding: "0 18px", display: "flex", alignItems: "center",
+          padding: "0 22px", display: "flex", alignItems: "center",
           borderLeft: `1px solid ${t.border}`, gap: 6,
         }}>
           <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>R²</span>
@@ -103,7 +99,7 @@ export default function Header({ tab, setTab, r2 }) {
         {/* Theme toggle */}
         <div
           style={{
-            padding: "0 18px", display: "flex", alignItems: "center",
+            padding: "0 22px", display: "flex", alignItems: "center",
             borderLeft: `1px solid ${t.border}`, cursor: "pointer",
           }}
           onClick={toggle}
@@ -128,16 +124,15 @@ export default function Header({ tab, setTab, r2 }) {
         borderBottom: `1px solid ${t.border}`,
         background: t.bg,
         display: "flex", alignItems: "stretch",
-        height: 52,
       }}>
         {/* Brand */}
         <div style={{
-          padding: "0 16px",
+          padding: "14px 16px",
           borderRight: `1px solid ${t.border}`,
           display: "flex", alignItems: "center",
         }}>
           <span style={{
-            fontFamily: bd, fontSize: 16, fontWeight: 700,
+            fontFamily: bd, fontSize: 14, fontWeight: 700,
             color: t.cream, letterSpacing: "-0.02em",
           }}>
             CommonSense
@@ -145,7 +140,25 @@ export default function Header({ tab, setTab, r2 }) {
         </div>
 
         {/* Left tabs: Lite Pro PL MC */}
-        {LEFT_TABS.map(n => tabBtn(n, true))}
+        {LEFT_TABS.map(n => {
+          const isActive = tab === n.key;
+          return (
+            <button
+              key={n.key}
+              onClick={() => { setTab(n.key); setMobileMenu(false); }}
+              style={{
+                padding: "0 14px", border: "none",
+                borderRight: `1px solid ${t.border}`,
+                cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 500,
+                color: isActive ? t.cream : t.faint,
+                background: isActive ? t.bgAlt : "transparent",
+                borderBottom: isActive ? `2px solid ${t.cream}` : "2px solid transparent",
+              }}
+            >
+              {n.label}
+            </button>
+          );
+        })}
 
         <div style={{ flex: 1 }} />
 
@@ -180,7 +193,7 @@ export default function Header({ tab, setTab, r2 }) {
       {/* ═══ MOBILE MENU DROPDOWN ═══ */}
       {mobileMenu && (
         <div className="header-mobile" style={{
-          position: "sticky", top: 52, zIndex: 99,
+          position: "sticky", top: 49, zIndex: 99,
           background: t.bg, borderBottom: `1px solid ${t.border}`,
           display: "flex", flexDirection: "column",
         }}>
