@@ -4,20 +4,12 @@ import { bd, mn } from "../../theme/tokens";
 import { fmtK } from "../../engine/constants.js";
 import { plPrice } from "../../engine/powerlaw.js";
 import { normInv } from "../../engine/stats.js";
+import { keyLevels, allBands, supportFloor } from "../../engine/bands.js";
 
 export function KeyLevels({ d }) {
   const { t } = useTheme();
   const { S0, a, b, t0, resMean, resStd, resFloor, ransac } = d;
-  const plToday = plPrice(a, b, t0);
-
-  const levels = [
-    { label: "Bubble zone", sigma: "+2σ", price: Math.exp(Math.log(plToday) + resMean + 2 * resStd) },
-    { label: "Cycle ceiling", sigma: "+1σ", price: Math.exp(Math.log(plToday) + resMean + resStd) },
-    { label: "Mild premium", sigma: "+0.5σ", price: Math.exp(Math.log(plToday) + resMean + 0.5 * resStd) },
-    { label: "Fair value", sigma: "0σ", price: plToday },
-    { label: "Mild discount", sigma: "−0.5σ", price: Math.exp(Math.log(plToday) + resMean - 0.5 * resStd) },
-    { label: "Support floor", sigma: "RANSAC", price: ransac ? Math.exp(ransac.a + ransac.b * Math.log(t0) + ransac.floor) : Math.exp(Math.log(plToday) + resFloor) },
-  ];
+  const levels = keyLevels(t0, S0, { a, b, resMean, resStd, resFloor, ransac });
 
   return (
     <>
@@ -56,13 +48,14 @@ export function ForwardProjections({ d }) {
     { label: "1 year", days: 365 },
     { label: "3 years", days: 1095 },
   ].map(h => {
-    const plF = plPrice(a, b, t0 + h.days);
+    const bParams = { a, b, resMean, resStd, resFloor, ransac };
+    const bl = allBands(t0 + h.days, bParams);
     return {
-      ...h, plF,
-      support: ransac ? Math.exp(ransac.a + ransac.b * Math.log(t0 + h.days) + ransac.floor) : Math.exp(Math.log(plF) + resFloor),
-      discount: Math.exp(Math.log(plF) + resMean - 0.5 * resStd),
-      ceiling: Math.exp(Math.log(plF) + resMean + resStd),
-      bubble: Math.exp(Math.log(plF) + resMean + 2 * resStd),
+      ...h, plF: bl.fair,
+      support: bl.support,
+      discount: bl.discount,
+      ceiling: bl.ceiling,
+      bubble: bl.bubble,
     };
   });
 
