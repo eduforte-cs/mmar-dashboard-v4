@@ -1,7 +1,7 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
-import { fmtK, fmt } from "../engine/constants.js";
+import { fmtK, fmt, daysSinceGenesis } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
 import Toggle from "../components/Toggle";
 import CatLabel from "../components/CatLabel";
@@ -269,6 +269,60 @@ export default function Pro({ d, derived }) {
             </div>
           ))}
         </div>
+
+        {/* Burger / Santostasi comparison */}
+        {(() => {
+          const LN10 = Math.log(10);
+          const a10 = a / LN10;
+          const b10 = b;
+          const burgerA = -17.016;
+          const burgerB = 5.845;
+          const deltaA = ((a10 - burgerA) / Math.abs(burgerA) * 100);
+          const deltaB = ((b10 - burgerB) / burgerB * 100);
+          const today = daysSinceGenesis(new Date().toISOString().slice(0, 10));
+          const ourFV = plPrice(a, b, today);
+          const burgerFV = Math.pow(10, burgerA + burgerB * Math.log10(today));
+          const fvDelta = ((ourFV - burgerFV) / burgerFV * 100);
+          const rows = [
+            { param: "Intercept (a)", burger: burgerA.toFixed(3), ours: a10.toFixed(3), delta: deltaA },
+            { param: "Slope (b)", burger: burgerB.toFixed(3), ours: b10.toFixed(3), delta: deltaB },
+            { param: "R²", burger: "0.931", ours: fmt(r2, 4), delta: null },
+            { param: "Fair value today", burger: fmtK(burgerFV), ours: fmtK(ourFV), delta: fvDelta },
+          ];
+          return (
+            <div style={{ marginTop: 16, padding: "16px 0", borderTop: `1px solid ${t.border}` }}>
+              <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
+                Comparison with Burger / Santostasi (OLS, log₁₀)
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                      {["Parameter", "Burger (OLS)", "Ours (WLS)", "Delta"].map(h => (
+                        <th key={h} style={{ padding: "6px 8px", textAlign: h === "Parameter" ? "left" : "right", fontFamily: bd, color: t.faint, fontWeight: 500, fontSize: 11 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(row => (
+                      <tr key={row.param} style={{ borderBottom: `1px solid ${t.borderFaint}` }}>
+                        <td style={{ padding: "8px 8px", fontFamily: bd, color: t.cream, fontWeight: 500 }}>{row.param}</td>
+                        <td style={{ padding: "8px 8px", textAlign: "right", fontFamily: mn, color: t.faint }}>{row.burger}</td>
+                        <td style={{ padding: "8px 8px", textAlign: "right", fontFamily: mn, color: t.cream, fontWeight: 600 }}>{row.ours}</td>
+                        <td style={{ padding: "8px 8px", textAlign: "right", fontFamily: mn, fontSize: 11, color: row.delta === null ? t.faint : Math.abs(row.delta) < 5 ? "#27AE60" : Math.abs(row.delta) < 15 ? "#F2994A" : "#EB5757" }}>
+                          {row.delta !== null ? `${row.delta >= 0 ? "+" : ""}${row.delta.toFixed(1)}%` : "–"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 12, lineHeight: 1.5 }}>
+                Burger's parameters are from his original OLS regression (~2019). Our WLS gives more weight to recent liquid-market data. Our model refits from scratch on every page load with all data through today, while Burger's params are frozen. A fair value delta under ±15% indicates strong structural agreement.
+              </p>
+            </div>
+          );
+        })()}
       </Toggle>
     </>
   );
