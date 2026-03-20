@@ -44,7 +44,7 @@ export default function Landing({ d, onAuth }) {
         display: "flex", flexDirection: "column",
         overflow: "hidden",
       }}>
-        {/* Title + subtitle — same as Lite: starts from top */}
+        {/* All content flows from top */}
         <div style={{
           flex: 1, display: "flex", flexDirection: "column",
           justifyContent: "flex-start",
@@ -70,41 +70,38 @@ export default function Landing({ d, onAuth }) {
             <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
           </div>
 
-          {/* Subtitle — same position as YES in Lite */}
           <p style={{
             fontFamily: bd,
-            fontSize: "clamp(14px, 1.3vw, 18px)",
+            fontSize: "clamp(15px, 1.5vw, 20px)",
             fontWeight: 400,
             color: t.faint,
             lineHeight: 1.6,
             margin: "clamp(16px, 2.5vw, 32px) 0 0",
-            maxWidth: 540,
+            maxWidth: 560,
           }}>
             A <strong style={{ fontWeight: 700, color: t.cream }}>Yes or No</strong> answer and your real odds of losing money at 1 year and 3 years. Based on institutional-grade quantitative analysis, explained in plain language you can actually understand.
           </p>
-        </div>
 
-        {/* Auth + anchors — pinned to bottom, same position as bars in Lite */}
-        <div style={{ flexShrink: 0, paddingBottom: "clamp(16px, 2vh, 32px)" }}>
+          {/* Auth — directly after subtitle */}
+          <div style={{ marginTop: "clamp(20px, 3vw, 40px)", maxWidth: 480 }}>
 
-          {/* Login nudge */}
-          {loginNudge && (
+            {loginNudge && (
+              <div style={{
+                padding: "8px 0 12px",
+                fontFamily: bd, fontSize: 13, color: "#E2A84B",
+                animation: "fi 0.3s ease",
+              }}>
+                Sign in to access the dashboard
+              </div>
+            )}
+
             <div style={{
-              padding: "10px 0 14px",
-              fontFamily: bd, fontSize: 13, color: "#E2A84B",
-              animation: "fi 0.3s ease",
+              fontFamily: bd, fontSize: 9, color: t.faint,
+              textTransform: "uppercase", letterSpacing: "0.08em",
+              marginBottom: "clamp(8px, 1vh, 12px)",
             }}>
-              Sign in to access the dashboard
+              Free access
             </div>
-          )}
-
-          <div style={{
-            fontFamily: bd, fontSize: 9, color: t.faint,
-            textTransform: "uppercase", letterSpacing: "0.08em",
-            marginBottom: "clamp(8px, 1vh, 14px)",
-          }}>
-            Free access
-          </div>
 
           {phase === "sent" ? (
             <div style={{ padding: "16px 0", textAlign: "center" }}>
@@ -179,13 +176,15 @@ export default function Landing({ d, onAuth }) {
               </div>
             </>
           )}
+          </div>
+        </div>
 
-          {/* Anchor bars — same style as Lite */}
+        {/* Anchor bars + footer — pinned to bottom */}
+        <div style={{ flexShrink: 0, paddingBottom: "clamp(12px, 1.5vh, 24px)" }}>
           <div onClick={() => scrollTo(whatRef)} style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "clamp(10px, 1.2vh, 16px) 0",
             borderTop: `1px solid ${t.border}`,
-            marginTop: "clamp(6px, 0.8vh, 12px)",
             cursor: "pointer",
           }}>
             <div>
@@ -206,6 +205,16 @@ export default function Landing({ d, onAuth }) {
               <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 2 }}>The math, briefly</div>
             </div>
             <Chevron size={14} color={t.faint} />
+          </div>
+
+          {/* Footer inline */}
+          <div style={{
+            display: "flex", justifyContent: "space-between",
+            fontFamily: bd, fontSize: 11, color: "#3A3B36",
+            paddingTop: "clamp(8px, 1vh, 16px)",
+          }}>
+            <span>CommonSense & Edu Forte · Barcelona</span>
+            <span>Not financial advice</span>
           </div>
         </div>
       </div>
@@ -300,17 +309,9 @@ export default function Landing({ d, onAuth }) {
         </div>
       </div>
 
-      {/* ── Disclaimer + footer ── */}
+      {/* ── Disclaimer ── */}
       <div style={{ fontFamily: bd, fontSize: 12, color: "#3A3B36", lineHeight: 1.6, padding: "16px 0" }}>
         <span style={{ color: t.faint }}>Not financial advice.</span> Past signal accuracy doesn't guarantee future results. Bitcoin is volatile and the model can be wrong. The 98% accuracy figure is historical and based on data the model was partially trained on.
-      </div>
-      <div style={{
-        borderTop: `1px solid ${t.border}`, padding: "20px 0 40px",
-        display: "flex", justifyContent: "space-between",
-        fontFamily: bd, fontSize: 11, color: "#3A3B36",
-      }}>
-        <span>CommonSense & Edu Forte · Barcelona</span>
-        <span>Not financial advice</span>
       </div>
     </>
   );
