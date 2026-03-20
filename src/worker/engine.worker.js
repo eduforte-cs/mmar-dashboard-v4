@@ -147,6 +147,36 @@ self.onmessage = async (e) => {
     const percentiles = computePercentiles(paths3y, 365);
     const percentiles3y = computePercentiles(paths3y, N3Y);
 
+    // ── 9b. Bootstrap CI for P(reaches FV) ──
+    const nBoot = 200;
+    const targetPrice1y = S0 * 1.30;
+    const p30Boots = [];
+    for (let bo = 0; bo < nBoot; bo++) {
+      const bootPaths = Array.from({ length: 200 }, () => paths3y[Math.floor(Math.random() * paths3y.length)]);
+      const bootPcts = computePercentiles(bootPaths, 365);
+      const row = bootPcts[bootPcts.length - 1];
+      if (!row) continue;
+      const pts = [{price:row.p5,prob:5},{price:row.p25,prob:25},{price:row.p50,prob:50},{price:row.p75,prob:75},{price:row.p95,prob:95}];
+      let pLoss = 50;
+      if (targetPrice1y <= pts[0].price) pLoss = 2.5;
+      else if (targetPrice1y >= pts[4].price) pLoss = 97.5;
+      else {
+        for (let k = 0; k < pts.length - 1; k++) {
+          if (targetPrice1y >= pts[k].price && targetPrice1y <= pts[k+1].price) {
+            const tt = (targetPrice1y - pts[k].price) / (pts[k+1].price - pts[k].price);
+            pLoss = pts[k].prob + tt * (pts[k+1].prob - pts[k].prob);
+            break;
+          }
+        }
+      }
+      p30Boots.push(Math.max(0, Math.min(100, 100 - pLoss)));
+    }
+    p30Boots.sort((x, y) => x - y);
+    const p30CI = {
+      lo: +p30Boots[Math.floor(nBoot * 0.05)].toFixed(1),
+      hi: +p30Boots[Math.floor(nBoot * 0.95)].toFixed(1),
+    };
+
     // ── 10. Charts data ──
     const sigmaChart = prices.map((p, i) => {
       if (i % 5 !== 0 && i !== prices.length - 1) return null;
@@ -183,7 +213,7 @@ self.onmessage = async (e) => {
         tauData, sigmaChart, rollingHurst,
         percentiles, percentiles3y,
         pFloorBreak1y, evtCap, floorBreakProb, empiricalFloorProb,
-        adfResult, backtestResults,
+        adfResult, backtestResults, p30CI,
         calibratedThresholds: backtestResults?.thresholds || { sig: -0.5, pLoss1y: 20, pFV: 40 },
         scoringParams: backtestResults?.scoringParams || null,
         calibratedWeights: backtestResults?.weights || null,
