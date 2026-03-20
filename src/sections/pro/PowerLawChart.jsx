@@ -3,6 +3,7 @@ import { useTheme } from "../../theme/ThemeContext";
 import { bd, mn } from "../../theme/tokens";
 import { fmtK, fmtY, daysSinceGenesis } from "../../engine/constants.js";
 import { plPrice } from "../../engine/powerlaw.js";
+import { bandsLog10 } from "../../engine/bands.js";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
@@ -20,7 +21,7 @@ export default function PowerLawChart({ d }) {
   const { t } = useTheme();
   const [range, setRange] = useState("2017");
 
-  const { a, b, resMean, resStd, resFloor, sigmaChart, t0, lastDate } = d;
+  const { a, b, resMean, resStd, resFloor, ransac, sigmaChart, t0, lastDate } = d;
 
   // Build plChart from sigmaChart (already sampled every 5 points)
   const { plChart, forecastChart, filteredPL, logTMin, logTMax, yearTicks, autoMin, autoMax, yTicks, lastLogT } = useMemo(() => {
@@ -28,19 +29,13 @@ export default function PowerLawChart({ d }) {
     const plChart = (sigmaChart || []).map(p => {
       const days = daysSinceGenesis(p.fullDate || p.date);
       if (days <= 0 || p.price <= 0) return null;
-      const plV = p.fair || plPrice(a, b, days);
-      const lpl = Math.log10(plV);
       const lprice = Math.log10(p.price);
+      const bl = bandsLog10(a, b, days, resMean, resStd, ransac, resFloor);
       return {
         date: p.fullDate || p.date,
         logT: +Math.log10(days).toFixed(4),
         lPrice: +lprice.toFixed(4),
-        lPl: +lpl.toFixed(4),
-        lR2up: +(lpl + (resMean + 2 * resStd) / Math.LN10).toFixed(4),
-        lR1up: +(lpl + (resMean + resStd) / Math.LN10).toFixed(4),
-        lR05up: +(lpl + (resMean + 0.5 * resStd) / Math.LN10).toFixed(4),
-        lR05dn: +(lpl + (resMean - 0.5 * resStd) / Math.LN10).toFixed(4),
-        lSup: +(lpl + resFloor / Math.LN10).toFixed(4),
+        ...bl,
       };
     }).filter(Boolean);
 
@@ -49,20 +44,14 @@ export default function PowerLawChart({ d }) {
     const monthsTo2039 = Math.ceil((new Date("2039-01-01") - new Date(lastDate || Date.now())) / (1000 * 60 * 60 * 24 * 30));
     for (let m = 1; m <= Math.max(24, monthsTo2039); m++) {
       const tF = t0 + m * 30;
-      const plF = plPrice(a, b, tF);
       const fd = new Date(lastDate || Date.now());
       fd.setDate(fd.getDate() + m * 30);
-      const lplF = Math.log10(plF);
+      const bl = bandsLog10(a, b, tF, resMean, resStd, ransac, resFloor);
       forecastChart.push({
         date: fd.toISOString().slice(0, 7),
         logT: +Math.log10(tF).toFixed(4),
-        lPl: +lplF.toFixed(4),
         lPrice: null,
-        lR2up: +(lplF + (resMean + 2 * resStd) / Math.LN10).toFixed(4),
-        lR1up: +(lplF + (resMean + resStd) / Math.LN10).toFixed(4),
-        lR05up: +(lplF + (resMean + 0.5 * resStd) / Math.LN10).toFixed(4),
-        lR05dn: +(lplF + (resMean - 0.5 * resStd) / Math.LN10).toFixed(4),
-        lSup: +(lplF + resFloor / Math.LN10).toFixed(4),
+        ...bl,
       });
     }
 
@@ -92,7 +81,7 @@ export default function PowerLawChart({ d }) {
     const lastLogT = plChart.length ? plChart[plChart.length - 1].logT : null;
 
     return { plChart, forecastChart, filteredPL, logTMin, logTMax, yearTicks, autoMin, autoMax, yTicks, lastLogT };
-  }, [sigmaChart, a, b, resMean, resStd, resFloor, t0, lastDate, range]);
+  }, [sigmaChart, a, b, resMean, resStd, resFloor, ransac, t0, lastDate, range]);
 
   const legendItems = [
     { color: "#EB5757", label: "Bubble zone", dash: false },
