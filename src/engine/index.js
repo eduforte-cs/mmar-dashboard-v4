@@ -9,3 +9,4 @@ export { estimateKappa, estimateRegimeSwitchingOU, computeHurstDivergences } fro
 export { simulatePathsPL, computePercentiles } from "./montecarlo.js";
 export { runWalkForwardBacktest } from "./backtest.js";
 export { generateVerdict, computeMCLossHorizons, computeEpisodeAnalysis, detectRegime } from "./verdict.js";
+export { supportFloor, allBands, bandsLog10, keyLevels, fairValue } from "./bands.js";
