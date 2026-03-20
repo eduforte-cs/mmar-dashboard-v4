@@ -85,7 +85,7 @@ function Dashboard() {
   const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
 
   // ── Preview toggle: set to true to see Landing, false for dashboard ──
-  const showLanding = true;
+  const showLanding = false;
 
   if (phase === "loading") return <Loading msg={msg} />;
   if (phase === "error") return <ErrorScreen msg={msg} onRetry={retry} />;
