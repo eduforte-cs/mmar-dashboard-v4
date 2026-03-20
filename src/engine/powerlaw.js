@@ -62,19 +62,20 @@ export function fitPowerLaw(prices) {
     }
   }
 
-  // RANSAC support: direct, no WLS-equivalent conversion
+  // RANSAC support: kept for diagnostic purposes
   const liquidStart = daysSinceGenesis("2013-04-01");
   const ransacResiduals = pts.filter(p => p.t > liquidStart).map(p => Math.log(p.price) - (rA + rB * Math.log(p.t)));
   const ransacFloor = ransacResiduals.length > 100 ? Math.min(...ransacResiduals) : -0.5;
 
-  const tToday = pts[pts.length - 1].t;
-  const supportPriceToday = Math.exp(rA + rB * Math.log(tToday) + ransacFloor);
-  const wlsPriceToday = Math.exp(a + b * Math.log(tToday));
-  const resFloor = Math.log(supportPriceToday) - Math.log(wlsPriceToday);
+  // resFloor = minimum WLS residual from liquid period
+  // This guarantees no data point falls below the support line by definition.
+  // The minimum residual is naturally robust to bubbles (those create positive residuals).
+  const liquidResiduals = pts.filter(p => p.t >= liquidStart).map(p => Math.log(p.price) - (a + b * Math.log(p.t)));
+  const resFloor = liquidResiduals.length > 100 ? Math.min(...liquidResiduals) : -0.8;
 
   const resFloorSigma = ((resFloor - resMean) / resStd);
 
-  const supportPriceFn = t => Math.exp(rA + rB * Math.log(t) + ransacFloor);
+  const supportPriceFn = t => Math.exp(a + b * Math.log(t) + resFloor);
 
   return { a, b, residuals, resMean, resStd, resFloor, resFloorSigma, r2, pts, ransacResiduals, ransac: { a: rA, b: rB, floor: ransacFloor }, supportPriceFn };
 }
