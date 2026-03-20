@@ -276,69 +276,65 @@ export default function MonteCarlo({ d, derived }) {
       {/* ── Strip ── */}
       <div className="page-pad" style={{ padding: "0 24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: `1px solid ${t.border}` }}>
+          {/* Hold 1 year */}
           <div style={{ padding: "24px 20px", borderRight: `1px solid ${t.border}` }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>
               Hold 1 year
             </div>
-            {chart.worst1y >= S0 ? (
-              <>
-                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
-                  Even in the worst 5% of scenarios, you're in profit.
-                </div>
-                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
-                  Worst case: your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#27AE60", fontSize: 14 }}>{fmtK(chart.worst1y)}</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
-                  There's a <span style={{ fontFamily: mn, fontWeight: 700, color: t.cream, fontSize: 15 }}>{chart.loss1y.toFixed(0)}%</span> chance you lose money.
-                </div>
-                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
-                  In the worst case, your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#EB5757", fontSize: 14 }}>{fmtK(chart.worst1y)}</span>
-                </div>
-              </>
-            )}
+            <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 6 }}>
+              {chart.worst1y >= S0
+                ? "Even in the worst 5% of scenarios, you're in profit."
+                : <>There's a <span style={{ fontFamily: mn, fontWeight: 700, color: t.cream }}>{chart.loss1y.toFixed(0)}%</span> chance you lose money.</>
+              }
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 12 }}>
+              <span style={{ fontFamily: mn, fontSize: 28, fontWeight: 700, color: chart.worst1y >= S0 ? "#27AE60" : "#EB5757" }}>
+                {fmtK(chart.worst1y)}
+              </span>
+              <span style={{ fontFamily: mn, fontSize: 12, color: chart.worst1y >= S0 ? "#27AE60" : "#EB5757" }}>
+                {((chart.worst1y - S0) / S0 * 100) >= 0 ? "+" : ""}{((chart.worst1y - S0) / S0 * 100).toFixed(0)}%
+              </span>
+            </div>
+            <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 4 }}>worst case</div>
           </div>
 
+          {/* Hold 3 years */}
           <div style={{ padding: "24px 20px", borderRight: `1px solid ${t.border}` }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>
               Hold 3 years
             </div>
-            {chart.worst3y >= S0 ? (
-              <>
-                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
-                  Even in the worst 5% of scenarios, you're in profit.
-                </div>
-                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
-                  Worst case: your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#27AE60", fontSize: 14 }}>{fmtK(chart.worst3y)}</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
-                  There's a <span style={{ fontFamily: mn, fontWeight: 700, color: "#27AE60", fontSize: 15 }}>{chart.loss3y.toFixed(0)}%</span> chance you lose money.
-                </div>
-                <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
-                  In the worst case, your {fmtK(S0)} is worth <span style={{ fontFamily: mn, fontWeight: 600, color: "#EB5757", fontSize: 14 }}>{fmtK(chart.worst3y)}</span>
-                </div>
-              </>
-            )}
+            <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 6 }}>
+              {chart.worst3y >= S0
+                ? "Even in the worst 5% of scenarios, you're in profit."
+                : <>There's a <span style={{ fontFamily: mn, fontWeight: 700, color: t.cream }}>{chart.loss3y.toFixed(0)}%</span> chance you lose money.</>
+              }
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 12 }}>
+              <span style={{ fontFamily: mn, fontSize: 28, fontWeight: 700, color: chart.worst3y >= S0 ? "#27AE60" : "#EB5757" }}>
+                {fmtK(chart.worst3y)}
+              </span>
+              <span style={{ fontFamily: mn, fontSize: 12, color: chart.worst3y >= S0 ? "#27AE60" : "#EB5757" }}>
+                {((chart.worst3y - S0) / S0 * 100) >= 0 ? "+" : ""}{((chart.worst3y - S0) / S0 * 100).toFixed(0)}%
+              </span>
+            </div>
+            <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 4 }}>worst case</div>
           </div>
 
+          {/* Median */}
           <div style={{ padding: "24px 20px" }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
-              Median return
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>
+              Median · 3 years
             </div>
-            <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 8 }}>
+            <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 6 }}>
               In the most likely scenario, your {fmtK(S0)} becomes
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <span style={{ fontFamily: mn, fontSize: 32, fontWeight: 700, color: t.cream }}>{fmtK(chart.last.p50)}</span>
-              <span style={{ fontFamily: mn, fontSize: 14, color: "#27AE60" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 12 }}>
+              <span style={{ fontFamily: mn, fontSize: 28, fontWeight: 700, color: t.cream }}>{fmtK(chart.last.p50)}</span>
+              <span style={{ fontFamily: mn, fontSize: 12, color: "#27AE60" }}>
                 +{((chart.last.p50 - S0) / S0 * 100).toFixed(0)}%
               </span>
             </div>
+            <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 4 }}>most likely outcome</div>
           </div>
         </div>
 
