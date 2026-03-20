@@ -38,13 +38,12 @@ export function mildDiscount(a, b, t, resMean, resStd) {
 }
 
 /**
- * Support floor — uses RANSAC (own slope) when available, falls back to resFloor offset.
- * RANSAC is robust to bubble outliers and has a different slope than WLS.
+ * Support floor — WLS slope + RANSAC-calibrated offset (resFloor).
+ * RANSAC determines HOW FAR the floor is from fair value (robust to bubbles).
+ * WLS determines THE SLOPE (same deceleration as fair value).
+ * resFloor = ln(RANSAC_support_today) - ln(WLS_fair_today), computed in powerlaw.js.
  */
-export function supportFloor(t, { a, b, resFloor, ransac }) {
-  if (ransac) {
-    return Math.exp(ransac.a + ransac.b * Math.log(Math.max(t, 1)) + ransac.floor);
-  }
+export function supportFloor(t, { a, b, resFloor }) {
   return Math.exp(Math.log(plPrice(a, b, Math.max(t, 1))) + resFloor);
 }
 
@@ -53,20 +52,19 @@ export function supportFloor(t, { a, b, resFloor, ransac }) {
 export function bandsLog10(a, b, t, resMean, resStd, ransac, resFloor) {
   const plV = plPrice(a, b, t);
   const lpl = Math.log10(plV);
-  const supParams = { a, b, resFloor, ransac };
   return {
     lPl:    +lpl.toFixed(4),
     lR2up:  +(lpl + (resMean + 2 * resStd) / Math.LN10).toFixed(4),
     lR1up:  +(lpl + (resMean + resStd) / Math.LN10).toFixed(4),
     lR05up: +(lpl + (resMean + 0.5 * resStd) / Math.LN10).toFixed(4),
     lR05dn: +(lpl + (resMean - 0.5 * resStd) / Math.LN10).toFixed(4),
-    lSup:   +Math.log10(supportFloor(t, supParams)).toFixed(4),
+    lSup:   +(lpl + resFloor / Math.LN10).toFixed(4),
   };
 }
 
 // ── All bands at a given day (price-space) ──
 
-export function allBands(t, { a, b, resMean, resStd, resFloor, ransac }) {
+export function allBands(t, { a, b, resMean, resStd, resFloor }) {
   const plV = plPrice(a, b, t);
   return {
     bubble:   Math.exp(Math.log(plV) + resMean + 2 * resStd),
@@ -74,7 +72,7 @@ export function allBands(t, { a, b, resMean, resStd, resFloor, ransac }) {
     warm:     Math.exp(Math.log(plV) + resMean + 0.5 * resStd),
     fair:     plV,
     discount: Math.exp(Math.log(plV) + resMean - 0.5 * resStd),
-    support:  supportFloor(t, { a, b, resFloor, ransac }),
+    support:  supportFloor(t, { a, b, resFloor }),
   };
 }
 
