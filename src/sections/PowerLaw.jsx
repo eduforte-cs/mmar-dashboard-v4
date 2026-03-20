@@ -48,11 +48,18 @@ export default function PowerLaw({ d, derived }) {
     const zl = ZOOM_LEVELS[zoom] || ZOOM_LEVELS[0];
     const daysBack = Math.round(365 * zl.back);
     const daysForward = Math.round(365 * zl.fwd);
-    const totalDays = daysBack + daysForward;
-    const tStart = t0 - daysBack;
+    const tMinVisible = daysSinceGenesis("2013-04-01"); // earliest reliable data
+    const tStartRaw = t0 - daysBack;
+    const tStart = Math.max(tStartRaw, tMinVisible);
     const tEnd = t0 + daysForward;
+    const totalDays = tEnd - tStart;
 
-    const tx = (tDay) => pad.left + ((tDay - tStart) / totalDays) * cw;
+    const tx = (tDay) => {
+      const logT = Math.log10(Math.max(tDay, 1));
+      const logStart = Math.log10(Math.max(tStart, 1));
+      const logEnd = Math.log10(tEnd);
+      return pad.left + ((logT - logStart) / (logEnd - logStart)) * cw;
+    };
 
     // ── Price axis: log10 scale — auto-fit to visible data ──
     const plEnd = plPrice(a, b, tEnd);
@@ -88,7 +95,9 @@ export default function PowerLaw({ d, derived }) {
     bandKeys.forEach(k => bands[k] = []);
 
     for (let i = 0; i <= steps; i++) {
-      const tDay = tStart + (i / steps) * totalDays;
+      const logStart = Math.log10(Math.max(tStart, 1));
+      const logEnd = Math.log10(tEnd);
+      const tDay = Math.pow(10, logStart + (i / steps) * (logEnd - logStart));
       if (tDay <= 100) continue;
       const plV = plPrice(a, b, tDay);
       const x = tx(tDay);
@@ -173,7 +182,8 @@ export default function PowerLaw({ d, derived }) {
     const pctWC_3y = ((wc3y - S0) / S0 * 100);
 
     // Fair value label positions on band lines
-    const fairLabelX = tx(tStart + totalDays * 0.25);
+    const fairLabelTDay = Math.pow(10, Math.log10(Math.max(tStart, 1)) + 0.25 * (Math.log10(tEnd) - Math.log10(Math.max(tStart, 1))));
+    const fairLabelX = tx(fairLabelTDay);
     const fairLabelIdx = Math.round(steps * 0.25);
 
     return {
@@ -192,7 +202,7 @@ export default function PowerLaw({ d, derived }) {
       supportLabelY: bands.support[fairLabelIdx]?.[1] || 320,
       plToday: plPrice(a, b, t0),
       // Crosshair helpers
-      tStart, totalDays, t0, a, b, resMean, resStd, resFloor, ransac, tx, ty,
+      tStart, tEnd, totalDays, t0, a, b, resMean, resStd, resFloor, ransac, tx, ty,
       histLookup: (sigmaChart || []).map(p => {
         const pDate = new Date(p.fullDate || p.date);
         const pT = (pDate.getTime() - genesisMs) / dayMs;
@@ -224,7 +234,10 @@ export default function PowerLaw({ d, derived }) {
     }
 
     // X → tDay
-    const tDay = chart.tStart + ((mouseX - chart.pad.left) / (chart.W - chart.pad.left - chart.pad.right)) * chart.totalDays;
+    const logStart = Math.log10(Math.max(chart.tStart, 1));
+    const logEnd = Math.log10(chart.tEnd);
+    const frac = (mouseX - chart.pad.left) / (chart.W - chart.pad.left - chart.pad.right);
+    const tDay = Math.pow(10, logStart + frac * (logEnd - logStart));
 
     // Date
     const genesisMs = new Date("2009-01-03").getTime();
