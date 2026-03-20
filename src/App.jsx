@@ -78,8 +78,13 @@ function Dashboard() {
   if (phase === "error") return <ErrorScreen msg={msg} onRetry={retry} />;
 
   if (showLanding) {
+    const handleTabClick = () => {
+      // Scroll to top and flash the auth section
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
     return (
       <div style={{ background: t.bg, minHeight: "100vh" }}>
+        <Header tab={null} setTab={handleTabClick} r2={d?.r2} />
         <div className="page-pad" style={{ padding: "0 24px" }}>
           <Landing d={d} onAuth={(method, email) => console.log("Auth:", method, email)} />
         </div>
