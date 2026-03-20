@@ -1,26 +1,93 @@
-// ── useEngine — Web Worker for heavy computation, main thread for spot refresh ──
+// ── useEngine — cache-first, Web Worker fallback ──
+// 1. Try Supabase cache (instant, <1s)
+// 2. Fetch live spot from Binance
+// 3. If cache hit: use cached params + fresh spot → instant display
+// 4. If cache miss: fall back to Web Worker (full computation, ~30s)
+// 5. Spot refresh every 60s (main thread, 200 paths MC)
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { fetchSpotPrice } from "../data/fetch.js";
+import { fetchCache } from "./useCache.js";
 import {
   daysSinceGenesis, plPrice,
   simulatePathsPL, computePercentiles,
   computeMCLossHorizons, computeEpisodeAnalysis, detectRegime, generateVerdict,
-  getVerdictPlain, getVolLabel, fmtK,
+  getVerdictPlain, getVolLabel, supportFloor,
 } from "../engine/index.js";
 
 export default function useEngine() {
-  const [phase, setPhase] = useState("loading"); // loading | done | error
-  const [msg, setMsg] = useState("Connecting to market data...");
+  const [phase, setPhase] = useState("loading");
+  const [msg, setMsg] = useState("Loading...");
   const [d, setD] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
   const workerRef = useRef(null);
 
-  // ── Initial run: heavy computation in Web Worker ──
-  const run = useCallback(() => {
+  // ── Try cache, then fallback to worker ──
+  const run = useCallback(async () => {
     setPhase("loading");
-    setMsg("Starting engine...");
 
-    // Clean up previous worker if any
+    // ── Step 1: Try Supabase cache ──
+    setMsg("Checking cache...");
+    try {
+      const cached = await fetchCache();
+      if (cached) {
+        setMsg("Cache found. Fetching live price...");
+
+        // Fetch live spot to update the cached σ
+        const { spot } = await fetchSpotPrice();
+        if (spot && spot > 1000) {
+          const { a, b, resMean, resStd, resFloor, H, lambda2, ouRegimes,
+            resReturns, evtCap, floorBreakProb, sigmaChart: prevSigmaChart } = cached;
+          const tNow = daysSinceGenesis(new Date().toISOString().slice(0, 10));
+          const plNow = plPrice(a, b, tNow);
+          const newResidual = Math.log(spot) - Math.log(plNow);
+          const newSigma = (newResidual - resMean) / resStd;
+
+          // Update sigma chart with today's point
+          const todayStr = new Date().toISOString().slice(0, 7);
+          const todayFull = new Date().toISOString().slice(0, 10);
+          const updatedSigmaChart = prevSigmaChart ? [
+            ...prevSigmaChart.filter(p => p.date !== todayStr),
+            { date: todayStr, fullDate: todayFull, sigma: +newSigma.toFixed(3), price: +spot.toFixed(0), fair: +plNow.toFixed(0) },
+          ] : prevSigmaChart;
+
+          // Quick MC with live spot (200 paths, fast)
+          const N3Y = 365 * 3;
+          const pathsUnified = simulatePathsPL(200, N3Y, H, lambda2, resStd, resMean, a, b, tNow, ouRegimes, newResidual, resReturns, resFloor, evtCap, floorBreakProb);
+          const pct = computePercentiles(pathsUnified, 365);
+          const pct3y = computePercentiles(pathsUnified, N3Y);
+
+          setD({
+            ...cached,
+            S0: spot, t0: tNow, plToday: plNow, sigmaFromPL: newSigma,
+            currentResidual: newResidual,
+            percentiles: pct, percentiles3y: pct3y,
+            pl1y: +plPrice(a, b, tNow + 365).toFixed(0),
+            pl2y: +plPrice(a, b, tNow + 730).toFixed(0),
+            pl3y: +plPrice(a, b, tNow + 365 * 3).toFixed(0),
+            sigmaChart: updatedSigmaChart,
+          });
+        } else {
+          // Spot failed, use cached data as-is
+          setD(cached);
+        }
+
+        setPhase("done");
+        setLastRefresh(new Date());
+        return; // Cache hit — done
+      }
+    } catch (err) {
+      console.warn("Cache failed, falling back to Worker:", err);
+    }
+
+    // ── Step 2: Fallback — Web Worker ──
+    setMsg("No cache. Computing from scratch...");
+    runWorker();
+
+  }, []);
+
+  // ── Worker launcher (separated for retry) ──
+  function runWorker() {
     if (workerRef.current) {
       workerRef.current.terminate();
       workerRef.current = null;
@@ -35,7 +102,6 @@ export default function useEngine() {
 
       worker.onmessage = (e) => {
         const { type, msg: workerMsg, result } = e.data;
-
         if (type === "progress") {
           setMsg(workerMsg);
         } else if (type === "done") {
@@ -60,36 +126,28 @@ export default function useEngine() {
         workerRef.current = null;
       };
 
-      // Start computation
       worker.postMessage({ type: "run" });
-
     } catch (err) {
-      // Worker creation failed — fallback info
       console.error("Worker init failed:", err);
       setMsg("Web Worker not available: " + (err?.message || "unknown error"));
       setPhase("error");
     }
-  }, []);
+  }
 
   useEffect(() => { run(); }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-      }
-    };
+    return () => { if (workerRef.current) workerRef.current.terminate(); };
   }, []);
 
-  // ── Spot refresh every 60s (main thread — lightweight, 200 paths) ──
+  // ── Spot refresh every 60s ──
   useEffect(() => {
     if (phase !== "done" || !d) return;
     const refreshSpot = async () => {
       try {
         const { spot } = await fetchSpotPrice();
         if (!spot) return;
-        const { a, b, resMean, resStd, resFloor, H, lambda2, ouRegimes, t0, resReturns, evtCap, floorBreakProb, sigmaChart: prevSigmaChart } = d;
+        const { a, b, resMean, resStd, resFloor, H, lambda2, ouRegimes, resReturns, evtCap, floorBreakProb, sigmaChart: prevSigmaChart } = d;
         const tNow = daysSinceGenesis(new Date().toISOString().slice(0, 10));
         const plNow = plPrice(a, b, tNow);
         const newResidual = Math.log(spot) - Math.log(plNow);
@@ -102,7 +160,6 @@ export default function useEngine() {
           { date: todayStr, fullDate: todayFull, sigma: +newSigma.toFixed(3), price: +spot.toFixed(0), fair: +plNow.toFixed(0) },
         ] : prevSigmaChart;
 
-        // Reduced MC on refresh (200 paths, not 2000) — fast enough for main thread
         const N3Y = 365 * 3;
         const pathsUnified = simulatePathsPL(200, N3Y, H, lambda2, resStd, resMean, a, b, tNow, ouRegimes, newResidual, resReturns, resFloor, evtCap, floorBreakProb);
         const pct = computePercentiles(pathsUnified, 365);
@@ -125,7 +182,7 @@ export default function useEngine() {
     return () => clearInterval(timer);
   }, [phase, d?.a]);
 
-  // ── Derived data (computed from state, not stored) ──
+  // ── Derived data ──
   const derived = d ? (() => {
     const { S0, a, b, t0, resMean, resStd, resFloor, ransac, plToday, sigmaFromPL: sig,
       H, lambda2, annualVol, mom, halfLife, ouRegimes,
@@ -154,9 +211,7 @@ export default function useEngine() {
     const episode = computeEpisodeAnalysis(sig, sigmaChart);
     const { domRegime } = detectRegime(sig, mom, H, lambda2, annualVol, halfLife);
 
-    const supportPrice = ransac
-      ? Math.exp(ransac.a + ransac.b * Math.log(t0) + ransac.floor)
-      : Math.exp(Math.log(plToday) + resFloor);
+    const supportPriceVal = supportFloor(t0, { a, b, resFloor, ransac });
 
     const verdict = generateVerdict({
       sig, S0, a, b, t0, resMean, resStd, resFloor, ransac, plToday,
@@ -172,10 +227,11 @@ export default function useEngine() {
 
     return {
       sig, deviationPct, udRatio, pl1yBands, pl1yFuture,
-      mcLossHorizons, episode, domRegime, supportPrice,
+      mcLossHorizons, episode, domRegime, supportPrice: supportPriceVal,
       verdict, mcP5, mcP95,
       volInfo: getVolLabel(annualVol),
       verdictPlain: getVerdictPlain(sig),
+      fromCache: !!d._fromCache,
     };
   })() : null;
 
