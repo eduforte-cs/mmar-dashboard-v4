@@ -3,6 +3,7 @@ import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK, daysSinceGenesis } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
+import { allBands, supportFloor, bandsLog10 } from "../engine/bands.js";
 import Toggle from "../components/Toggle";
 
 export default function PowerLaw({ d, derived }) {
@@ -60,16 +61,11 @@ export default function PowerLaw({ d, derived }) {
       return pad.left + ((logT - logStart) / (logEnd - logStart)) * cw;
     };
 
-    // ── Support price helper — RANSAC has its own slope, not parallel to FV ──
-    const supPrice = (tDay) => ransac
-      ? Math.exp(ransac.a + ransac.b * Math.log(Math.max(tDay, 1)) + ransac.floor)
-      : Math.exp(Math.log(plPrice(a, b, Math.max(tDay, 1))) + resFloor);
-
     // ── Price axis: log10 scale — auto-fit to visible data ──
     const plEnd = plPrice(a, b, tEnd);
     const ceilingEnd = Math.exp(Math.log(plEnd) + resMean + 1.2 * resStd);
     const tStartSafe = Math.max(tStart, 100);
-    const supportStart = supPrice(tStartSafe);
+    const supportStart = supportFloor(tStartSafe, { a, b, resFloor, ransac });
 
     // Include actual historical prices in range when zoomed out
     const histPricesInRange = (sigmaChart || [])
@@ -90,27 +86,26 @@ export default function PowerLaw({ d, derived }) {
       return pad.top + ch - ((lp - logMin) / (logMax - logMin)) * ch;
     };
 
-    // ── Corridor bands — match Pro chart formula exactly ──
+    // ── Corridor bands — via bands.js (single source of truth) ──
     const steps = 80;
     const bandKeys = ["bubble", "ceiling", "warm", "fair", "discount", "support"];
     const bands = {};
     bandKeys.forEach(k => bands[k] = []);
+    const bandParams = { a, b, resMean, resStd, resFloor, ransac };
 
     for (let i = 0; i <= steps; i++) {
       const logStart = Math.log10(Math.max(tStart, 1));
       const logEnd = Math.log10(tEnd);
       const tDay = Math.pow(10, logStart + (i / steps) * (logEnd - logStart));
       if (tDay <= 100) continue;
-      const plV = plPrice(a, b, tDay);
       const x = tx(tDay);
-      // All bands use WLS-based offsets: exp(ln(plV) + resMean + n*resStd)
-      bands.bubble.push([x, ty(Math.exp(Math.log(plV) + (resMean + 2 * resStd)))]);
-      bands.ceiling.push([x, ty(Math.exp(Math.log(plV) + (resMean + resStd)))]);
-      bands.warm.push([x, ty(Math.exp(Math.log(plV) + (resMean + 0.5 * resStd)))]);
-      bands.fair.push([x, ty(plV)]);
-      bands.discount.push([x, ty(Math.exp(Math.log(plV) + (resMean - 0.5 * resStd)))]);
-      // Support uses RANSAC (own slope, not parallel to FV)
-      bands.support.push([x, ty(supPrice(tDay))]);
+      const b_ = allBands(tDay, bandParams);
+      bands.bubble.push([x, ty(b_.bubble)]);
+      bands.ceiling.push([x, ty(b_.ceiling)]);
+      bands.warm.push([x, ty(b_.warm)]);
+      bands.fair.push([x, ty(b_.fair)]);
+      bands.discount.push([x, ty(b_.discount)]);
+      bands.support.push([x, ty(b_.support)]);
     }
 
     const toPath = (pts) => pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
@@ -148,8 +143,8 @@ export default function PowerLaw({ d, derived }) {
     const t3y = t0 + 365 * 3;
     const fv1y = plPrice(a, b, t1y);
     const fv3y = plPrice(a, b, t3y);
-    const wc1y = supPrice(t1y);
-    const wc3y = supPrice(t3y);
+    const wc1y = supportFloor(t1y, bandParams);
+    const wc3y = supportFloor(t3y, bandParams);
 
     const fv1yX = tx(t1y), fv1yY = ty(fv1y);
     const wc1yX = tx(t1y), wc1yY = ty(wc1y);
@@ -177,7 +172,7 @@ export default function PowerLaw({ d, derived }) {
 
     // ── Percentages ──
     const pctFV_today = ((plPrice(a, b, t0) - S0) / S0 * 100);
-    const wcToday = supPrice(t0);
+    const wcToday = supportFloor(t0, bandParams);
     const pctWC_today = ((wcToday - S0) / S0 * 100);
     const pctFV_1y = ((fv1y - S0) / S0 * 100);
     const pctWC_1y = ((wc1y - S0) / S0 * 100);
@@ -247,15 +242,17 @@ export default function PowerLaw({ d, derived }) {
     const date = new Date(genesisMs + tDay * 86400000);
     const dateStr = date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 
-    // PL values at this tDay
+    // PL values at this tDay — via bands.js
     const isFuture = tDay > chart.t0;
-    const plV = plPrice(chart.a, chart.b, Math.max(tDay, 1));
-    const fair = plV;
-    const bubble = Math.exp(Math.log(plV) + chart.resMean + 2 * chart.resStd);
-    const ceiling = Math.exp(Math.log(plV) + chart.resMean + chart.resStd);
-    const sup = chart.ransac
-      ? Math.exp(chart.ransac.a + chart.ransac.b * Math.log(Math.max(tDay, 1)) + chart.ransac.floor)
-      : Math.exp(Math.log(plV) + chart.resFloor);
+    const hoverBands = allBands(Math.max(tDay, 1), {
+      a: chart.a, b: chart.b,
+      resMean: chart.resMean, resStd: chart.resStd,
+      resFloor: chart.resFloor, ransac: chart.ransac,
+    });
+    const fair = hoverBands.fair;
+    const bubble = hoverBands.bubble;
+    const ceiling = hoverBands.ceiling;
+    const sup = hoverBands.support;
 
     // Historical price (nearest)
     let actualPrice = null;
