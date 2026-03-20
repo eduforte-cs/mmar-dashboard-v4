@@ -36,7 +36,6 @@ export default function PowerLaw({ d, derived }) {
   const chart = useMemo(() => {
     if (!d || !derived) return null;
     const { a, b, t0, S0, resMean, resStd, resFloor, ransac, sigmaChart, lastDate } = d;
-    const { supportPrice } = derived;
 
     // ── SVG layout — uses actual container dimensions ──
     const W = dims.w, H = dims.h;
@@ -65,9 +64,7 @@ export default function PowerLaw({ d, derived }) {
     const plEnd = plPrice(a, b, tEnd);
     const ceilingEnd = Math.exp(Math.log(plEnd) + resMean + 1.2 * resStd);
     const tStartSafe = Math.max(tStart, 100);
-    const supportStart = ransac
-      ? Math.exp(ransac.a + ransac.b * Math.log(tStartSafe) + ransac.floor)
-      : Math.exp(Math.log(plPrice(a, b, tStartSafe)) + resFloor);
+    const supportStart = Math.exp(Math.log(plPrice(a, b, tStartSafe)) + resFloor);
 
     // Include actual historical prices in range when zoomed out
     const histPricesInRange = (sigmaChart || [])
@@ -88,9 +85,9 @@ export default function PowerLaw({ d, derived }) {
       return pad.top + ch - ((lp - logMin) / (logMax - logMin)) * ch;
     };
 
-    // ── Corridor bands ──
+    // ── Corridor bands — match Pro chart formula exactly ──
     const steps = 80;
-    const bandKeys = ["bubble", "ceiling", "fair", "discount", "support"];
+    const bandKeys = ["bubble", "ceiling", "warm", "fair", "discount", "support"];
     const bands = {};
     bandKeys.forEach(k => bands[k] = []);
 
@@ -101,14 +98,14 @@ export default function PowerLaw({ d, derived }) {
       if (tDay <= 100) continue;
       const plV = plPrice(a, b, tDay);
       const x = tx(tDay);
-      bands.bubble.push([x, ty(Math.exp(Math.log(plV) + resMean + 2 * resStd))]);
-      bands.ceiling.push([x, ty(Math.exp(Math.log(plV) + resMean + resStd))]);
+      // All bands use WLS-based offsets: exp(ln(plV) + resMean + n*resStd)
+      bands.bubble.push([x, ty(Math.exp(Math.log(plV) + (resMean + 2 * resStd)))]);
+      bands.ceiling.push([x, ty(Math.exp(Math.log(plV) + (resMean + resStd)))]);
+      bands.warm.push([x, ty(Math.exp(Math.log(plV) + (resMean + 0.5 * resStd)))]);
       bands.fair.push([x, ty(plV)]);
-      bands.discount.push([x, ty(Math.exp(Math.log(plV) + resMean - 0.5 * resStd))]);
-      const supP = ransac
-        ? Math.exp(ransac.a + ransac.b * Math.log(tDay) + ransac.floor)
-        : Math.exp(Math.log(plV) + resFloor);
-      bands.support.push([x, ty(supP)]);
+      bands.discount.push([x, ty(Math.exp(Math.log(plV) + (resMean - 0.5 * resStd)))]);
+      // Support uses resFloor (same as Pro chart)
+      bands.support.push([x, ty(Math.exp(Math.log(plV) + resFloor))]);
     }
 
     const toPath = (pts) => pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
@@ -146,8 +143,8 @@ export default function PowerLaw({ d, derived }) {
     const t3y = t0 + 365 * 3;
     const fv1y = plPrice(a, b, t1y);
     const fv3y = plPrice(a, b, t3y);
-    const wc1y = ransac ? Math.exp(ransac.a + ransac.b * Math.log(t1y) + ransac.floor) : Math.exp(Math.log(fv1y) + resFloor);
-    const wc3y = ransac ? Math.exp(ransac.a + ransac.b * Math.log(t3y) + ransac.floor) : Math.exp(Math.log(fv3y) + resFloor);
+    const wc1y = Math.exp(Math.log(fv1y) + resFloor);
+    const wc3y = Math.exp(Math.log(fv3y) + resFloor);
 
     const fv1yX = tx(t1y), fv1yY = ty(fv1y);
     const wc1yX = tx(t1y), wc1yY = ty(wc1y);
@@ -175,7 +172,8 @@ export default function PowerLaw({ d, derived }) {
 
     // ── Percentages ──
     const pctFV_today = ((plPrice(a, b, t0) - S0) / S0 * 100);
-    const pctWC_today = ((supportPrice - S0) / S0 * 100);
+    const wcToday = Math.exp(Math.log(plPrice(a, b, t0)) + resFloor);
+    const pctWC_today = ((wcToday - S0) / S0 * 100);
     const pctFV_1y = ((fv1y - S0) / S0 * 100);
     const pctWC_1y = ((wc1y - S0) / S0 * 100);
     const pctFV_3y = ((fv3y - S0) / S0 * 100);
@@ -201,6 +199,7 @@ export default function PowerLaw({ d, derived }) {
       bubbleLabelY: bands.bubble[fairLabelIdx]?.[1] || 100,
       supportLabelY: bands.support[fairLabelIdx]?.[1] || 320,
       plToday: plPrice(a, b, t0),
+      wcToday,
       // Crosshair helpers
       tStart, tEnd, totalDays, t0, a, b, resMean, resStd, resFloor, ransac, tx, ty,
       histLookup: (sigmaChart || []).map(p => {
@@ -214,7 +213,6 @@ export default function PowerLaw({ d, derived }) {
   if (!d || !derived || !chart) return null;
 
   const { S0 } = d;
-  const { supportPrice } = derived;
 
   // ── Crosshair state ──
   const [hover, setHover] = useState(null);
@@ -250,9 +248,7 @@ export default function PowerLaw({ d, derived }) {
     const fair = plV;
     const bubble = Math.exp(Math.log(plV) + chart.resMean + 2 * chart.resStd);
     const ceiling = Math.exp(Math.log(plV) + chart.resMean + chart.resStd);
-    const sup = chart.ransac
-      ? Math.exp(chart.ransac.a + chart.ransac.b * Math.log(Math.max(tDay, 1)) + chart.ransac.floor)
-      : Math.exp(Math.log(plV) + chart.resFloor);
+    const sup = Math.exp(Math.log(plV) + chart.resFloor);
 
     // Historical price (nearest)
     let actualPrice = null;
@@ -379,6 +375,7 @@ export default function PowerLaw({ d, derived }) {
           {/* Band lines */}
           <path d={chart.toPath(chart.bands.bubble)} stroke={t.faint} strokeWidth={1} fill="none" strokeDasharray="6 4" opacity={0.5} />
           <path d={chart.toPath(chart.bands.ceiling)} stroke={t.faint} strokeWidth={0.8} fill="none" strokeDasharray="5 3" opacity={0.4} />
+          <path d={chart.toPath(chart.bands.warm)} stroke={t.faint} strokeWidth={0.6} fill="none" strokeDasharray="4 3" opacity={0.3} />
           <path d={chart.toPath(chart.bands.fair)} stroke={t.cream} strokeWidth={1.5} fill="none" opacity={0.6} />
           <path d={chart.toPath(chart.bands.discount)} stroke={t.faint} strokeWidth={0.8} fill="none" strokeDasharray="5 3" opacity={0.4} />
           <path d={chart.toPath(chart.bands.support)} stroke={t.faint} strokeWidth={1} fill="none" strokeDasharray="6 4" opacity={0.5} />
@@ -547,7 +544,7 @@ export default function PowerLaw({ d, derived }) {
           <div>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Worst case</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.faint }}>{fmtK(supportPrice)}</span>
+              <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.faint }}>{fmtK(chart.wcToday)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctWC_today.toFixed(0)}%</span>
             </div>
           </div>
