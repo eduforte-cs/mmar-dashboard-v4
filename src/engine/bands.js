@@ -38,12 +38,14 @@ export function mildDiscount(a, b, t, resMean, resStd) {
 }
 
 /**
- * Support floor — WLS slope + RANSAC-calibrated offset (resFloor).
- * RANSAC determines HOW FAR the floor is from fair value (robust to bubbles).
- * WLS determines THE SLOPE (same deceleration as fair value).
- * resFloor = ln(RANSAC_support_today) - ln(WLS_fair_today), computed in powerlaw.js.
+ * Support floor — RANSAC with its own slope.
+ * RANSAC fits to non-bubble data, naturally finding the support envelope.
+ * Its slope differs from WLS — the support is NOT parallel to fair value.
  */
-export function supportFloor(t, { a, b, resFloor }) {
+export function supportFloor(t, { a, b, resFloor, ransac }) {
+  if (ransac) {
+    return Math.exp(ransac.a + ransac.b * Math.log(Math.max(t, 1)) + ransac.floor);
+  }
   return Math.exp(Math.log(plPrice(a, b, Math.max(t, 1))) + resFloor);
 }
 
@@ -58,13 +60,13 @@ export function bandsLog10(a, b, t, resMean, resStd, ransac, resFloor) {
     lR1up:  +(lpl + (resMean + resStd) / Math.LN10).toFixed(4),
     lR05up: +(lpl + (resMean + 0.5 * resStd) / Math.LN10).toFixed(4),
     lR05dn: +(lpl + (resMean - 0.5 * resStd) / Math.LN10).toFixed(4),
-    lSup:   +(lpl + resFloor / Math.LN10).toFixed(4),
+    lSup:   +Math.log10(supportFloor(t, { a, b, resFloor, ransac })).toFixed(4),
   };
 }
 
 // ── All bands at a given day (price-space) ──
 
-export function allBands(t, { a, b, resMean, resStd, resFloor }) {
+export function allBands(t, { a, b, resMean, resStd, resFloor, ransac }) {
   const plV = plPrice(a, b, t);
   return {
     bubble:   Math.exp(Math.log(plV) + resMean + 2 * resStd),
@@ -72,7 +74,7 @@ export function allBands(t, { a, b, resMean, resStd, resFloor }) {
     warm:     Math.exp(Math.log(plV) + resMean + 0.5 * resStd),
     fair:     plV,
     discount: Math.exp(Math.log(plV) + resMean - 0.5 * resStd),
-    support:  supportFloor(t, { a, b, resFloor }),
+    support:  supportFloor(t, { a, b, resFloor, ransac }),
   };
 }
 
