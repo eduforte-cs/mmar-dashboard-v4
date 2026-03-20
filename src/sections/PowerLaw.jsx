@@ -60,11 +60,16 @@ export default function PowerLaw({ d, derived }) {
       return pad.left + ((logT - logStart) / (logEnd - logStart)) * cw;
     };
 
+    // ── Support price helper — RANSAC has its own slope, not parallel to FV ──
+    const supPrice = (tDay) => ransac
+      ? Math.exp(ransac.a + ransac.b * Math.log(Math.max(tDay, 1)) + ransac.floor)
+      : Math.exp(Math.log(plPrice(a, b, Math.max(tDay, 1))) + resFloor);
+
     // ── Price axis: log10 scale — auto-fit to visible data ──
     const plEnd = plPrice(a, b, tEnd);
     const ceilingEnd = Math.exp(Math.log(plEnd) + resMean + 1.2 * resStd);
     const tStartSafe = Math.max(tStart, 100);
-    const supportStart = Math.exp(Math.log(plPrice(a, b, tStartSafe)) + resFloor);
+    const supportStart = supPrice(tStartSafe);
 
     // Include actual historical prices in range when zoomed out
     const histPricesInRange = (sigmaChart || [])
@@ -104,8 +109,8 @@ export default function PowerLaw({ d, derived }) {
       bands.warm.push([x, ty(Math.exp(Math.log(plV) + (resMean + 0.5 * resStd)))]);
       bands.fair.push([x, ty(plV)]);
       bands.discount.push([x, ty(Math.exp(Math.log(plV) + (resMean - 0.5 * resStd)))]);
-      // Support uses resFloor (same as Pro chart)
-      bands.support.push([x, ty(Math.exp(Math.log(plV) + resFloor))]);
+      // Support uses RANSAC (own slope, not parallel to FV)
+      bands.support.push([x, ty(supPrice(tDay))]);
     }
 
     const toPath = (pts) => pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
@@ -143,8 +148,8 @@ export default function PowerLaw({ d, derived }) {
     const t3y = t0 + 365 * 3;
     const fv1y = plPrice(a, b, t1y);
     const fv3y = plPrice(a, b, t3y);
-    const wc1y = Math.exp(Math.log(fv1y) + resFloor);
-    const wc3y = Math.exp(Math.log(fv3y) + resFloor);
+    const wc1y = supPrice(t1y);
+    const wc3y = supPrice(t3y);
 
     const fv1yX = tx(t1y), fv1yY = ty(fv1y);
     const wc1yX = tx(t1y), wc1yY = ty(wc1y);
@@ -172,7 +177,7 @@ export default function PowerLaw({ d, derived }) {
 
     // ── Percentages ──
     const pctFV_today = ((plPrice(a, b, t0) - S0) / S0 * 100);
-    const wcToday = Math.exp(Math.log(plPrice(a, b, t0)) + resFloor);
+    const wcToday = supPrice(t0);
     const pctWC_today = ((wcToday - S0) / S0 * 100);
     const pctFV_1y = ((fv1y - S0) / S0 * 100);
     const pctWC_1y = ((wc1y - S0) / S0 * 100);
@@ -248,7 +253,9 @@ export default function PowerLaw({ d, derived }) {
     const fair = plV;
     const bubble = Math.exp(Math.log(plV) + chart.resMean + 2 * chart.resStd);
     const ceiling = Math.exp(Math.log(plV) + chart.resMean + chart.resStd);
-    const sup = Math.exp(Math.log(plV) + chart.resFloor);
+    const sup = chart.ransac
+      ? Math.exp(chart.ransac.a + chart.ransac.b * Math.log(Math.max(tDay, 1)) + chart.ransac.floor)
+      : Math.exp(Math.log(plV) + chart.resFloor);
 
     // Historical price (nearest)
     let actualPrice = null;
