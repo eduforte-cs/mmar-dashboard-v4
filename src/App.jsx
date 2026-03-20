@@ -66,13 +66,26 @@ function ErrorScreen({ msg, onRetry }) {
 
 import Landing from "./sections/Landing";
 
+function Placeholder({ label }) {
+  const { t } = useTheme();
+  return (
+    <div style={{
+      minHeight: "60vh", display: "flex", flexDirection: "column",
+      justifyContent: "center", alignItems: "center", gap: 12,
+    }}>
+      <div style={{ fontFamily: bd, fontSize: 24, fontWeight: 700, color: t.cream, letterSpacing: "-0.03em" }}>{label}</div>
+      <div style={{ fontFamily: bd, fontSize: 14, color: t.faint }}>Coming soon</div>
+    </div>
+  );
+}
+
 function Dashboard() {
   const { t } = useTheme();
   const [tab, setTab] = useState("lite");
   const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
 
   // ── Preview toggle: set to true to see Landing, false for dashboard ──
-  const showLanding = false;
+  const showLanding = true;
 
   if (phase === "loading") return <Loading msg={msg} />;
   if (phase === "error") return <ErrorScreen msg={msg} onRetry={retry} />;
@@ -92,6 +105,11 @@ function Dashboard() {
     );
   }
 
+  // Full-bleed tabs (no page-pad)
+  const fullBleedTabs = ["pl", "mc"];
+  // Tabs that show Hero
+  const heroTabs = ["pro", "backtest"];
+
   return (
     <div style={{
       background: t.bg, minHeight: "100vh",
@@ -99,17 +117,21 @@ function Dashboard() {
     }}>
       <Header tab={tab} setTab={setTab} r2={d?.r2} />
 
-      {tab === "pl" ? (
+      {fullBleedTabs.includes(tab) ? (
         <div style={{ animation: "fi 0.3s ease" }}>
-          <PowerLaw d={d} derived={derived} />
+          {tab === "pl" && <PowerLaw d={d} derived={derived} />}
+          {tab === "mc" && <Placeholder label="Monte Carlo — 3 Year Simulation" />}
         </div>
       ) : (
         <div className="page-pad" style={{ padding: "0 24px" }}>
-          {tab !== "lite" && <Hero d={d} derived={derived} />}
+          {heroTabs.includes(tab) && <Hero d={d} derived={derived} />}
           <div style={{ animation: "fi 0.3s ease" }}>
             {tab === "lite" && <Lite d={d} derived={derived} setTab={setTab} />}
             {tab === "pro" && <Pro d={d} derived={derived} />}
+            {tab === "backtest" && <Placeholder label="Backtest — Walk-Forward Validation" />}
             {tab === "faq" && <Faq />}
+            {tab === "whitepaper" && <Placeholder label="Whitepaper — The MMAR Model" />}
+            {tab === "about" && <Placeholder label="About — CommonSense & Edu Forte" />}
           </div>
           <Footer lastRefresh={lastRefresh} />
         </div>
