@@ -1,6 +1,7 @@
 // ── Verdict generator — pure function, no React deps ──
 // Receives all pre-computed data as a context object, returns verdict.
 import { plPrice } from "./powerlaw.js";
+import { supportFloor } from "./bands.js";
 import { computeHurstDivergences } from "./regime.js";
 import { fmtK } from "./constants.js";
 
@@ -199,10 +200,8 @@ export function generateVerdict(ctx) {
   const pl3yFuture = plPrice(a, b, t0 + 1095);
   const pl3yReturn = ((pl3yFuture - S0) / S0 * 100);
 
-  // PL: structural anchor
-  const supportPrice = ransac
-    ? Math.exp(ransac.a + ransac.b * Math.log(t0) + ransac.floor)
-    : Math.exp(Math.log(plToday) + resFloor);
+  // PL: structural anchor — via bands.js (single source of truth)
+  const supportPrice = supportFloor(t0, { a, b, resFloor, ransac });
 
   // MC: probabilistic outlook
   const pPos1y = Math.max(0, Math.min(100, 100 - l1y));
@@ -347,7 +346,8 @@ export function generateVerdict(ctx) {
   }
 
   const maxDownside = ((S0 - supportPrice) / S0 * 100);
-  paras.push(`If you buy today and hold 1 year, there's a ${pFV.toFixed(0)}% chance the price reaches its fair value of ${fmtK(pl1yFutureLocal)}. The worst case floor — the lowest level Bitcoin has historically respected — is ${fmtK(supportPrice)} (−${maxDownside.toFixed(0)}% from today). Over 3 years, the fair value target is ${fmtK(pl3yFuture)} (${pl3yReturn >= 0 ? "+" : ""}${pl3yReturn.toFixed(0)}%).`);
+  const mcWorst3y = loss3y?.p5 ? ((loss3y.p5 - S0) / S0 * 100) : -30;
+  paras.push(`If you buy today and hold 1 year, there's a ${pFV.toFixed(0)}% chance the price reaches its fair value of ${fmtK(pl1yFutureLocal)}. The worst case floor — the lowest level Bitcoin has historically respected — is ${fmtK(supportPrice)} (−${maxDownside.toFixed(0)}% from today). Over 3 years, the fair value target is ${fmtK(pl3yFuture)} (${pl3yReturn >= 0 ? "+" : ""}${pl3yReturn.toFixed(0)}%).${mcWorst3y > 0 ? " Even in the worst 5% of simulations, you're in profit at 3 years." : ""}`);
   paras.push(episodeCallout || `Bitcoin is near its structural fair value. The market is ${regimeNote}.`);
   if (Math.abs(sig) >= 0.15 && conditionalRemaining > 0) {
     paras.push(`Based on how long previous episodes lasted, the model estimates about ${Math.round(conditionalRemaining / 30)} more months before Bitcoin returns to fair value. ${sigImproving ? "The trend is already improving — it could be faster." : sigWorsening ? "The trend is still worsening — it could take longer." : "The trend is flat — patience required."}`);
@@ -367,9 +367,7 @@ export function generateVerdict(ctx) {
   }
 
   // Horizon cards
-  const supportAt = t => ransac
-    ? Math.exp(ransac.a + ransac.b * Math.log(t) + ransac.floor)
-    : supportPrice;
+  const supportAt = t => supportFloor(t, { a, b, resFloor, ransac });
 
   const horizonCards = [
     {
