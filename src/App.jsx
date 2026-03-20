@@ -71,8 +71,8 @@ function Dashboard() {
   const [tab, setTab] = useState("lite");
   const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
 
-  // Preview landing: add ?landing to URL
-  const showLanding = new URLSearchParams(window.location.search).has("landing");
+  // ── Preview toggle: set to true to see Landing, false for dashboard ──
+  const showLanding = true;
 
   if (phase === "loading") return <Loading msg={msg} />;
   if (phase === "error") return <ErrorScreen msg={msg} onRetry={retry} />;
