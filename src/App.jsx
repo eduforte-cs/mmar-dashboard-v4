@@ -8,6 +8,7 @@ import Lite from "./sections/Lite";
 import Pro from "./sections/Pro";
 import Faq from "./sections/Faq";
 import PowerLaw from "./sections/PowerLaw";
+import MonteCarlo from "./sections/MonteCarlo";
 import Footer from "./sections/Footer";
 
 function Loading({ msg }) {
@@ -120,7 +121,7 @@ function Dashboard() {
       {fullBleedTabs.includes(tab) ? (
         <div style={{ animation: "fi 0.3s ease" }}>
           {tab === "pl" && <PowerLaw d={d} derived={derived} />}
-          {tab === "mc" && <Placeholder label="Monte Carlo — 3 Year Simulation" />}
+          {tab === "mc" && <MonteCarlo d={d} derived={derived} />}
         </div>
       ) : (
         <div className="page-pad" style={{ padding: "0 24px" }}>
