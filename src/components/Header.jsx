@@ -2,9 +2,48 @@ import React, { useState } from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
 
+const LEFT_TABS = [
+  { label: "Lite", key: "lite" },
+  { label: "Pro", key: "pro" },
+  { label: "PL", key: "pl" },
+  { label: "MC", key: "mc" },
+];
+
+const RIGHT_TABS = [
+  { label: "Backtest", key: "backtest" },
+  { label: "FAQ", key: "faq" },
+  { label: "Whitepaper", key: "whitepaper" },
+  { label: "About", key: "about" },
+];
+
 export default function Header({ tab, setTab, r2 }) {
   const { t, mode, toggle } = useTheme();
   const [mobileMenu, setMobileMenu] = useState(false);
+
+  const tabBtn = (n, isMobile = false) => {
+    const isActive = tab === n.key;
+    return (
+      <button
+        key={n.key}
+        onClick={() => { setTab(n.key); setMobileMenu(false); }}
+        style={{
+          padding: isMobile ? "0 14px" : "0 20px",
+          border: "none",
+          borderRight: `1px solid ${t.border}`,
+          cursor: "pointer",
+          fontFamily: bd,
+          fontSize: isMobile ? 13 : 13,
+          fontWeight: 400,
+          color: isActive ? t.cream : t.faint,
+          background: isActive ? t.bgAlt : "transparent",
+          borderBottom: isActive ? `2px solid ${t.cream}` : "2px solid transparent",
+          transition: "all 0.2s",
+        }}
+      >
+        {n.label}
+      </button>
+    );
+  };
 
   return (
     <>
@@ -13,53 +52,57 @@ export default function Header({ tab, setTab, r2 }) {
         borderBottom: `1px solid ${t.border}`,
         display: "flex", alignItems: "stretch",
       }}>
+        {/* Brand */}
         <div style={{
-          padding: "20px 24px",
+          padding: "0 24px",
           borderRight: `1px solid ${t.border}`,
           display: "flex", alignItems: "center",
         }}>
           <span style={{
-            fontFamily: bd, fontSize: 22, fontWeight: 700,
-            color: t.cream, letterSpacing: "-0.03em",
+            fontFamily: bd, fontSize: 14, fontWeight: 700,
+            color: t.cream, letterSpacing: "-0.02em",
           }}>
-            MMAR
+            CommonSense
           </span>
         </div>
 
-        {["Lite", "Pro", "PL", "FAQ"].map(n => {
-          const tabKey = n === "PL" ? "pl" : n.toLowerCase();
-          return (
-          <button
-            key={n}
-            onClick={() => setTab(tabKey)}
-            style={{
-              padding: "0 32px", border: "none",
-              borderRight: `1px solid ${t.border}`,
-              cursor: "pointer", fontFamily: bd, fontSize: 14, fontWeight: 400,
-              color: tab === tabKey ? t.cream : t.faint,
-              background: tab === tabKey ? t.bgAlt : "transparent",
-              transition: "all 0.2s",
-            }}
-          >
-            {n}
-          </button>
-          );
-        })}
+        {/* Left tabs: Lite Pro PL MC */}
+        {LEFT_TABS.map(n => tabBtn(n))}
 
         <div style={{ flex: 1 }} />
 
+        {/* Right tabs: Backtest FAQ Whitepaper About */}
+        {RIGHT_TABS.map(n => (
+          <button
+            key={n.key}
+            onClick={() => setTab(n.key)}
+            style={{
+              padding: "0 18px", border: "none",
+              borderLeft: `1px solid ${t.border}`,
+              cursor: "pointer", fontFamily: bd, fontSize: 12, fontWeight: 400,
+              color: tab === n.key ? t.cream : t.faint,
+              background: tab === n.key ? t.bgAlt : "transparent",
+              borderBottom: tab === n.key ? `2px solid ${t.cream}` : "2px solid transparent",
+              transition: "all 0.2s",
+            }}
+          >
+            {n.label}
+          </button>
+        ))}
+
+        {/* R² */}
         <div style={{
-          padding: "0 24px", display: "flex", alignItems: "center",
-          borderLeft: `1px solid ${t.border}`,
+          padding: "0 18px", display: "flex", alignItems: "center",
+          borderLeft: `1px solid ${t.border}`, gap: 6,
         }}>
-          <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>
-            R² {r2 ? r2.toFixed(3) : "0.914"}
-          </span>
+          <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>R²</span>
+          <span style={{ fontFamily: mn, fontSize: 11, color: t.cream }}>{r2 ? r2.toFixed(3) : "0.907"}</span>
         </div>
 
+        {/* Theme toggle */}
         <div
           style={{
-            padding: "0 24px", display: "flex", alignItems: "center",
+            padding: "0 18px", display: "flex", alignItems: "center",
             borderLeft: `1px solid ${t.border}`, cursor: "pointer",
           }}
           onClick={toggle}
@@ -85,42 +128,30 @@ export default function Header({ tab, setTab, r2 }) {
         background: t.bg,
         display: "flex", alignItems: "stretch",
       }}>
-        <div style={{ padding: "14px 16px", display: "flex", alignItems: "center" }}>
+        {/* Brand */}
+        <div style={{
+          padding: "0 14px",
+          borderRight: `1px solid ${t.border}`,
+          display: "flex", alignItems: "center",
+        }}>
           <span style={{
-            fontFamily: bd, fontSize: 18, fontWeight: 700,
-            color: t.cream, letterSpacing: "-0.03em",
+            fontFamily: bd, fontSize: 14, fontWeight: 700,
+            color: t.cream, letterSpacing: "-0.02em",
           }}>
-            MMAR
+            CommonSense
           </span>
         </div>
 
-        {["Lite", "Pro", "PL"].map(n => {
-          const tabKey = n === "PL" ? "pl" : n.toLowerCase();
-          return (
-          <button
-            key={n}
-            onClick={() => { setTab(tabKey); setMobileMenu(false); }}
-            style={{
-              padding: "0 16px", border: "none",
-              cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 500,
-              color: tab === tabKey ? t.cream : t.faint,
-              background: tab === tabKey ? t.bgAlt : "transparent",
-              borderBottom: tab === tabKey
-                ? `2px solid ${t.cream}`
-                : "2px solid transparent",
-            }}
-          >
-            {n}
-          </button>
-          );
-        })}
+        {/* Left tabs: Lite Pro PL MC */}
+        {LEFT_TABS.map(n => tabBtn(n, true))}
 
         <div style={{ flex: 1 }} />
 
+        {/* Hamburger */}
         <button
           onClick={() => setMobileMenu(m => !m)}
           style={{
-            padding: "0 16px", border: "none", background: "none",
+            padding: "0 14px", border: "none", background: "none",
             cursor: "pointer", display: "flex", alignItems: "center",
           }}
         >
@@ -151,30 +182,30 @@ export default function Header({ tab, setTab, r2 }) {
           background: t.bg, borderBottom: `1px solid ${t.border}`,
           display: "flex", flexDirection: "column",
         }}>
-          <button
-            onClick={() => { setTab("faq"); setMobileMenu(false); }}
-            style={{
-              padding: "16px 20px", border: "none",
-              borderBottom: `1px solid ${t.borderFaint}`,
-              cursor: "pointer", fontFamily: bd, fontSize: 14, fontWeight: 500,
-              color: tab === "faq" ? t.cream : t.faint,
-              background: "transparent", textAlign: "left",
-            }}
-          >
-            FAQ
-          </button>
+          {RIGHT_TABS.map(n => (
+            <button
+              key={n.key}
+              onClick={() => { setTab(n.key); setMobileMenu(false); }}
+              style={{
+                padding: "16px 20px", border: "none",
+                borderBottom: `1px solid ${t.borderFaint}`,
+                cursor: "pointer", fontFamily: bd, fontSize: 14, fontWeight: 500,
+                color: tab === n.key ? t.cream : t.faint,
+                background: "transparent", textAlign: "left",
+              }}
+            >
+              {n.label}
+            </button>
+          ))}
           <div style={{
             padding: "16px 20px",
             display: "flex", justifyContent: "space-between", alignItems: "center",
           }}>
             <span style={{ fontFamily: mn, fontSize: 10, color: t.faint }}>
-              R² {r2 ? r2.toFixed(3) : "0.914"}
+              R² {r2 ? r2.toFixed(3) : "0.907"}
             </span>
             <div
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                cursor: "pointer",
-              }}
+              style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
               onClick={toggle}
             >
               <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>
