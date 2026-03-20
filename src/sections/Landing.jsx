@@ -6,9 +6,9 @@ import Chevron from "../components/Chevron";
 
 export default function Landing({ d, onAuth }) {
   const { t } = useTheme();
+  const topRef = useRef(null);
   const whatRef = useRef(null);
   const hoodRef = useRef(null);
-  const topRef = useRef(null);
   const [email, setEmail] = useState("");
   const [phase, setPhase] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -33,18 +33,17 @@ export default function Landing({ d, onAuth }) {
     }
   };
 
-  // Called from App when user clicks a tab while not logged in
   Landing.showNudge = () => setLoginNudge(true);
 
   return (
     <>
-      {/* ── Viewport — matches Lite layout exactly ── */}
+      {/* ── Viewport ── */}
       <div ref={topRef} style={{
         height: "calc(100vh - 56px)",
         display: "flex", flexDirection: "column",
         overflow: "hidden",
       }}>
-        {/* All content flows from top */}
+        {/* Title + subtitle — fill the space */}
         <div style={{
           flex: 1, display: "flex", flexDirection: "column",
           justifyContent: "flex-start",
@@ -72,42 +71,40 @@ export default function Landing({ d, onAuth }) {
 
           <p style={{
             fontFamily: bd,
-            fontSize: "clamp(15px, 1.5vw, 20px)",
+            fontSize: "clamp(16px, 2vw, 24px)",
             fontWeight: 400,
             color: t.faint,
-            lineHeight: 1.6,
-            margin: "clamp(16px, 2.5vw, 32px) 0 0",
-            maxWidth: 560,
+            lineHeight: 1.55,
+            margin: "clamp(16px, 3vw, 40px) 0 0",
           }}>
             A <strong style={{ fontWeight: 700, color: t.cream }}>Yes or No</strong> answer and your real odds of losing money at 1 year and 3 years. Based on institutional-grade quantitative analysis, explained in plain language you can actually understand.
           </p>
+        </div>
 
-          {/* Auth — directly after subtitle */}
-          <div style={{ marginTop: "clamp(20px, 3vw, 40px)", maxWidth: 480 }}>
+        {/* Auth + bars + footer — pinned to bottom, full width */}
+        <div style={{ flexShrink: 0, paddingBottom: "clamp(12px, 1.5vh, 24px)" }}>
 
-            {loginNudge && (
-              <div style={{
-                padding: "8px 0 12px",
-                fontFamily: bd, fontSize: 13, color: "#E2A84B",
-                animation: "fi 0.3s ease",
-              }}>
-                Sign in to access the dashboard
-              </div>
-            )}
-
+          {loginNudge && (
             <div style={{
-              fontFamily: bd, fontSize: 9, color: t.faint,
-              textTransform: "uppercase", letterSpacing: "0.08em",
-              marginBottom: "clamp(8px, 1vh, 12px)",
+              padding: "8px 0 12px",
+              fontFamily: bd, fontSize: 13, color: "#E2A84B",
+              animation: "fi 0.3s ease",
             }}>
-              Free access
+              Sign in to access the dashboard
             </div>
+          )}
+
+          <div style={{
+            fontFamily: bd, fontSize: 9, color: t.faint,
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            marginBottom: "clamp(8px, 1vh, 12px)",
+          }}>
+            Free access
+          </div>
 
           {phase === "sent" ? (
             <div style={{ padding: "16px 0", textAlign: "center" }}>
-              <div style={{ fontFamily: bd, fontSize: 16, fontWeight: 600, color: t.cream, marginBottom: 6 }}>
-                Check your email
-              </div>
+              <div style={{ fontFamily: bd, fontSize: 16, fontWeight: 600, color: t.cream, marginBottom: 6 }}>Check your email</div>
               <p style={{ fontFamily: bd, fontSize: 13, color: t.faint, margin: 0 }}>
                 Magic link sent to <strong style={{ color: t.cream }}>{email}</strong>.
               </p>
@@ -176,15 +173,13 @@ export default function Landing({ d, onAuth }) {
               </div>
             </>
           )}
-          </div>
-        </div>
 
-        {/* Anchor bars + footer — pinned to bottom */}
-        <div style={{ flexShrink: 0, paddingBottom: "clamp(12px, 1.5vh, 24px)" }}>
+          {/* Anchors */}
           <div onClick={() => scrollTo(whatRef)} style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "clamp(10px, 1.2vh, 16px) 0",
             borderTop: `1px solid ${t.border}`,
+            marginTop: "clamp(6px, 0.8vh, 10px)",
             cursor: "pointer",
           }}>
             <div>
@@ -207,11 +202,11 @@ export default function Landing({ d, onAuth }) {
             <Chevron size={14} color={t.faint} />
           </div>
 
-          {/* Footer inline */}
+          {/* Footer */}
           <div style={{
             display: "flex", justifyContent: "space-between",
             fontFamily: bd, fontSize: 11, color: "#3A3B36",
-            paddingTop: "clamp(8px, 1vh, 16px)",
+            paddingTop: "clamp(8px, 1vh, 14px)",
           }}>
             <span>CommonSense & Edu Forte · Barcelona</span>
             <span>Not financial advice</span>
@@ -240,13 +235,11 @@ export default function Landing({ d, onAuth }) {
             </div>
           ))}
         </div>
-
-        {/* Navigate to next section */}
+        {/* Navigate to next */}
         <div onClick={() => scrollTo(hoodRef)} style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "16px 0", marginTop: 40,
-          borderTop: `1px solid ${t.border}`,
-          borderBottom: `1px solid ${t.border}`,
+          borderTop: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`,
           cursor: "pointer",
         }}>
           <div>
@@ -293,13 +286,11 @@ export default function Landing({ d, onAuth }) {
             </div>
           ))}
         </div>
-
-        {/* Navigate back to top */}
+        {/* Back to top */}
         <div onClick={() => scrollTo(topRef)} style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "16px 0", marginTop: 40,
-          borderTop: `1px solid ${t.border}`,
-          borderBottom: `1px solid ${t.border}`,
+          borderTop: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`,
           cursor: "pointer",
         }}>
           <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>Back to top</div>
