@@ -64,13 +64,29 @@ function ErrorScreen({ msg, onRetry }) {
   );
 }
 
+import Landing from "./sections/Landing";
+
 function Dashboard() {
   const { t } = useTheme();
   const [tab, setTab] = useState("lite");
   const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
 
+  // Preview landing: add ?landing to URL
+  const showLanding = new URLSearchParams(window.location.search).has("landing");
+
   if (phase === "loading") return <Loading msg={msg} />;
   if (phase === "error") return <ErrorScreen msg={msg} onRetry={retry} />;
+
+  if (showLanding) {
+    return (
+      <div style={{ background: t.bg, minHeight: "100vh" }}>
+        <Header tab={null} setTab={() => {}} r2={d?.r2} />
+        <div className="page-pad" style={{ padding: "0 24px" }}>
+          <Landing d={d} onAuth={(method, email) => console.log("Auth:", method, email)} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
