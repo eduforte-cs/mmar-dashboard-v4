@@ -34,7 +34,7 @@ export default function Pro({ d, derived, setTab }) {
     { l: "Hurst (90d)", v: H.toFixed(2), s: H > 0.55 ? "Persistent" : "Mean-reverting" },
     { l: "λ² multifractal", v: lambda2.toFixed(2), s: "Partition fn" },
     { l: "Signal", v: verdict.subtitle, s: `σ = ${sig.toFixed(2)}`, color: verdict.subtitleColor },
-    { l: "Regime", v: domRegime.label.split(" ")[0], s: `${domRegime.score}/7 conditions` },
+    { l: "Regime", v: domRegime.label.split(" ")[0], s: `Score ${domRegime.score}` },
   ];
 
   // Key price levels
