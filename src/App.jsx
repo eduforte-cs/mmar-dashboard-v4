@@ -10,6 +10,7 @@ import Faq from "./sections/Faq";
 import PowerLaw from "./sections/PowerLaw";
 import MonteCarlo from "./sections/MonteCarlo";
 import Backtest from "./sections/Backtest";
+import BacktestCompare from "./sections/BacktestCompare";
 import Footer from "./sections/Footer";
 
 function Loading({ msg }) {
@@ -131,6 +132,7 @@ function Dashboard() {
             {tab === "lite" && <Lite d={d} derived={derived} setTab={setTab} />}
             {tab === "pro" && <Pro d={d} derived={derived} />}
             {tab === "backtest" && <Backtest d={d} />}
+            {tab === "compare" && <BacktestCompare d={d} />}
             {tab === "faq" && <Faq />}
             {tab === "whitepaper" && <Placeholder label="Whitepaper — The MMAR Model" />}
             {tab === "about" && <Placeholder label="About — CommonSense & Edu Forte" />}
