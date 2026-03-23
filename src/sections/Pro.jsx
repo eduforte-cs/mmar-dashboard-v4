@@ -34,7 +34,7 @@ export default function Pro({ d, derived, setTab }) {
     { l: "Hurst (90d)", v: H.toFixed(2), s: H > 0.55 ? "Persistent" : "Mean-reverting" },
     { l: "λ² multifractal", v: lambda2.toFixed(2), s: "Partition fn" },
     { l: "Signal", v: verdict.subtitle, s: `σ = ${sig.toFixed(2)}`, color: verdict.subtitleColor },
-    { l: "Regime", v: domRegime.label.split(" ")[0], s: `Score ${domRegime.score}` },
+    { l: "Regime", v: domRegime.label, s: domRegime.zone || "", color: domRegime.zone === "Buy" || domRegime.zone === "Strong Buy" ? "#27AE60" : domRegime.zone === "Sell" ? "#EB5757" : domRegime.zone === "Reduce" ? "#F2994A" : t.cream },
   ];
 
   // Key price levels
@@ -123,7 +123,7 @@ export default function Pro({ d, derived, setTab }) {
         <DriversPanel verdict={verdict} sig={sig} backtestResults={bt} />
       </Toggle>
 
-      <Toggle label="Market Regime" badge={domRegime.label.split(" ")[0]}>
+      <Toggle label="Market Regime" badge={domRegime.label}>
         <MarketRegime d={d} derived={derived} />
       </Toggle>
 
