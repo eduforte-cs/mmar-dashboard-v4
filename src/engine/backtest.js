@@ -289,6 +289,19 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
       avgReturn: avgReturn(noPremium),
       minReturn: noPremium.length > 0 ? +Math.min(...noPremium.map(r => r.realReturn)).toFixed(1) : null,
     },
+    // Internal hold sub-zones
+    accumulate: (() => {
+      const pts = noResults.filter(r => r.internalLevel === "accumulate");
+      return { n: pts.length, precision: precisionFn(pts), avgReturn: avgReturn(pts), minReturn: pts.length > 0 ? +Math.min(...pts.map(r => r.realReturn)).toFixed(1) : null };
+    })(),
+    neutral: (() => {
+      const pts = noResults.filter(r => r.internalLevel === "neutral");
+      return { n: pts.length, precision: precisionFn(pts), avgReturn: avgReturn(pts), minReturn: pts.length > 0 ? +Math.min(...pts.map(r => r.realReturn)).toFixed(1) : null };
+    })(),
+    caution: (() => {
+      const pts = noResults.filter(r => r.internalLevel === "caution");
+      return { n: pts.length, precision: precisionFn(pts), avgReturn: avgReturn(pts), minReturn: pts.length > 0 ? +Math.min(...pts.map(r => r.realReturn)).toFixed(1) : null };
+    })(),
   };
 
   // Métricas PL bubble — con percentiles dinámicos
