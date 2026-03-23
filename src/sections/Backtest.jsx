@@ -18,24 +18,11 @@ export default function Backtest({ d }) {
   const br = parseFloat(bt.baseRate);
   const bl = bt.byLevel;
 
-  // Spectrum rows — buy side
-  const buyRows = [
-    { label: "Strong Buy", range: "σ < -1.0", data: bl?.strongBuy, color: "#1B8A4A" },
-    { label: "Buy", range: "-1.0 ≤ σ < -0.5", data: bl?.buy, color: "#27AE60" },
-    { label: "Hold", range: "-0.5 ≤ σ < 0.5", data: bl?.no, color: t.faint },
-  ].filter(r => r.data?.n > 0);
-
-  // Spectrum rows — sell side
-  const sellRows = bt.plBubbleMetrics ? [
-    { label: "Reduce", range: "0.5 ≤ σ < 0.8", data: bt.plBubbleMetrics.reduce, color: "#F2994A" },
-    { label: "Sell", range: "σ ≥ 0.8", data: bt.plBubbleMetrics.sell, color: "#EB5757" },
-  ].filter(r => r.data?.n > 0) : [];
-
   // Calibration: find overheated bucket for the "real" sell loss rate
   const overheatedCal = bt.calibrationBuckets?.find(b => b.label?.includes("Overheated") || b.label?.includes("> 1"));
   const sellLossRate12m = overheatedCal?.lossRate;
 
-  const gridCols = "1.2fr 0.6fr 0.8fr 0.8fr 0.7fr";
+  const gridCols = "1.2fr 0.6fr 0.6fr 0.8fr 0.7fr";
   const headerStyle = { fontFamily: bd, fontSize: 10, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em" };
   const cellStyle = (i, nCols = 4) => ({ padding: "12px 12px 12px 0", borderRight: i < nCols - 1 ? `1px solid ${t.borderFaint}` : "none", borderBottom: `1px solid ${t.borderFaint}` });
 
@@ -124,60 +111,55 @@ export default function Backtest({ d }) {
         </div>
       )}
 
-      {/* ── Signal spectrum ── */}
+      {/* ── Signal spectrum — full 7 zones ── */}
       <div style={{ padding: "24px 0" }}>
         <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>
-          Signal spectrum — from strong buy to sell
+          Signal spectrum — all zones
         </div>
 
         {/* Header */}
         <div style={{ display: "grid", gridTemplateColumns: gridCols, padding: "8px 0", borderBottom: `1px solid ${t.border}` }}>
-          <div style={headerStyle}>Signal</div>
+          <div style={headerStyle}>Zone</div>
           <div style={{ ...headerStyle, textAlign: "right" }}>σ range</div>
           <div style={{ ...headerStyle, textAlign: "right" }}>n</div>
           <div style={{ ...headerStyle, textAlign: "right" }}>Avg return</div>
           <div style={{ ...headerStyle, textAlign: "right" }}>Worst</div>
         </div>
 
-        {/* Buy rows */}
-        {buyRows.map(r => {
-          const nW = r.data.precision != null ? Math.round(parseFloat(r.data.precision) / 100 * r.data.n) : null;
+        {/* All rows — 12m for buy/hold, 6m for sell */}
+        {[
+          { label: "Strong Buy", range: "σ < -1.0", data: bl?.strongBuy, color: "#1B8A4A", horizon: "12m" },
+          { label: "Buy", range: "-1.0 ≤ σ < -0.5", data: bl?.buy, color: "#27AE60", horizon: "12m" },
+          { label: "Accumulate", range: "-0.5 ≤ σ < 0", data: bl?.accumulate, color: "#6FCF97", horizon: "12m", indent: true },
+          { label: "Neutral", range: "0 ≤ σ < 0.3", data: bl?.neutral, color: t.cream, horizon: "12m", indent: true },
+          { label: "Caution", range: "0.3 ≤ σ < 0.5", data: bl?.caution, color: "#E8A838", horizon: "12m", indent: true },
+          { label: "Reduce", range: "0.5 ≤ σ < 0.8", data: bt.plBubbleMetrics?.reduce, color: "#F2994A", horizon: "6m", isSell: true },
+          { label: "Sell", range: "σ ≥ 0.8", data: bt.plBubbleMetrics?.sell, color: "#EB5757", horizon: "6m", isSell: true },
+        ].filter(r => r.data && r.data.n > 0).map(r => {
+          const d = r.data;
+          const nW = d.precision != null ? Math.round(parseFloat(d.precision) / 100 * d.n) : null;
+          const avg = r.isSell ? d.avgRet6m : d.avgReturn;
+          const worst = r.isSell ? d.maxDrawdown : d.minReturn;
+          const pctLost = r.isSell && d.pctAnyLoss != null ? `${d.pctAnyLoss}% lost` : null;
           return (
             <div key={r.label} style={{ display: "grid", gridTemplateColumns: gridCols, padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-              <div style={{ fontFamily: bd, fontSize: 13, fontWeight: 600, color: r.color }}>
+              <div style={{ fontFamily: bd, fontSize: 13, fontWeight: r.indent ? 400 : 600, color: r.color, paddingLeft: r.indent ? 16 : 0 }}>
                 {r.label}
-                {r.data.precision != null && <span style={{ fontFamily: mn, fontSize: 10, color: t.dim, marginLeft: 6 }}>{nW}/{r.data.n}</span>}
+                {nW != null && !r.isSell && <span style={{ fontFamily: mn, fontSize: 10, color: t.dim, marginLeft: 6 }}>{nW}/{d.n}</span>}
+                {pctLost && <span style={{ fontFamily: mn, fontSize: 10, color: t.dim, marginLeft: 6 }}>{pctLost}</span>}
               </div>
               <div style={{ fontFamily: mn, fontSize: 11, color: t.dim, textAlign: "right" }}>{r.range}</div>
-              <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{r.data.n}</div>
-              <div style={{ fontFamily: mn, fontSize: 12, color: r.data.avgReturn > 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>
-                {r.data.avgReturn != null ? `${r.data.avgReturn > 0 ? "+" : ""}${r.data.avgReturn}%` : "–"}
+              <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{d.n}</div>
+              <div style={{ fontFamily: mn, fontSize: 12, color: avg > 0 ? "#27AE60" : avg < 0 ? "#EB5757" : t.dim, textAlign: "right" }}>
+                {avg != null ? `${avg > 0 ? "+" : ""}${avg}%` : "–"}
+                {r.isSell && <span style={{ fontSize: 9, color: t.dim }}> 6m</span>}
               </div>
-              <div style={{ fontFamily: mn, fontSize: 11, color: r.data.minReturn >= 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>
-                {r.data.minReturn != null ? `${r.data.minReturn > 0 ? "+" : ""}${r.data.minReturn}%` : "–"}
+              <div style={{ fontFamily: mn, fontSize: 11, color: worst >= 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>
+                {worst != null ? `${worst > 0 ? "+" : ""}${worst}%` : "–"}
               </div>
             </div>
           );
         })}
-
-        {/* Sell rows — show 6m metrics */}
-        {sellRows.map(r => (
-          <div key={r.label} style={{ display: "grid", gridTemplateColumns: gridCols, padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-            <div style={{ fontFamily: bd, fontSize: 13, fontWeight: 600, color: r.color }}>
-              {r.label}
-              {r.data.pctAnyLoss != null && <span style={{ fontFamily: mn, fontSize: 10, color: t.dim, marginLeft: 6 }}>{r.data.pctAnyLoss}% lost</span>}
-            </div>
-            <div style={{ fontFamily: mn, fontSize: 11, color: t.dim, textAlign: "right" }}>{r.range}</div>
-            <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{r.data.n}</div>
-            <div style={{ fontFamily: mn, fontSize: 12, color: r.data.avgRet6m < 0 ? "#EB5757" : t.dim, textAlign: "right" }}>
-              {r.data.avgRet6m != null ? `${r.data.avgRet6m > 0 ? "+" : ""}${r.data.avgRet6m}%` : "–"}
-              <span style={{ fontSize: 9, color: t.dim }}> 6m</span>
-            </div>
-            <div style={{ fontFamily: mn, fontSize: 11, color: "#EB5757", textAlign: "right" }}>
-              {r.data.maxDrawdown != null ? `${r.data.maxDrawdown}%` : "–"}
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* ── Toggle: Sigma buckets ── */}
