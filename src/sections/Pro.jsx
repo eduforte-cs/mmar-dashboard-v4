@@ -12,7 +12,6 @@ import HurstRegime from "./pro/HurstRegime";
 import { KeyLevels, ForwardProjections, RiskMatrix } from "./pro/DataTables";
 import { MCChart, SigmaChart, MCHorizonTable } from "./pro/Charts";
 import PowerLawChart from "./pro/PowerLawChart";
-import ValidationPanel from "./pro/ValidationPanel";
 
 function TextPlaceholder({ text }) {
   const { t } = useTheme();
@@ -150,10 +149,6 @@ export default function Pro({ d, derived }) {
             Generated dynamically from Power Law + MMAR + Monte Carlo. Walk-forward validated.
           </p>
         </div>
-      </Toggle>
-
-      <Toggle label="Has this worked in the past?">
-        <ValidationPanel bt={bt} calibratedWeights={d.calibratedWeights} />
       </Toggle>
 
       {/* ═══ MARKET ═══ */}
