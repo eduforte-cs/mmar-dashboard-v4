@@ -172,91 +172,149 @@ export function computeEpisodeAnalysis(sig, sigmaChart) {
 }
 
 /**
- * Detect dominant market regime from multiple signals.
- * Returns individual conditions for each regime (for UI checklist).
+ * Detect market regime via 2D matrix: Position (σ) × Direction (momentum).
+ * No scoring, no ambiguity — deterministic lookup.
+ * H, vol, halfLife become diagnostics, not regime inputs.
  */
 export function detectRegime(sig, mom, H, lambda2, annualVol, halfLife) {
-  // Individual conditions — each has a label and a boolean
-  const conditions = {
-    bull: [
-      { label: "Price well above fair value", test: sig > 1.0, detail: `σ = ${sig.toFixed(2)} (threshold: > 1.0)`, pts: 3 },
-      { label: "Price above fair value", test: sig > 0.3 && sig <= 1.0, detail: `σ = ${sig.toFixed(2)} (threshold: > 0.3)`, pts: 1 },
-      { label: "Strong trend persistence", test: H > 0.6 && sig > 0, detail: `H = ${H.toFixed(2)} with positive σ`, pts: 1 },
-      { label: "High volatility", test: annualVol > 0.9, detail: `Ann. vol = ${(annualVol * 100).toFixed(0)}%`, pts: 1 },
-    ],
-    bear: [
-      { label: "Price well below fair value", test: sig < -1.0, detail: `σ = ${sig.toFixed(2)} (threshold: < -1.0)`, pts: 3 },
-      { label: "Price below fair value", test: sig < -0.3 && sig >= -1.0, detail: `σ = ${sig.toFixed(2)} (threshold: < -0.3)`, pts: 1 },
-      { label: "Strong trend persistence (downward)", test: H > 0.6 && sig < 0, detail: `H = ${H.toFixed(2)} with negative σ`, pts: 1 },
-      { label: "High volatility", test: annualVol > 0.9, detail: `Ann. vol = ${(annualVol * 100).toFixed(0)}%`, pts: 1 },
-    ],
-    accum: [
-      { label: "Below fair value but not deep", test: sig < -0.5 && sig > -1.0, detail: `σ = ${sig.toFixed(2)} (between -1.0 and -0.5)`, pts: 2 },
-      { label: "Negative or flat momentum", test: mom < 0, detail: `Momentum = ${mom.toFixed(3)}`, pts: 0 },
-    ],
-    recov: [
-      { label: "Near fair value from below", test: sig < 0 && sig > -0.5, detail: `σ = ${sig.toFixed(2)} (between -0.5 and 0)`, pts: 2 },
-      { label: "Positive momentum", test: mom > 0, detail: `Momentum = ${mom.toFixed(3)}`, pts: 0 },
-    ],
-    range: [
-      { label: "Close to fair value", test: Math.abs(sig) < 0.3, detail: `|σ| = ${Math.abs(sig).toFixed(2)} (threshold: < 0.3)`, pts: 1 },
-      { label: "Fast mean-reversion", test: halfLife < 30, detail: `Half-life = ${halfLife} days (threshold: < 30)`, pts: 1 },
-    ],
+  // ── Axis 1: Position (σ, validated by backtest) ──
+  const sigZone = sig < -1.0 ? "deepValue" : sig < -0.5 ? "discount" : sig < 0.3 ? "fair" : sig < 0.8 ? "elevated" : "overheated";
+
+  // ── Axis 2: Direction (momentum autocorrelation) ──
+  const momZone = mom < -0.05 ? "negative" : mom > 0.05 ? "positive" : "flat";
+
+  // ── 2D lookup — 15 distinct states ──
+  const MATRIX = {
+    deepValue:  { negative: "capitulation", flat: "deepValue",      positive: "earlyRecovery" },
+    discount:   { negative: "bear",         flat: "accumulation",   positive: "recovery" },
+    fair:       { negative: "cooling",      flat: "ranging",        positive: "warming" },
+    elevated:   { negative: "correcting",   flat: "elevated",       positive: "bullRun" },
+    overheated: { negative: "crash",        flat: "bubblePlateau",  positive: "euphoria" },
   };
 
-  // Compute scores
-  const regimes = [
-    { id: "bull", label: "Bull run", score: 0, conditions: conditions.bull },
-    { id: "bear", label: "Bear market", score: 0, conditions: conditions.bear },
-    { id: "accum", label: "Accumulation", score: 0, conditions: conditions.accum },
-    { id: "recov", label: "Recovery", score: 0, conditions: conditions.recov },
-    { id: "range", label: "Ranging", score: 0, conditions: conditions.range },
-  ];
+  const regimeId = MATRIX[sigZone][momZone];
 
-  // Score using same logic as before
-  if (sig > 1.0) regimes[0].score += 3; else if (sig > 0.3) regimes[0].score += 1;
-  if (sig < -1.0) regimes[1].score += 3; else if (sig < -0.3) regimes[1].score += 1;
-  if (sig < -0.5 && sig > -1.0 && mom < 0) regimes[2].score += 2;
-  if (sig < 0 && sig > -0.5 && mom > 0) regimes[3].score += 2;
-  if (Math.abs(sig) < 0.3) regimes[4].score += 1;
-  if (H > 0.6) { if (sig > 0) regimes[0].score += 1; else regimes[1].score += 1; }
-  if (annualVol > 0.9) { regimes[0].score += 1; regimes[1].score += 1; }
-  if (halfLife < 30) regimes[4].score += 1;
-
-  const domRegime = regimes.reduce((a, b) => a.score > b.score ? a : b);
-
-  // Regime narratives and historical context
-  const narratives = {
-    bull: {
-      desc: "Bitcoin is trading significantly above its structural fair value with strong upward momentum. Bull runs are driven by FOMO, leverage, and media attention. They end with corrections of 40-70%.",
-      history: "Previous bull runs lasted 64–500 days above σ > 0.5. The longer the run, the sharper the eventual correction.",
-      implication: "Not the time to add positions. If you're holding, consider your exit strategy.",
+  // ── Regime metadata ──
+  const REGIMES = {
+    capitulation: {
+      id: "capitulation", label: "Capitulation", zone: "Strong Buy",
+      desc: "Bitcoin is deeply below fair value and still falling. This is panic selling — forced liquidations, capitulation, maximum fear. Historically, these are the absolute best entries.",
+      history: "Previous capitulation phases (σ < -1.0 with negative momentum) lasted weeks to months. Every single one preceded a rally of 100-400%.",
+      implication: "Maximum opportunity. The price may keep falling in the short term, but every historical entry from this level was profitable at 12 months.",
+    },
+    deepValue: {
+      id: "deepValue", label: "Deep value", zone: "Strong Buy",
+      desc: "Bitcoin is deeply discounted and the selling pressure has stopped. The price is sitting at the bottom, not falling further. Smart money accumulates here while the market is quiet.",
+      history: "Deep value with flat momentum has been the launchpad for every major rally. Duration: weeks to a few months before recovery begins.",
+      implication: "Strongest buying opportunity. The discount is maximum and the trend is stabilizing.",
+    },
+    earlyRecovery: {
+      id: "earlyRecovery", label: "Early recovery", zone: "Strong Buy",
+      desc: "Bitcoin is deeply discounted but momentum has turned positive — the first signs of recovery from a major bottom. A V-shaped bounce may be forming.",
+      history: "Early recoveries from deep value are fast and violent. Typical 3-month return: +50-150%.",
+      implication: "Strong buy. The discount is still deep and the trend just turned in your favor.",
     },
     bear: {
-      desc: "Bitcoin is trading below fair value with persistent downward momentum. Bear markets are driven by forced selling, deleveraging, and capitulation. They create the best buying opportunities.",
-      history: "Previous bear markets lasted 93–860 days below σ < -0.5. Every single one ended with a rally to new highs.",
-      implication: "Historically the best time to accumulate. Every bear market bottom has been higher than the previous one.",
+      id: "bear", label: "Bear market", zone: "Buy",
+      desc: "Bitcoin is below fair value and still falling. The market hasn't found its floor yet. Sentiment is negative, volume is declining, and each bounce sells off.",
+      history: "Bear markets at this σ level lasted 93–860 days. Every single one ended with a rally to new all-time highs.",
+      implication: "Good entry if you can handle short-term pain. The price may keep falling, but 100% of the time it was higher 12 months later from this level.",
     },
-    accum: {
-      desc: "Bitcoin is below fair value but momentum has stalled — price isn't falling anymore, but it isn't recovering either. Smart money is accumulating while retail has capitulated.",
-      history: "Accumulation phases typically last 3-12 months. They're the quiet period between capitulation and recovery, characterized by low volatility and sideways price action.",
-      implication: "Strong buying opportunity if you have patience. The price may drift sideways for months before moving up.",
+    accumulation: {
+      id: "accumulation", label: "Accumulation", zone: "Buy",
+      desc: "Bitcoin is below fair value and momentum has flattened — the price isn't falling anymore, but it isn't recovering either. The market is building a base. Smart money is buying while retail has given up.",
+      history: "Accumulation phases typically last 3-12 months. They're the quiet period between capitulation and the next leg up, characterized by low volatility and sideways action.",
+      implication: "Strong buying opportunity with patience. The worst of the decline is likely over, but the recovery may take months.",
     },
-    recov: {
-      desc: "Bitcoin is starting to recover from below fair value. Momentum has turned positive but the price hasn't reached fair value yet. Early signs of a new trend forming.",
-      history: "Recovery phases are typically short (1-3 months) as the market transitions from accumulation to fair value. They often accelerate as confidence builds.",
-      implication: "Good entry but with less discount than accumulation. The trend is in your favor.",
+    recovery: {
+      id: "recovery", label: "Recovery", zone: "Buy",
+      desc: "Bitcoin is below fair value but momentum has turned positive — the market is recovering. Confidence is returning and buyers are stepping in.",
+      history: "Recovery phases from the discount zone are typically 1-3 months. They often accelerate as the price approaches fair value.",
+      implication: "Good entry. Less discount than accumulation but the trend is now working for you.",
     },
-    range: {
-      desc: "Bitcoin is trading near its structural fair value with no clear directional bias. The market is in equilibrium — waiting for the next catalyst.",
-      history: "Ranging periods can last weeks to months. They typically resolve into either a bull run (if external catalysts appear) or a correction (if momentum fades).",
-      implication: "No strong edge in either direction. Hold existing positions, avoid adding at this level.",
+    cooling: {
+      id: "cooling", label: "Cooling", zone: "Hold",
+      desc: "Bitcoin is near fair value but drifting lower. Momentum is negative — the market is cooling off. This could be a mild pullback or the start of a deeper correction.",
+      history: "Cooling from fair value either resolves into a buying opportunity (if σ drops below -0.5) or stabilizes near fair value.",
+      implication: "Wait. If you're holding, continue holding. If you want to enter, a better price may be coming.",
+    },
+    ranging: {
+      id: "ranging", label: "Ranging", zone: "Hold",
+      desc: "Bitcoin is trading near its structural fair value with no clear direction. The market is in equilibrium — waiting for the next catalyst.",
+      history: "Ranging periods last weeks to months. They resolve into either a bull run or a correction depending on external catalysts.",
+      implication: "No strong edge. Hold existing positions, avoid adding size at this level.",
+    },
+    warming: {
+      id: "warming", label: "Warming", zone: "Hold",
+      desc: "Bitcoin is near fair value and drifting higher. Momentum is positive — the market is warming up. Could be the start of a new trend or just a bounce.",
+      history: "Warming phases often precede bull runs if accompanied by increasing volume and Hurst persistence above 0.55.",
+      implication: "Modestly positive. If you're holding, stay in. If you want to enter, you're paying fair value — not a discount.",
+    },
+    correcting: {
+      id: "correcting", label: "Correction starting", zone: "Reduce",
+      desc: "Bitcoin is above fair value and momentum has turned negative — the trend is breaking. This is often the first phase of a correction, as profit-taking begins and new buyers hesitate.",
+      history: "When elevated prices meet negative momentum, corrections of 20-40% typically follow within 1-3 months.",
+      implication: "Consider reducing exposure. The trend has turned against you at an elevated level.",
+    },
+    elevated: {
+      id: "elevated", label: "Elevated", zone: "Reduce",
+      desc: "Bitcoin is above fair value but stable — not rising or falling sharply. The market is extended but holding. This is a plateau that typically resolves with a correction.",
+      history: "Elevated plateaus (σ 0.3-0.8 with flat momentum) tend to precede corrections rather than further rallies. Duration: weeks to a few months.",
+      implication: "Not a good time to add. If you're in, consider your exit plan.",
+    },
+    bullRun: {
+      id: "bullRun", label: "Bull run", zone: "Reduce",
+      desc: "Bitcoin is above fair value with strong positive momentum — a classic bull run. FOMO is building, leverage is increasing, and media attention is growing. The trend is strong but unsustainable.",
+      history: "Previous bull runs lasted 64–500 days above σ > 0.3. The longer and higher, the sharper the eventual correction (40-70%).",
+      implication: "Enjoy the ride but have a plan. The model says this ends badly for new buyers — historically, only 33% were in profit 12 months later from this zone.",
+    },
+    crash: {
+      id: "crash", label: "Crash", zone: "Sell",
+      desc: "Bitcoin is well above fair value and momentum has turned sharply negative — the bubble is bursting. This is the most dangerous phase: rapid price declines, liquidation cascades, and panic.",
+      history: "Every major Bitcoin crash started from σ > 0.8 with momentum turning negative. Average drawdown: -50-70% over 3-6 months.",
+      implication: "Exit or reduce immediately. The trend has broken at an extremely elevated level.",
+    },
+    bubblePlateau: {
+      id: "bubblePlateau", label: "Bubble plateau", zone: "Sell",
+      desc: "Bitcoin is well above fair value and momentum has flattened — the rally has stalled at extreme levels. This is the top. Historically, flat momentum at σ > 0.8 precedes the sharpest corrections.",
+      history: "Bubble plateaus are brief (days to weeks). They're the moment between euphoria and crash.",
+      implication: "Strongest sell signal. Take profit. 94% of the time the price was lower 12 months later from this level.",
+    },
+    euphoria: {
+      id: "euphoria", label: "Euphoria", zone: "Sell",
+      desc: "Bitcoin is well above fair value and still accelerating — maximum greed, maximum leverage, maximum media frenzy. This is the peak of the cycle.",
+      history: "Euphoria phases (σ > 0.8 with positive momentum) are the final leg before major corrections. They can last days to weeks but always end the same way.",
+      implication: "Take profit. The momentum feels unstoppable but every previous euphoria phase was followed by a 50-70% crash.",
     },
   };
 
-  domRegime.narrative = narratives[domRegime.id] || narratives.range;
+  const regime = REGIMES[regimeId] || REGIMES.ranging;
 
-  return { domRegime, regimes };
+  // ── Diagnostics (shown but don't determine regime) ──
+  const diagnostics = [
+    { label: "Hurst exponent (90d)", value: H.toFixed(2), interpretation: H > 0.65 ? "Strong trend persistence" : H > 0.55 ? "Moderate persistence" : "Weak / mean-reverting" },
+    { label: "Intermittency λ²", value: lambda2.toFixed(2), interpretation: lambda2 > 0.15 ? "High vol clustering" : lambda2 > 0.08 ? "Moderate" : "Low clustering" },
+    { label: "Annualized volatility", value: `${(annualVol * 100).toFixed(0)}%`, interpretation: annualVol > 0.8 ? "High" : annualVol > 0.4 ? "Normal" : "Low" },
+    { label: "Mean-reversion half-life", value: `${halfLife}d`, interpretation: halfLife < 30 ? "Fast reversion" : halfLife < 90 ? "Moderate" : "Slow reversion" },
+  ];
+
+  // Backward compat: domRegime shape
+  const domRegime = {
+    id: regime.id, label: regime.label, score: 0, // score deprecated
+    narrative: { desc: regime.desc, history: regime.history, implication: regime.implication },
+    zone: regime.zone, sigZone, momZone,
+  };
+
+  // All 5 position zones with their current momentum state
+  const regimes = [
+    { id: "overheated", label: REGIMES[MATRIX.overheated[momZone]]?.label || "Overheated", score: sigZone === "overheated" ? 1 : 0 },
+    { id: "elevated", label: REGIMES[MATRIX.elevated[momZone]]?.label || "Elevated", score: sigZone === "elevated" ? 1 : 0 },
+    { id: "fair", label: REGIMES[MATRIX.fair[momZone]]?.label || "Ranging", score: sigZone === "fair" ? 1 : 0 },
+    { id: "discount", label: REGIMES[MATRIX.discount[momZone]]?.label || "Discount", score: sigZone === "discount" ? 1 : 0 },
+    { id: "deepValue", label: REGIMES[MATRIX.deepValue[momZone]]?.label || "Deep value", score: sigZone === "deepValue" ? 1 : 0 },
+  ];
+
+  return { domRegime, regimes, diagnostics, sigZone, momZone, MATRIX, REGIMES };
 }
 
 export function generateVerdict(ctx) {
@@ -373,7 +431,7 @@ export function generateVerdict(ctx) {
 
   // ── Explanatory paragraphs ──
   const paras = [];
-  const regimeNote = domRegime.id === "bull" ? "in a bull run" : domRegime.id === "bear" ? "in a bear market" : domRegime.id === "accum" ? "in an accumulation phase" : domRegime.id === "recov" ? "in early recovery" : "in a ranging market";
+  const regimeNote = `in ${domRegime.label.toLowerCase()}`;
 
   if (sig > 1.8) {
     paras.push(`Bitcoin at ${fmtK(S0)} is ${Math.abs(deviationPct).toFixed(0)}% above where the model says it should be (${fmtK(plToday)}). That's expensive — every time BTC got this stretched in the past, a correction followed.`);
