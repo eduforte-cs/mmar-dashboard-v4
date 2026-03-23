@@ -11,6 +11,7 @@ const LEFT_TABS = [
 
 const RIGHT_TABS = [
   { label: "Backtest", key: "backtest" },
+  { label: "Compare", key: "compare" },
   { label: "FAQ", key: "faq" },
   { label: "Whitepaper", key: "whitepaper" },
   { label: "About", key: "about" },
