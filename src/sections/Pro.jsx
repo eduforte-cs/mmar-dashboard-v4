@@ -1,7 +1,7 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
-import { fmtK, fmt, daysSinceGenesis } from "../engine/constants.js";
+import { fmtK, fmt } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
 import Toggle from "../components/Toggle";
 import CatLabel from "../components/CatLabel";
@@ -9,16 +9,11 @@ import DriversPanel from "./pro/DriversPanel";
 import TimeToFairValue from "./pro/TimeToFairValue";
 import MarketRegime from "./pro/MarketRegime";
 import HurstRegime from "./pro/HurstRegime";
-import { KeyLevels, ForwardProjections, RiskMatrix } from "./pro/DataTables";
+import { RiskMatrix } from "./pro/DataTables";
 import { MCChart, SigmaChart, MCHorizonTable } from "./pro/Charts";
 import PowerLawChart from "./pro/PowerLawChart";
 
-function TextPlaceholder({ text }) {
-  const { t } = useTheme();
-  return <p style={{ fontFamily: bd, fontSize: 16, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: 0 }}>{text}</p>;
-}
-
-export default function Pro({ d, derived }) {
+export default function Pro({ d, derived, setTab }) {
   const { t } = useTheme();
   if (!d || !derived) return null;
 
@@ -26,46 +21,51 @@ export default function Pro({ d, derived }) {
     ransac, evtCap, kappa, halfLife, annualVol, S0, a, b, t0,
     backtestResults, percentiles, percentiles3y, sigmaChart,
   } = d;
-  const { verdict, domRegime, mcLossHorizons, supportPrice, udRatio, episode } = derived;
+  const { verdict, domRegime, mcLossHorizons, supportPrice, episode } = derived;
 
-  // Compute PL forecast data for MC charts
-  const plForecast365 = Array.from({ length: 74 }, (_, i) => ({ t: i * 5, pl: +plPrice(a, b, t0 + i * 5).toFixed(0) }));
+  const bt = backtestResults;
+
+  // PL forecast data
   const plForecast3y = Array.from({ length: Math.ceil(365 * 3 / 5) + 1 }, (_, i) => ({ t: i * 5, pl: +plPrice(a, b, t0 + i * 5).toFixed(0) }));
-  const last = percentiles[percentiles.length - 1];
   const last3y = percentiles3y[percentiles3y.length - 1];
 
   // Metrics strip
   const metrics = [
     { l: "Hurst (90d)", v: H.toFixed(2), s: H > 0.55 ? "Persistent" : "Mean-reverting" },
     { l: "λ² multifractal", v: lambda2.toFixed(2), s: "Partition fn" },
-    { l: "Buy score", v: verdict.buyScore.toFixed(2), s: `Signal: ${verdict.subtitle}` },
+    { l: "Signal", v: verdict.subtitle, s: `σ = ${sig.toFixed(2)}`, color: verdict.subtitleColor },
     { l: "Regime", v: domRegime.label.split(" ")[0], s: `${domRegime.score}/7 conditions` },
   ];
 
-  // Temperature
-  const tempLabel = Math.abs(sig) > 1.5 ? "Hot" : sig > 0.5 ? "Warm" : sig < -0.5 ? "Cool" : "Neutral";
-
-  // MC loss display
-  const mcLossDisplay = mcLossHorizons.filter(h => h.days >= 90);
-
-  // PL bands at 1Y
+  // Key price levels
   const pl1y = plPrice(a, b, t0 + 365);
-  const plBands = [
-    { l: "Bubble zone", v: fmtK(Math.exp(Math.log(pl1y) + resMean + 2 * resStd)), pct: `+${((Math.exp(Math.log(pl1y) + resMean + 2 * resStd) - S0) / S0 * 100).toFixed(0)}%` },
-    { l: "Cycle ceiling", v: fmtK(Math.exp(Math.log(pl1y) + resMean + resStd)), pct: `+${((Math.exp(Math.log(pl1y) + resMean + resStd) - S0) / S0 * 100).toFixed(0)}%` },
-    { l: "Fair value", v: fmtK(pl1y), pct: `${((pl1y - S0) / S0 * 100) >= 0 ? "+" : ""}${((pl1y - S0) / S0 * 100).toFixed(0)}%` },
-    { l: "Mild discount", v: fmtK(Math.exp(Math.log(pl1y) + resMean - 0.5 * resStd)), pct: `${((Math.exp(Math.log(pl1y) + resMean - 0.5 * resStd) - S0) / S0 * 100).toFixed(0)}%` },
-    { l: "Support floor", v: fmtK(ransac ? Math.exp(ransac.a + ransac.b * Math.log(t0 + 365) + ransac.floor) : supportPrice), pct: `${((supportPrice - S0) / S0 * 100).toFixed(0)}%` },
+  const pl2y = plPrice(a, b, t0 + 730);
+  const pl3y = plPrice(a, b, t0 + 1095);
+  const supportAt = (days) => ransac ? Math.exp(ransac.a + ransac.b * Math.log(t0 + days) + ransac.floor) : supportPrice;
+  const keyLevels = [
+    { l: "Bubble zone (+2σ)", v: Math.exp(Math.log(plPrice(a, b, t0)) + resMean + 2 * resStd), color: "#EB5757" },
+    { l: "Cycle ceiling (+1σ)", v: Math.exp(Math.log(plPrice(a, b, t0)) + resMean + resStd), color: "#F2994A" },
+    { l: "Fair value", v: plPrice(a, b, t0), color: t.cream },
+    { l: "current", v: S0, color: "#27AE60" },
+    { l: "Support floor", v: supportPrice, color: "#27AE60" },
   ];
 
-  // Backtest stats
-  const bt = backtestResults;
-  const btMetrics = bt ? [
-    { l: "Buy accuracy", v: `${bt.precision || "–"}%`, s: `${bt.nYes} buy signals` },
-    { l: "Avg return buy", v: `+${bt.avgReturnYes || "–"}%`, s: "12m horizon" },
-    { l: "Return hold", v: `${bt.avgReturnHold >= 0 ? "+" : ""}${bt.avgReturnHold || "–"}%`, s: `${bt.nNo} hold periods` },
-    { l: "Return sell", v: `${bt.avgReturnSell || "–"}%`, s: "6m after sell signal" },
-  ] : [];
+  // MC summary
+  const last1y = percentiles[percentiles.length - 1];
+  const pProfit1y = last1y ? Math.round(100 - (mcLossHorizons.find(h => h.days === 365)?.pLoss || 50)) : null;
+  const pProfit3y = last3y ? Math.round(100 - (mcLossHorizons.find(h => h.days === 1095)?.pLoss || 50)) : null;
+
+  // Percentile table rows
+  const pctRows = [
+    { label: "3 months", pcts: percentiles[Math.min(Math.floor(90 / 5), percentiles.length - 1)], pl: plPrice(a, b, t0 + 90) },
+    { label: "6 months", pcts: percentiles[Math.min(Math.floor(182 / 5), percentiles.length - 1)], pl: plPrice(a, b, t0 + 182) },
+    { label: "1 year", pcts: last1y, pl: pl1y },
+    { label: "2 years", pcts: percentiles3y[Math.min(Math.floor(730 / 5), percentiles3y.length - 1)], pl: pl2y },
+    { label: "3 years", pcts: last3y, pl: pl3y },
+  ].filter(r => r.pcts);
+
+  // Loss curve
+  const lossCurve = mcLossHorizons.filter(h => h.days >= 30);
 
   // Model parameters
   const modelParams = [
@@ -86,6 +86,11 @@ export default function Pro({ d, derived }) {
     { l: "RANSAC floor", v: fmt(ransac?.floor, 2), s: "ln-space" },
   ];
 
+  // Helpers
+  const gridCols4 = "1fr 1fr 1fr 1fr";
+  const tableHead = { fontFamily: bd, fontSize: 10, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", padding: "8px 8px", borderBottom: `1px solid ${t.border}` };
+  const tableCell = { fontFamily: mn, fontSize: 13, color: t.cream, padding: "8px 8px", borderBottom: `1px solid ${t.borderFaint}` };
+
   return (
     <>
       {/* ── METRICS STRIP ── */}
@@ -93,7 +98,7 @@ export default function Pro({ d, derived }) {
         {metrics.map((m, i) => (
           <div key={m.l} style={{ padding: "18px 0", borderRight: (i % 2 === 0) ? `1px solid ${t.border}` : "none", paddingRight: (i % 2 === 0) ? 24 : 0, paddingLeft: (i % 2 === 1) ? 24 : 0, borderBottom: i < 2 ? `1px solid ${t.borderFaint}` : "none" }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{m.l}</div>
-            <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: t.cream }}>{m.v}</div>
+            <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: m.color || t.cream }}>{m.v}</div>
             <div style={{ fontFamily: bd, fontSize: 10, color: t.faint, marginTop: 2 }}>{m.s}</div>
           </div>
         ))}
@@ -102,88 +107,20 @@ export default function Pro({ d, derived }) {
       {/* ═══ VERDICT ═══ */}
       <CatLabel label="Verdict" />
 
-      <Toggle label="The short answer" badge={verdict.subtitle} defaultOpen>
-        <div className="inner-grid" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 0, marginBottom: 24 }}>
-          {verdict.horizonCards.map((c, i) => (
-            <div key={c.horizon} style={{ padding: "20px 0", borderBottom: i === 0 ? `1px solid ${t.borderFaint}` : "none" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-                <div>
-                  <span style={{ fontFamily: bd, fontSize: 10, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>{c.horizon}</span>
-                  <span style={{ fontFamily: bd, fontSize: 30, fontWeight: 700, color: t.cream, marginLeft: 14, letterSpacing: "-0.03em" }}>{fmtK(c.plTarget)}</span>
-                  <span style={{ fontFamily: mn, fontSize: 13, color: t.dim, marginLeft: 8 }}>{c.plReturn >= 0 ? "+" : ""}{c.plReturn.toFixed(0)}%</span>
-                </div>
-                <span style={{ fontFamily: bd, fontSize: 11, color: t.dim }}>{c.verdict}</span>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr" }}>
-                {[{ l: "Profit", v: `${c.pProfit.toFixed(0)}%` }, { l: "Loss", v: `${c.pLoss.toFixed(0)}%` }, { l: "Reaches FV", v: `${c.pFairValue.toFixed(0)}%` }, { l: "Worst case", v: fmtK(c.worstCase) }].map((s, j) => (
-                  <div key={s.l} style={{ paddingRight: j < 3 ? 14 : 0, borderRight: j < 3 ? `1px solid ${t.borderFaint}` : "none", paddingLeft: j > 0 ? 14 : 0 }}>
-                    <div style={{ fontFamily: bd, fontSize: 8, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.l}</div>
-                    <div style={{ fontFamily: mn, fontSize: 15, color: t.cream, fontWeight: 500, marginTop: 2 }}>{s.v}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        {/* Backtest summary */}
-        {bt && (
-          <div style={{ padding: "14px 0", borderTop: `1px solid ${t.borderFaint}` }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Walk-forward backtest</div>
-            <div style={{ fontFamily: mn, fontSize: 12, color: t.dim, lineHeight: 1.8 }}>
-              Precision: {bt.precision}% · Avg return buy: +{bt.avgReturnYes}% · Hold: {bt.avgReturnHold >= 0 ? "+" : ""}{bt.avgReturnHold}% · n={bt.nYes + bt.nNo}
-            </div>
-          </div>
-        )}
-      </Toggle>
-
-      <Toggle label="What's driving this" badge={verdict.buyScore.toFixed(2)}>
-        <DriversPanel verdict={verdict} sig={sig} backtestResults={bt} />
-      </Toggle>
-
-      <Toggle label="The long answer" section="Narrative" textOnly>
+      <Toggle label="The long answer" defaultOpen>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {verdict.paras.map((p, i) => (
-            <p key={i} style={{ fontFamily: bd, fontSize: 17, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: 0 }}>{p}</p>
+          {(verdict.parasLite || verdict.paras || []).map((p, i) => (
+            <p key={i} style={{
+              fontFamily: bd, fontSize: 17, fontWeight: 400,
+              color: i % 2 === 0 ? t.cream : t.faint,
+              lineHeight: 1.7, margin: 0,
+            }}>{p}</p>
           ))}
-          <p style={{ fontFamily: bd, fontSize: 12, color: t.faint, fontStyle: "italic", marginTop: 8 }}>
-            Generated dynamically from Power Law + MMAR + Monte Carlo. Walk-forward validated.
-          </p>
         </div>
       </Toggle>
 
-      {/* ═══ MARKET ═══ */}
-      <CatLabel label="Market" />
-
-      <Toggle label="Live snapshot" badge="Live" defaultOpen>
-        <div className="data-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 0, borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 20 }}>
-          {[
-            { l: "Risk / Reward (1Y)", v: `${udRatio.toFixed(1)}x`, s: udRatio > 2 ? "Favorable asymmetry" : "Neutral" },
-            { l: "Market temperature", v: tempLabel, s: `${sig >= 0 ? "Above" : "Below"} fair value zone` },
-          ].map((dm, i) => (
-            <div key={dm.l} style={{ padding: "14px 0", borderBottom: i === 0 ? `1px solid ${t.borderFaint}` : "none" }}>
-              <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{dm.l}</div>
-              <div style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.cream }}>{dm.v}</div>
-              <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 2 }}>{dm.s}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Power Law — 1 Year Forward</div>
-        {plBands.map(lv => (
-          <div key={lv.l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-            <span style={{ fontFamily: bd, fontSize: 13, color: t.cream, fontWeight: 400 }}>{lv.l}</span>
-            <div style={{ display: "flex", gap: 16 }}>
-              <span style={{ fontFamily: mn, fontSize: 13, color: t.cream, fontWeight: 500 }}>{lv.v}</span>
-              <span style={{ fontFamily: mn, fontSize: 11, color: t.faint, width: 48, textAlign: "right" }}>{lv.pct}</span>
-            </div>
-          </div>
-        ))}
-        <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 24, marginBottom: 10 }}>Probability of loss — Monte Carlo</div>
-        {mcLossDisplay.map(r => (
-          <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-            <span style={{ fontFamily: bd, fontSize: 13, color: t.dim }}>{r.label}</span>
-            <span style={{ fontFamily: mn, fontSize: 13, color: t.cream, fontWeight: 500 }}>{r.pLoss?.toFixed(0) || "–"}%</span>
-          </div>
-        ))}
+      <Toggle label="What's driving this" badge={`σ = ${sig.toFixed(2)}`}>
+        <DriversPanel verdict={verdict} sig={sig} backtestResults={bt} />
       </Toggle>
 
       <Toggle label="Market Regime" badge={domRegime.label.split(" ")[0]}>
@@ -205,37 +142,121 @@ export default function Pro({ d, derived }) {
       {/* ═══ MODELS ═══ */}
       <CatLabel label="Models" />
 
-      <Toggle label="Power Law Model">
+      {/* ── Power Law ── */}
+      <Toggle label="Power Law">
         <PowerLawChart d={d} />
-      </Toggle>
 
-      <Toggle label="Key Price Levels">
-        <KeyLevels d={d} />
-      </Toggle>
-
-      <Toggle label="Power Law — Forward Projections">
-        <ForwardProjections d={d} />
-      </Toggle>
-
-      <Toggle label="Monte Carlo — 1 Year">
-        <MCChart
-          percentiles={percentiles}
-          plForecast={plForecast365}
-          horizon="1Y"
-          stats={[
-            { label: "Bear (P5)", value: fmtK(last?.p5) },
-            { label: "Base (P50)", value: fmtK(last?.p50) },
-            { label: "Bull (P95)", value: fmtK(last?.p95) },
-            { label: "PL target", value: fmtK(d.pl1y) },
-          ]}
-          t={t}
-        />
+        {/* Key levels */}
         <div style={{ marginTop: 16 }}>
-          <MCHorizonTable d={d} t={t} />
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Key price levels</div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Level", "Price", "From today"].map(h => (
+                  <th key={h} style={{ ...tableHead, textAlign: h === "Level" ? "left" : "right" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {keyLevels.map(lv => (
+                <tr key={lv.l} style={lv.l === "current" ? { background: t.bg === "#0D0D0B" ? "rgba(39,174,96,0.08)" : "rgba(39,174,96,0.06)" } : {}}>
+                  <td style={{ ...tableCell, fontFamily: bd, fontWeight: lv.l === "current" ? 600 : 400, color: lv.l === "current" ? "#27AE60" : t.cream }}>
+                    {lv.l === "current" ? `→ Current price (σ ${sig.toFixed(2)})` : lv.l}
+                  </td>
+                  <td style={{ ...tableCell, textAlign: "right", color: lv.color, fontWeight: lv.l === "current" ? 600 : 400 }}>{fmtK(lv.v)}</td>
+                  <td style={{ ...tableCell, textAlign: "right", color: t.faint }}>
+                    {lv.l !== "current" ? `${((lv.v - S0) / S0 * 100) >= 0 ? "+" : ""}${((lv.v - S0) / S0 * 100).toFixed(0)}%` : ""}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Forward projections */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Forward projections</div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Horizon", "Fair value", "Return", "Support floor"].map(h => (
+                  <th key={h} style={{ ...tableHead, textAlign: h === "Horizon" ? "left" : "right" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: "1 year", fv: pl1y, sup: supportAt(365) },
+                { label: "2 years", fv: pl2y, sup: supportAt(730) },
+                { label: "3 years", fv: pl3y, sup: supportAt(1095) },
+              ].map(row => (
+                <tr key={row.label}>
+                  <td style={{ ...tableCell, fontFamily: bd, color: t.cream }}>{row.label}</td>
+                  <td style={{ ...tableCell, textAlign: "right" }}>{fmtK(row.fv)}</td>
+                  <td style={{ ...tableCell, textAlign: "right", color: "#27AE60" }}>+{((row.fv - S0) / S0 * 100).toFixed(0)}%</td>
+                  <td style={{ ...tableCell, textAlign: "right", color: t.faint }}>{fmtK(row.sup)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Full-screen portal */}
+        {setTab && (
+          <div onClick={() => setTab("pl")} style={{
+            display: "flex", alignItems: "center", gap: 6,
+            fontFamily: bd, fontSize: 12, color: t.dim,
+            padding: "12px 16px", marginTop: 16, cursor: "pointer",
+            border: `1px solid ${t.border}`, borderRadius: 6,
+          }}>
+            <span style={{ fontSize: 14 }}>↗</span> Open full-screen Power Law view
+          </div>
+        )}
+
+        <div style={{ fontFamily: bd, fontSize: 11, color: t.dim, padding: "12px 0", borderTop: `1px solid ${t.borderFaint}`, marginTop: 12 }}>
+          WLS with exponential decay (4-year half-life) · RANSAC for support floor · R² = {r2.toFixed(3)}
         </div>
       </Toggle>
 
-      <Toggle label="Monte Carlo — 3 Years">
+      {/* ── Monte Carlo (unified) ── */}
+      <Toggle label="Monte Carlo">
+        {/* Summary strip */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${t.border}`, marginBottom: 16 }}>
+          {/* 1Y */}
+          <div style={{ padding: "0 16px 14px 0", borderRight: `1px solid ${t.border}` }}>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>1 year outcome</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>Median</div>
+                <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: t.cream }}>{last1y ? fmtK(last1y.p50) : "–"}</div>
+                <div style={{ fontFamily: mn, fontSize: 11, color: "#27AE60" }}>{last1y ? `+${((last1y.p50 - S0) / S0 * 100).toFixed(0)}%` : ""}</div>
+              </div>
+              <div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>Profitable</div>
+                <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: "#27AE60" }}>{pProfit1y != null ? `${pProfit1y}%` : "–"}</div>
+                <div style={{ fontFamily: bd, fontSize: 10, color: t.faint }}>of simulations</div>
+              </div>
+            </div>
+          </div>
+          {/* 3Y */}
+          <div style={{ padding: "0 0 14px 16px" }}>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>3 year outcome</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>Median</div>
+                <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: t.cream }}>{last3y ? fmtK(last3y.p50) : "–"}</div>
+                <div style={{ fontFamily: mn, fontSize: 11, color: "#27AE60" }}>{last3y ? `+${((last3y.p50 - S0) / S0 * 100).toFixed(0)}%` : ""}</div>
+              </div>
+              <div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>Profitable</div>
+                <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: "#27AE60" }}>{pProfit3y != null ? `${pProfit3y}%` : "–"}</div>
+                <div style={{ fontFamily: bd, fontSize: 10, color: t.faint }}>of simulations</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3Y fan chart */}
         <MCChart
           percentiles={percentiles3y}
           plForecast={plForecast3y}
@@ -248,6 +269,75 @@ export default function Pro({ d, derived }) {
           ]}
           t={t}
         />
+
+        {/* Percentile table */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Percentile table</div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
+              <thead>
+                <tr>
+                  {["Horizon", "Bear (P5)", "P25", "Median", "P75", "Bull (P95)", "PL target"].map((h, i) => (
+                    <th key={h} style={{ ...tableHead, textAlign: i === 0 ? "left" : "right" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pctRows.map(row => (
+                  <tr key={row.label}>
+                    <td style={{ ...tableCell, fontFamily: bd, color: row.label === "3 years" ? t.cream : t.faint, fontWeight: row.label === "3 years" ? 600 : 400 }}>{row.label}</td>
+                    <td style={{ ...tableCell, textAlign: "right", color: row.pcts.p5 < S0 ? "#EB5757" : t.cream }}>{fmtK(row.pcts.p5)}</td>
+                    <td style={{ ...tableCell, textAlign: "right" }}>{fmtK(row.pcts.p25)}</td>
+                    <td style={{ ...tableCell, textAlign: "right", fontWeight: 600 }}>{fmtK(row.pcts.p50)}</td>
+                    <td style={{ ...tableCell, textAlign: "right" }}>{fmtK(row.pcts.p75)}</td>
+                    <td style={{ ...tableCell, textAlign: "right", color: "#27AE60" }}>{fmtK(row.pcts.p95)}</td>
+                    <td style={{ ...tableCell, textAlign: "right", color: t.faint }}>{fmtK(row.pl)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Loss curve */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Probability of loss</div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Horizon", "P(loss)", "Worst 5%", "Median"].map((h, i) => (
+                  <th key={h} style={{ ...tableHead, textAlign: i === 0 ? "left" : "right" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {lossCurve.map(row => (
+                <tr key={row.label}>
+                  <td style={{ ...tableCell, fontFamily: bd, color: t.faint }}>{row.label}</td>
+                  <td style={{ ...tableCell, textAlign: "right", color: row.pLoss > 20 ? "#EB5757" : row.pLoss > 10 ? "#F2994A" : "#27AE60" }}>{row.pLoss?.toFixed(0) || "–"}%</td>
+                  <td style={{ ...tableCell, textAlign: "right", color: row.p5 < S0 ? "#EB5757" : t.cream }}>{row.p5 ? fmtK(row.p5) : "–"}</td>
+                  <td style={{ ...tableCell, textAlign: "right" }}>{row.p50 ? fmtK(row.p50) : "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Full-screen portal */}
+        {setTab && (
+          <div onClick={() => setTab("mc")} style={{
+            display: "flex", alignItems: "center", gap: 6,
+            fontFamily: bd, fontSize: 12, color: t.dim,
+            padding: "12px 16px", marginTop: 16, cursor: "pointer",
+            border: `1px solid ${t.border}`, borderRadius: 6,
+          }}>
+            <span style={{ fontSize: 14 }}>↗</span> Open full-screen Monte Carlo view
+          </div>
+        )}
+
+        <div style={{ fontFamily: bd, fontSize: 11, color: t.dim, padding: "12px 0", borderTop: `1px solid ${t.borderFaint}`, marginTop: 12 }}>
+          2,000 paths · MMAR/Hurst dynamics · Empirical shock resampling · Reflective floor at RANSAC support
+        </div>
       </Toggle>
 
       <Toggle label="Risk Matrix — PL vs Monte Carlo">
@@ -265,22 +355,20 @@ export default function Pro({ d, derived }) {
           ))}
         </div>
 
-        {/* Burger / Santostasi comparison */}
+        {/* Burger comparison */}
         {(() => {
           const LN10 = Math.log(10);
           const a10 = a / LN10;
-          const b10 = b;
-          const burgerA = -17.016;
-          const burgerB = 5.845;
+          const burgerA = -17.016, burgerB = 5.845;
           const deltaA = ((a10 - burgerA) / Math.abs(burgerA) * 100);
-          const deltaB = ((b10 - burgerB) / burgerB * 100);
-          const today = daysSinceGenesis(new Date().toISOString().slice(0, 10));
+          const deltaB = ((b - burgerB) / burgerB * 100);
+          const today = t0;
           const ourFV = plPrice(a, b, today);
           const burgerFV = Math.pow(10, burgerA + burgerB * Math.log10(today));
           const fvDelta = ((ourFV - burgerFV) / burgerFV * 100);
           const rows = [
             { param: "Intercept (a)", burger: burgerA.toFixed(3), ours: a10.toFixed(3), delta: deltaA },
-            { param: "Slope (b)", burger: burgerB.toFixed(3), ours: b10.toFixed(3), delta: deltaB },
+            { param: "Slope (b)", burger: burgerB.toFixed(3), ours: b.toFixed(3), delta: deltaB },
             { param: "R²", burger: "0.931", ours: fmt(r2, 4), delta: null },
             { param: "Fair value today", burger: fmtK(burgerFV), ours: fmtK(ourFV), delta: fvDelta },
           ];
@@ -289,32 +377,27 @@ export default function Pro({ d, derived }) {
               <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
                 Comparison with Burger / Santostasi (OLS, log₁₀)
               </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ borderBottom: `1px solid ${t.border}` }}>
-                      {["Parameter", "Burger (OLS)", "Ours (WLS)", "Delta"].map(h => (
-                        <th key={h} style={{ padding: "6px 8px", textAlign: h === "Parameter" ? "left" : "right", fontFamily: bd, color: t.faint, fontWeight: 500, fontSize: 11 }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map(row => (
-                      <tr key={row.param} style={{ borderBottom: `1px solid ${t.borderFaint}` }}>
-                        <td style={{ padding: "8px 8px", fontFamily: bd, color: t.cream, fontWeight: 500 }}>{row.param}</td>
-                        <td style={{ padding: "8px 8px", textAlign: "right", fontFamily: mn, color: t.faint }}>{row.burger}</td>
-                        <td style={{ padding: "8px 8px", textAlign: "right", fontFamily: mn, color: t.cream, fontWeight: 600 }}>{row.ours}</td>
-                        <td style={{ padding: "8px 8px", textAlign: "right", fontFamily: mn, fontSize: 11, color: row.delta === null ? t.faint : Math.abs(row.delta) < 5 ? "#27AE60" : Math.abs(row.delta) < 15 ? "#F2994A" : "#EB5757" }}>
-                          {row.delta !== null ? `${row.delta >= 0 ? "+" : ""}${row.delta.toFixed(1)}%` : "–"}
-                        </td>
-                      </tr>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                    {["Parameter", "Burger (OLS)", "Ours (WLS)", "Delta"].map(h => (
+                      <th key={h} style={{ padding: "6px 8px", textAlign: h === "Parameter" ? "left" : "right", fontFamily: bd, color: t.faint, fontWeight: 500, fontSize: 11 }}>{h}</th>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-              <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 12, lineHeight: 1.5 }}>
-                Burger's parameters are from his original OLS regression (~2019). Our WLS gives more weight to recent liquid-market data. Our model refits from scratch on every page load with all data through today, while Burger's params are frozen. A fair value delta under ±15% indicates strong structural agreement.
-              </p>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map(row => (
+                    <tr key={row.param} style={{ borderBottom: `1px solid ${t.borderFaint}` }}>
+                      <td style={{ padding: "8px", fontFamily: bd, color: t.cream, fontWeight: 500 }}>{row.param}</td>
+                      <td style={{ padding: "8px", textAlign: "right", fontFamily: mn, color: t.faint }}>{row.burger}</td>
+                      <td style={{ padding: "8px", textAlign: "right", fontFamily: mn, color: t.cream, fontWeight: 600 }}>{row.ours}</td>
+                      <td style={{ padding: "8px", textAlign: "right", fontFamily: mn, fontSize: 11, color: row.delta === null ? t.faint : Math.abs(row.delta) < 5 ? "#27AE60" : Math.abs(row.delta) < 15 ? "#F2994A" : "#EB5757" }}>
+                        {row.delta !== null ? `${row.delta >= 0 ? "+" : ""}${row.delta.toFixed(1)}%` : "–"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           );
         })()}
