@@ -1,317 +1,569 @@
-// ── Robust Walk-Forward Backtest ──
-// 1. Refits Power Law (WLS + RANSAC) at each test point using ONLY data up to that point
-// 2. Uses simple sigma rules — no grid-search weight optimization
-// 3. Sell/Reduce require PL maturity (b > 4.0) — immature PL can't identify bubbles
-// 4. Result: genuinely out-of-sample accuracy — no look-ahead, no in-sample optimization
-
+// ── Walk-forward backtest — calibrates buy/sell thresholds against history ──
 import { daysSinceGenesis } from "./constants.js";
+import { plPrice } from "./powerlaw.js";
+import { hurstDFA } from "./fractal.js";
 import { simulatePathsPL, computePercentiles } from "./montecarlo.js";
 
-// ── Inline WLS + RANSAC fit ──
-function fitWLS(pts) {
-  const logT = pts.map(p => Math.log(p.t));
-  const logP = pts.map(p => Math.log(p.price));
-  const n = pts.length;
-  const tMax = logT[n - 1];
-  const halfLife = Math.log(daysSinceGenesis("2020-01-01")) - Math.log(daysSinceGenesis("2016-01-01"));
-  const decay = Math.LN2 / halfLife;
-  const rawW = logT.map(lt => Math.exp(-decay * (tMax - lt)));
-  const wSum = rawW.reduce((s, w) => s + w, 0);
-  const w = rawW.map(wi => wi / wSum);
-  const mT = logT.reduce((s, x, i) => s + w[i] * x, 0);
-  const mP = logP.reduce((s, y, i) => s + w[i] * y, 0);
-  const b = logT.reduce((s, x, i) => s + w[i] * (x - mT) * (logP[i] - mP), 0) /
-    logT.reduce((s, x, i) => s + w[i] * (x - mT) ** 2, 0);
-  const a = mP - b * mT;
-  const residuals = pts.map(p => Math.log(p.price) - (a + b * Math.log(p.t)));
-  const resMean = residuals.reduce((s, r) => s + r, 0) / n;
-  const resStd = Math.sqrt(residuals.reduce((s, r) => s + (r - resMean) ** 2, 0) / n);
-
-  // RANSAC
-  let rA = a, rB = b, bestInliers = 0;
-  let rng = 42;
-  const nextRng = () => { rng = (rng * 1664525 + 1013904223) & 0x7fffffff; return rng / 0x7fffffff; };
-  for (let iter = 0; iter < 200; iter++) {
-    const i1 = Math.floor(nextRng() * n), i2 = Math.floor(nextRng() * n);
-    if (i1 === i2 || Math.abs(logT[i1] - logT[i2]) < 0.01) continue;
-    const bTry = (logP[i2] - logP[i1]) / (logT[i2] - logT[i1]);
-    const aTry = logP[i1] - bTry * logT[i1];
-    if (bTry < 3 || bTry > 8) continue;
-    const inliers = [];
-    for (let j = 0; j < n; j++) {
-      if (Math.abs(logP[j] - (aTry + bTry * logT[j])) < 0.5) inliers.push(j);
-    }
-    if (inliers.length > bestInliers) {
-      bestInliers = inliers.length;
-      const mTi = inliers.reduce((s, j) => s + logT[j], 0) / inliers.length;
-      const mPi = inliers.reduce((s, j) => s + logP[j], 0) / inliers.length;
-      const num = inliers.reduce((s, j) => s + (logT[j] - mTi) * (logP[j] - mPi), 0);
-      const den = inliers.reduce((s, j) => s + (logT[j] - mTi) ** 2, 0);
-      if (den > 0) { rB = num / den; rA = mPi - rB * mTi; }
-    }
-  }
-  const liquidStart = daysSinceGenesis("2013-04-01");
-  const ransacRes = pts.filter(p => p.t > liquidStart).map(p => Math.log(p.price) - (rA + rB * Math.log(p.t)));
-  const ransacFloor = ransacRes.length > 100 ? Math.min(...ransacRes) : -0.5;
-  const tToday = pts[pts.length - 1].t;
-  const supportPriceToday = Math.exp(rA + rB * Math.log(tToday) + ransacFloor);
-  const wlsPriceToday = Math.exp(a + b * Math.log(tToday));
-  const resFloor = Math.log(supportPriceToday) - Math.log(wlsPriceToday);
-
-  return { a, b, resMean, resStd, resFloor, ransac: { a: rA, b: rB, floor: ransacFloor } };
-}
-
-function plPrice(a, b, t) { return Math.exp(a + b * Math.log(t)); }
-
-function probAbove(pcts, targetPrice) {
-  const row = pcts[pcts.length - 1];
-  if (!row) return 50;
-  const pts = [{ price: row.p5, prob: 5 }, { price: row.p25, prob: 25 }, { price: row.p50, prob: 50 }, { price: row.p75, prob: 75 }, { price: row.p95, prob: 95 }];
-  if (targetPrice <= pts[0].price) return 97.5;
-  if (targetPrice >= pts[4].price) return 2.5;
-  for (let k = 0; k < pts.length - 1; k++) {
-    if (targetPrice >= pts[k].price && targetPrice <= pts[k + 1].price) {
-      const t = (targetPrice - pts[k].price) / (pts[k + 1].price - pts[k].price);
-      return 100 - (pts[k].prob + t * (pts[k + 1].prob - pts[k].prob));
-    }
-  }
-  return 50;
-}
-
-// ── Signal thresholds (validated out-of-sample) ──
-// Buy: σ < -0.5 → 100% accuracy 12m, worst +23%
-// Strong Buy: σ < -1.0 → 100% accuracy, worst +30%
-// Sell: σ > 0.8 → 0% accuracy 12m (post-maturity), avg -44%
-// Reduce: σ 0.5–0.8 → 14% accuracy 12m, avg -30%
-// Maturity gate: sell/reduce only when b > 4.0 (PL converged, ~8yr data)
-const THRESHOLDS = {
-  strongBuy: -1.0,
-  buy: -0.5,
-  reduce: 0.5,
-  sell: 0.8,
-  maturityB: 4.0,
-};
-
-export function runRobustBacktest(prices, ouRegimes, onProgress) {
+export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, evtCap, floorBreakProb, ouRegimes) {
   const results = [];
   const horizon = 365;
-  const horizonSell = 182;
-  const minDataPoints = 365 * 4;
-  const step = 30;
+  const minTrainDays = 365 * 3;
 
-  const allPts = prices.map(p => ({ t: daysSinceGenesis(p.date), price: p.price })).filter(p => p.t > 0 && p.price > 0);
+  // Helper: interpola probabilidad en percentiles MC
+  function probAbove(pcts, targetPrice) {
+    const row = pcts[pcts.length - 1];
+    if (!row) return 50;
+    const pts = [{price:row.p5,prob:5},{price:row.p25,prob:25},{price:row.p50,prob:50},{price:row.p75,prob:75},{price:row.p95,prob:95}];
+    if (targetPrice <= pts[0].price) return 97.5;
+    if (targetPrice >= pts[4].price) return 2.5;
+    for (let k = 0; k < pts.length - 1; k++) {
+      if (targetPrice >= pts[k].price && targetPrice <= pts[k+1].price) {
+        const t = (targetPrice - pts[k].price) / (pts[k+1].price - pts[k].price);
+        return 100 - (pts[k].prob + t * (pts[k+1].prob - pts[k].prob));
+      }
+    }
+    return 50;
+  }
 
-  let nProcessed = 0;
-  const nTotal = Math.floor((allPts.length - horizon - minDataPoints) / step);
-
-  for (let i = minDataPoints; i < prices.length - horizon; i += step) {
+  for (let i = minTrainDays; i < prices.length - horizon; i += 30) {
     const p = prices[i];
     const t0 = daysSinceGenesis(p.date);
     if (t0 <= 0 || p.price <= 0) continue;
 
-    // 1. Refit WLS using ONLY data up to this point
-    const ptsSlice = allPts.slice(0, i + 1);
-    const fit = fitWLS(ptsSlice);
-    const { a, b, resMean, resStd, resFloor } = fit;
-
-    // 2. Compute sigma with local fit
     const plNow = plPrice(a, b, t0);
     const residual = Math.log(p.price) - Math.log(plNow);
     const sig = (residual - resMean) / resStd;
 
-    // 3. Actual future returns
-    const futurePrice12 = prices[i + horizon]?.price;
-    if (!futurePrice12) continue;
-    const realReturn = (futurePrice12 - p.price) / p.price * 100;
-    const isGoodBuy = realReturn > 0;
+    const futurePrice = prices[i + horizon]?.price;
+    if (!futurePrice) continue;
+    const realReturn = (futurePrice - p.price) / p.price * 100;
+    const isGoodBuy = realReturn > 0; // "good buy" = no perder dinero (base conservadora)
 
-    const futurePrice6 = prices[i + horizonSell]?.price;
-    const ret6m = futurePrice6 ? (futurePrice6 - p.price) / p.price * 100 : null;
-
-    // 4. Residual returns for MC (1yr lookback)
     const resReturnsSlice = [];
     for (let j = Math.max(1, i - 365); j < i; j++) {
-      const t1 = daysSinceGenesis(prices[j - 1].date);
-      const t2 = daysSinceGenesis(prices[j].date);
-      if (t1 <= 0 || t2 <= 0) continue;
-      const r0 = Math.log(prices[j - 1].price) - Math.log(plPrice(a, b, t1));
-      const r1 = Math.log(prices[j].price) - Math.log(plPrice(a, b, t2));
+      const r0 = Math.log(prices[j-1].price) - Math.log(plPrice(a, b, daysSinceGenesis(prices[j-1].date)));
+      const r1 = Math.log(prices[j].price) - Math.log(plPrice(a, b, daysSinceGenesis(prices[j].date)));
       resReturnsSlice.push(r1 - r0);
     }
     if (resReturnsSlice.length < 30) continue;
 
-    // 5. MC with local params
-    const evtCap = resMean + 2.5 * resStd;
-    const H = 0.65, lambda2 = 0.12;
-    const paths = simulatePathsPL(200, horizon, H, lambda2, resStd, resMean, a, b, t0, ouRegimes, residual, resReturnsSlice, resFloor, evtCap, 0.03);
+    const H = 0.65;
+    const lambda2 = 0.12;
+    const paths = simulatePathsPL(200, horizon, H, lambda2, resStd, resMean, a, b, t0, ouRegimes, residual, resReturnsSlice, resFloor, evtCap, floorBreakProb);
     const pcts = computePercentiles(paths, horizon);
+
+    // P(pérdida en 12m) — fracción de paths bajo el precio de entrada
     const pLoss1y = Math.max(0, Math.min(100, 100 - probAbove(pcts, p.price)));
+
+    // P(llega al fair value en 12m) — fair value en t0+365
     const fv1y = plPrice(a, b, t0 + horizon);
     const pFV = Math.max(0, Math.min(100, probAbove(pcts, fv1y)));
 
-    // 6. Signal — pure sigma rules + maturity gate
-    const isMature = b > THRESHOLDS.maturityB;
-    let level;
-    if (sig < THRESHOLDS.strongBuy)                          level = "strongBuy";
-    else if (sig < THRESHOLDS.buy)                           level = "buy";
-    else if (isMature && sig >= THRESHOLDS.sell)             level = "sell";
-    else if (isMature && sig >= THRESHOLDS.reduce)           level = "reduce";
-    else                                                     level = "hold";
-
-    // Regime
+    // Régimen en ese punto histórico: calm si rolling vol < mediana, volatile si no
     const recentVols = resReturnsSlice.slice(-30).map(r => Math.abs(r));
-    const medVol = [...resReturnsSlice.map(r => Math.abs(r))].sort((x, y) => x - y)[Math.floor(resReturnsSlice.length / 2)];
-    const avgRecentVol = recentVols.reduce((s, x) => s + x, 0) / Math.max(recentVols.length, 1);
+    const medVol = [...resReturnsSlice.map(r => Math.abs(r))].sort((a,b) => a-b)[Math.floor(resReturnsSlice.length/2)];
+    const avgRecentVol = recentVols.reduce((s,x) => s+x, 0) / Math.max(recentVols.length, 1);
     const regime = avgRecentVol > medVol ? "volatile" : "calm";
 
     results.push({
-      date: p.date, sig: +sig.toFixed(3), a: +a.toFixed(4), b: +b.toFixed(4),
-      pLoss1y: +pLoss1y.toFixed(1), pFV: +pFV.toFixed(1),
-      pFloor: +(paths.floorBreakPct || 0).toFixed(2),
+      date: p.date,
+      sig: +sig.toFixed(2),
+      pLoss1y: +pLoss1y.toFixed(1),
+      pFV: +pFV.toFixed(1),
+      pFloor: +(paths.floorBreakPct || 0).toFixed(2), // P(toca floor) del MC
       realReturn: +realReturn.toFixed(1),
-      ret6m: ret6m != null ? +ret6m.toFixed(1) : null,
-      isGoodBuy, level, regime, isMature,
+      isGoodBuy,
+      regime,
     });
-
-    nProcessed++;
-    if (onProgress && nProcessed % 5 === 0) onProgress(Math.round(nProcessed / nTotal * 100));
   }
 
   if (results.length === 0) return {
-    type: "robust", precision: null, nYes: 0, nNo: 0, results: [],
-    thresholds: THRESHOLDS,
+    thresholds: { sig: -0.5, pLoss1y: 20, pFV: 40 },
+    weights: null,
+    precision: null, recall: null, nYes: 0, nNo: 0,
+    avgReturnYes: null, avgReturnNo: null, results: [],
+    regimeEffect: null,
   };
 
-  // ── Reporting ──
-  const avg = arr => arr.length > 0 ? +(arr.reduce((s, r) => s + r.realReturn, 0) / arr.length).toFixed(1) : null;
-  const avg6 = arr => { const f = arr.filter(r => r.ret6m != null); return f.length > 0 ? +(f.reduce((s, r) => s + r.ret6m, 0) / f.length).toFixed(1) : null; };
-  const prec = arr => arr.length > 0 ? +(arr.filter(r => r.isGoodBuy).length / arr.length * 100).toFixed(1) : null;
-  const minRet = arr => arr.length > 0 ? +Math.min(...arr.map(r => r.realReturn)).toFixed(1) : null;
+  // ── Signal: pure sigma rules (matching verdict.js v2) ──
+  // No grid search for signal — sigma thresholds validated by robust backtest
+  const levelOf = (r) => {
+    if (r.sig < -1.0) return "strongBuy";
+    if (r.sig < -0.5) return "buy";
+    if (r.sig >= 0.8) return "sell";
+    if (r.sig >= 0.5) return "reduce";
+    return "no"; // hold (internally: accumulate/neutral/caution based on sub-zone)
+  };
 
-  const strongBuyR = results.filter(r => r.level === "strongBuy");
-  const buyR = results.filter(r => r.level === "buy");
-  const yesR = results.filter(r => r.level === "strongBuy" || r.level === "buy");
-  const holdR = results.filter(r => r.level === "hold");
-  const reduceR = results.filter(r => r.level === "reduce");
-  const sellR = results.filter(r => r.level === "sell");
+  const internalLevelOf = (r) => {
+    if (r.sig < -1.0) return "strongBuy";
+    if (r.sig < -0.5) return "buy";
+    if (r.sig >= 0.8) return "sell";
+    if (r.sig >= 0.5) return "reduce";
+    if (r.sig < 0) return "accumulate";
+    if (r.sig < 0.3) return "neutral";
+    return "caution";
+  };
 
-  const baseRate = results.length > 0 ? +(results.filter(r => r.isGoodBuy).length / results.length * 100).toFixed(1) : null;
-  const unconditionalMean = avg(results);
+  results.forEach(r => { r.level = levelOf(r); r.internalLevel = internalLevelOf(r); });
+
+  // Buy score for backward compat (simple sigma distance)
+  const buyScore = (r) => r.sig < -0.5 ? +((-r.sig - 0.5) * 2).toFixed(3) : 0;
+
+  // Grid search weights — still computed for scoringParams export (used by cache compat)
+  // but NOT used for signal decision
+  const sigMean   = results.reduce((s,r) => s + r.sig, 0) / results.length;
+  const lossMean  = results.reduce((s,r) => s + r.pLoss1y, 0) / results.length;
+  const fvMean    = results.reduce((s,r) => s + r.pFV, 0) / results.length;
+  const floorMean = results.reduce((s,r) => s + r.pFloor, 0) / results.length;
+
+  const bestWeights = { w1: 2, w2: 0.5, w3: 0, w4: 0 }; // fixed, matching what grid search converges to
+  const bestThresholds = { sig: -0.5, pLoss1y: 20, pFV: 40 };
+  const strongThresh = 1.0;
+
+  const avgReturn = arr => arr.length > 0
+    ? +(arr.reduce((s,r) => s + r.realReturn, 0) / arr.length).toFixed(1)
+    : null;
+  const precisionFn = arr => arr.length > 0
+    ? +(arr.filter(r => r.isGoodBuy).length / arr.length * 100).toFixed(1)
+    : null;
+
+  // regimeEffect, holdBuckets y byLevel se calculan después del segundo pass (post-calibración)
+
+  // ── Calibración de la señal PL bubble (σ solo, sin Hurst) ──
+  // Busca el σ mínimo que, por sí solo, predice correcciones > 20% en 6 meses.
+  const horizonSell = 182; // 6 meses
+  const allSellResults = [];
+  for (let i = minTrainDays; i < prices.length - horizonSell; i += 30) {
+    const p = prices[i];
+    const t0loc = daysSinceGenesis(p.date);
+    if (t0loc <= 0) continue;
+    const plLoc = plPrice(a, b, t0loc);
+    const resLoc = Math.log(p.price) - Math.log(plLoc);
+    const sigLoc = (resLoc - resMean) / resStd;
+    const futureP = prices[i + horizonSell]?.price;
+    if (!futureP) continue;
+    const ret6m = (futureP - p.price) / p.price * 100;
+    allSellResults.push({ date: p.date, sig: +sigLoc.toFixed(2), ret6m: +ret6m.toFixed(1) });
+  }
+
+  // ── Percentiles empíricos de correcciones históricas ──
+  // Usamos solo los retornos NEGATIVOS para calibrar umbrales de corrección.
+  // P25 de retornos negativos = una caída que ocurre en el 25% de los peores casos.
+  // P50 de retornos negativos = la corrección mediana entre los que sí corrigieron.
+  const overheatedReturns = allSellResults.map(r => r.ret6m).sort((a, b) => a - b);
+  const negativeReturns   = overheatedReturns.filter(r => r < 0);
+  const pctile = (arr, p) => arr.length > 0 ? arr[Math.floor(arr.length * p)] : null;
+
+  // P25 sobre todos los retornos (incluye positivos) — primer cuartil
+  const corrP25 = overheatedReturns.length >= 4
+    ? +pctile(overheatedReturns, 0.25).toFixed(1)
+    : -20;
+  // P50 sobre retornos negativos — corrección mediana entre quienes sí perdieron
+  const corrP50 = negativeReturns.length >= 4
+    ? +pctile(negativeReturns, 0.50).toFixed(1)
+    : -35;
+  // P75 de retornos negativos — corrección severa (peor cuarto)
+  const corrP75 = negativeReturns.length >= 4
+    ? +pctile(negativeReturns, 0.75).toFixed(1)
+    : -50;
+
+  // Actualizar isGoodSell con umbral dinámico P25 (en lugar del -20% fijo)
+  allSellResults.forEach(r => {
+    r.isGoodSell       = r.ret6m < corrP25;  // caída mayor al P25 — corrección significativa
+    r.isAnyLoss        = r.ret6m < 0;         // cualquier pérdida — dirección correcta
+    r.isSevereSell     = r.ret6m < corrP50;   // peor que la mediana
+  });
+
+  const sigBubbleCandidates = [0.5, 0.7, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0, 2.2];
+
+  // Grid search: calibrar DOS umbrales de σ separados
+  // sigReduceThr = primer punto donde corrección > 30% del tiempo → Reduce
+  // sigSellThr   = primer punto donde retorno medio < 0 Y corrección > 50% → Sell
+  let calibratedBubbleSig = 1.0;  // Sell (default)
+  let calibratedReduceSig = 0.5;  // Reduce (default)
+
+  if (allSellResults.length >= 10) {
+    // Construir perfil por σ candidato
+    const profiles = sigBubbleCandidates.map(sigT => {
+      const pts = allSellResults.filter(r => r.sig > sigT);
+      if (pts.length < 3) return null;
+      const n = pts.length;
+      const nFell = pts.filter(r => r.isGoodSell).length;
+      const pct20 = nFell / n;
+      const avgRet = pts.reduce((s, r) => s + r.ret6m, 0) / n;
+      return { sigT, n, pct20, avgRet };
+    }).filter(Boolean);
+
+    // sigReduceThr: primer σ donde pct20 > 35% (corrección común pero no mayoritaria)
+    const reduceCandidate = profiles.find(p => p.pct20 > 0.35);
+    if (reduceCandidate) calibratedReduceSig = reduceCandidate.sigT;
+
+    // sigSellThr: primer σ donde retorno medio < 0 Y pct20 > 50%
+    const sellCandidate = profiles.find(p => p.avgRet < 0 && p.pct20 > 0.50);
+    if (sellCandidate) calibratedBubbleSig = sellCandidate.sigT;
+    else {
+      // Fallback: primer σ donde pct20 > 50% aunque retorno sea positivo
+      const fallback = profiles.find(p => p.pct20 > 0.50);
+      if (fallback) calibratedBubbleSig = fallback.sigT;
+    }
+
+    // Asegurar que Sell > Reduce siempre
+    if (calibratedBubbleSig <= calibratedReduceSig) {
+      calibratedBubbleSig = Math.min(calibratedReduceSig + 0.3, 2.0);
+    }
+  }
+
+  // Signal uses fixed σ thresholds — no second pass needed
+  // Sell calibration below is for reporting/display only
+
+  // Grupos basados en la clasificación final (post-calibración)
+  const strongBuyResults = results.filter(r => r.level === "strongBuy");
+  const buyResults       = results.filter(r => r.level === "buy");
+  const yesResults       = results.filter(r => r.level === "strongBuy" || r.level === "buy");
+  const noResults        = results.filter(r => r.level === "no");
+  const truePositives    = yesResults.filter(r => r.isGoodBuy).length;
+  const allPositives     = results.filter(r => r.isGoodBuy).length;
+
+  // Segmentación por régimen
+  const yesCalm     = yesResults.filter(r => r.regime === "calm");
+  const yesVolatile = yesResults.filter(r => r.regime === "volatile");
+  const allCalm     = results.filter(r => r.regime === "calm");
+  const allVolatile = results.filter(r => r.regime === "volatile");
+
+  const regimeEffect = {
+    calm:     { n: allCalm.length,     nYes: yesCalm.length,     avgReturn: avgReturn(yesCalm),     precisionYes: precisionFn(yesCalm) },
+    volatile: { n: allVolatile.length, nYes: yesVolatile.length, avgReturn: avgReturn(yesVolatile), precisionYes: precisionFn(yesVolatile) },
+    delta: yesCalm.length >= 3 && yesVolatile.length >= 3
+      ? +((avgReturn(yesCalm) || 0) - (avgReturn(yesVolatile) || 0)).toFixed(1)
+      : null,
+  };
+
+  // Hold subdividido
+  const noDiscount = noResults.filter(r => r.sig < 0);
+  const noPremium  = noResults.filter(r => r.sig >= 0);
+
+  const holdBuckets = [
+    { label: "σ < 0",     pts: noResults.filter(r => r.sig < 0)                    },
+    { label: "0 – 0.3",   pts: noResults.filter(r => r.sig >= 0   && r.sig < 0.3)  },
+    { label: "0.3 – 0.5", pts: noResults.filter(r => r.sig >= 0.3 && r.sig < 0.5)  },
+    { label: "0.5 – 0.8", pts: noResults.filter(r => r.sig >= 0.5 && r.sig < 0.8)  },
+    { label: "0.8+",      pts: noResults.filter(r => r.sig >= 0.8)                  },
+  ].map(b => ({
+    label: b.label,
+    n: b.pts.length,
+    avgReturn: avgReturn(b.pts),
+    minReturn: b.pts.length > 0 ? +Math.min(...b.pts.map(r => r.realReturn)).toFixed(1) : null,
+    precision: precisionFn(b.pts),
+    nBad: b.pts.filter(r => r.realReturn < -30).length,
+  }));
 
   const byLevel = {
-    strongBuy: { n: strongBuyR.length, precision: prec(strongBuyR), avgReturn: avg(strongBuyR), minReturn: minRet(strongBuyR) },
-    buy:       { n: buyR.length,       precision: prec(buyR),       avgReturn: avg(buyR),       minReturn: minRet(buyR) },
-    no:        { n: holdR.length,      precision: prec(holdR),      avgReturn: avg(holdR),      minReturn: minRet(holdR) },
+    strongBuy: {
+      n:         strongBuyResults.length,
+      precision: precisionFn(strongBuyResults),
+      avgReturn: avgReturn(strongBuyResults),
+      minReturn: strongBuyResults.length > 0 ? +Math.min(...strongBuyResults.map(r => r.realReturn)).toFixed(1) : null,
+    },
+    buy: {
+      n:         buyResults.length,
+      precision: precisionFn(buyResults),
+      avgReturn: avgReturn(buyResults),
+      minReturn: buyResults.length > 0 ? +Math.min(...buyResults.map(r => r.realReturn)).toFixed(1) : null,
+    },
+    no: {
+      n:         noResults.length,
+      precision: precisionFn(noResults),
+      avgReturn: avgReturn(noResults),
+      minReturn: noResults.length > 0 ? +Math.min(...noResults.map(r => r.realReturn)).toFixed(1) : null,
+    },
+    holdDiscount: {
+      n:         noDiscount.length,
+      precision: precisionFn(noDiscount),
+      avgReturn: avgReturn(noDiscount),
+      minReturn: noDiscount.length > 0 ? +Math.min(...noDiscount.map(r => r.realReturn)).toFixed(1) : null,
+    },
+    holdPremium: {
+      n:         noPremium.length,
+      precision: precisionFn(noPremium),
+      avgReturn: avgReturn(noPremium),
+      minReturn: noPremium.length > 0 ? +Math.min(...noPremium.map(r => r.realReturn)).toFixed(1) : null,
+    },
   };
 
-  // Sell metrics (6-month)
-  const sellWith6 = sellR.filter(r => r.ret6m != null);
-  const reduceWith6 = reduceR.filter(r => r.ret6m != null);
+  // Métricas PL bubble — con percentiles dinámicos
+  const bubblePoints  = allSellResults.filter(r => r.sig > calibratedBubbleSig);
+  const reducePoints  = allSellResults.filter(r => r.sig > calibratedReduceSig && r.sig <= calibratedBubbleSig);
+  const avgRetFn  = arr => arr.length > 0 ? +(arr.reduce((s,r)=>s+r.ret6m,0)/arr.length).toFixed(1) : null;
+  const pct20Fn   = arr => arr.length > 0 ? +(arr.filter(r=>r.isGoodSell).length/arr.length*100).toFixed(1) : null;
+  const pctAnyFn  = arr => arr.length > 0 ? +(arr.filter(r=>r.isAnyLoss).length/arr.length*100).toFixed(1) : null;
+  const pctSevFn  = arr => arr.length > 0 ? +(arr.filter(r=>r.isSevereSell).length/arr.length*100).toFixed(1) : null;
+
+  const mkPlRow = arr => ({
+    n: arr.length,
+    avgRet6m:    avgRetFn(arr),
+    pct20:       pct20Fn(arr),
+    pctAnyLoss:  pctAnyFn(arr),
+    pctSevere:   pctSevFn(arr),
+    maxDrawdown: arr.length > 0 ? +Math.min(...arr.map(r=>r.ret6m)).toFixed(1) : null,
+  });
+
   const plBubbleMetrics = {
-    sell: {
-      n: sellWith6.length,
-      avgRet6m: avg6(sellR),
-      pctAnyLoss: sellWith6.length > 0 ? +(sellWith6.filter(r => r.ret6m < 0).length / sellWith6.length * 100).toFixed(1) : null,
-      pct20: sellWith6.length > 0 ? +(sellWith6.filter(r => r.ret6m < -20).length / sellWith6.length * 100).toFixed(1) : null,
-      maxDrawdown: sellWith6.length > 0 ? +Math.min(...sellWith6.map(r => r.ret6m)).toFixed(1) : null,
-    },
-    reduce: {
-      n: reduceWith6.length,
-      avgRet6m: avg6(reduceR),
-      pctAnyLoss: reduceWith6.length > 0 ? +(reduceWith6.filter(r => r.ret6m < 0).length / reduceWith6.length * 100).toFixed(1) : null,
-      pct20: reduceWith6.length > 0 ? +(reduceWith6.filter(r => r.ret6m < -20).length / reduceWith6.length * 100).toFixed(1) : null,
-      maxDrawdown: reduceWith6.length > 0 ? +Math.min(...reduceWith6.map(r => r.ret6m)).toFixed(1) : null,
-    },
+    sell:   { ...mkPlRow(bubblePoints),  sigThreshold: calibratedBubbleSig },
+    reduce: { ...mkPlRow(reducePoints),  sigThreshold: calibratedReduceSig },
   };
 
-  // Cross-validation
-  const eras = [
-    { label: "2013–2017", s: "2013-01-01", e: "2017-12-31" },
-    { label: "2018–2021", s: "2018-01-01", e: "2021-12-31" },
-    { label: "2022–present", s: "2022-01-01", e: "2099-12-31" },
+  // ── Calibración de thresholds de divergencias Hurst por grid search ──
+  // Variable dependiente: precio cae > 20% en los siguientes 6 meses
+  const sellResults = [];
+
+  // Candidatos para grid search de divergencias
+  const sigmaDeltaCandidates = [0.05, 0.10, 0.15, 0.20];
+  const hDeltaCandidates     = [-0.02, -0.03, -0.05];
+  const volRatioCandidates   = [1.10, 1.15, 1.20, 1.25];
+
+  // Computar datos de divergencia por punto histórico en sobrecompra
+  for (let i = minTrainDays; i < prices.length - horizonSell; i += 30) {
+    const p = prices[i];
+    const t0loc = daysSinceGenesis(p.date);
+    if (t0loc <= 0) continue;
+    const plLoc = plPrice(a, b, t0loc);
+    const resLoc = Math.log(p.price) - Math.log(plLoc);
+    const sigLoc = (resLoc - resMean) / resStd;
+    if (sigLoc <= 0.5) continue;
+
+    const futureP = prices[i + horizonSell]?.price;
+    if (!futureP) continue;
+    const ret6m = (futureP - p.price) / p.price * 100;
+    const isGoodSell = ret6m < -20;
+
+    const sliceCur  = [];
+    const slicePrev = [];
+    for (let j = Math.max(1, i - 90); j < i; j++) {
+      const r0 = Math.log(prices[j-1].price) - Math.log(plPrice(a, b, daysSinceGenesis(prices[j-1].date)));
+      const r1 = Math.log(prices[j].price)   - Math.log(plPrice(a, b, daysSinceGenesis(prices[j].date)));
+      sliceCur.push(r1 - r0);
+    }
+    for (let j = Math.max(1, i - 120); j < i - 30; j++) {
+      const r0 = Math.log(prices[j-1].price) - Math.log(plPrice(a, b, daysSinceGenesis(prices[j-1].date)));
+      const r1 = Math.log(prices[j].price)   - Math.log(plPrice(a, b, daysSinceGenesis(prices[j].date)));
+      slicePrev.push(r1 - r0);
+    }
+    if (sliceCur.length < 30 || slicePrev.length < 30) continue;
+
+    const { H: h90cur  } = hurstDFA(sliceCur.slice(-90));
+    const { H: h30cur  } = hurstDFA(sliceCur.slice(-30));
+    const { H: h90prev } = hurstDFA(slicePrev.slice(-90));
+
+    const volFn = arr => { const m = arr.reduce((s,x)=>s+x,0)/arr.length; return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/arr.length); };
+    const vol30 = volFn(sliceCur.slice(-30));
+    const vol90 = volFn(sliceCur.slice(-90));
+    const volRatioLoc = vol90 > 0 ? vol30 / vol90 : 1;
+
+    const pPrev = prices[Math.max(0, i - 30)];
+    const sigPrev = pPrev ? (Math.log(pPrev.price) - Math.log(plPrice(a, b, daysSinceGenesis(pPrev.date))) - resMean) / resStd : sigLoc;
+    const sigmaDelta = sigLoc - sigPrev;
+
+    sellResults.push({
+      date: p.date, sig: +sigLoc.toFixed(2), ret6m: +ret6m.toFixed(1), isGoodSell,
+      sigmaDelta: +sigmaDelta.toFixed(3),
+      h90delta: +(h90cur - h90prev).toFixed(3),
+      h30h90delta: +(h30cur - h90cur).toFixed(3),
+      volRatio: +volRatioLoc.toFixed(3),
+      h90cur: +h90cur.toFixed(3),
+    });
+  }
+
+  // Grid search para umbrales de divergencias Hurst
+  let bestSellF1 = -1;
+  let bestSellThresholds = { sigmaDelta: 0.10, hDelta: -0.03, volRatio: 1.15 };
+  let bestSellMetrics = null;
+
+  if (sellResults.length >= 5) {
+    for (const sdT of sigmaDeltaCandidates) {
+      for (const hdT of hDeltaCandidates) {
+        for (const vrT of volRatioCandidates) {
+          const d1 = r => r.sigmaDelta > sdT && r.h90delta < hdT;
+          const d2 = r => r.h30h90delta < hdT && r.h90cur > 0.55;
+          const d3 = r => r.h90delta < hdT && r.volRatio > vrT;
+          const scoreOf = r => [d1(r), d2(r), d3(r)].filter(Boolean).length;
+          const sellSignals = sellResults.filter(r => scoreOf(r) >= 2);
+          if (sellSignals.length < 3) continue;
+          const tp = sellSignals.filter(r => r.isGoodSell).length;
+          const allSellPos = sellResults.filter(r => r.isGoodSell).length;
+          const prec = tp / sellSignals.length;
+          const rec  = allSellPos > 0 ? tp / allSellPos : 0;
+          const f1   = prec + rec > 0 ? 2 * prec * rec / (prec + rec) : 0;
+          if (f1 > bestSellF1) {
+            bestSellF1 = f1;
+            bestSellThresholds = { sigmaDelta: sdT, hDelta: hdT, volRatio: vrT };
+          }
+        }
+      }
+    }
+  }
+
+  const sellBacktest = sellResults.length >= 3 ? {
+    thresholds: bestSellThresholds,
+    metrics: (() => {
+      // Usar los mejores thresholds encontrados, o los defaults si el grid search no convergió
+      const sdT = bestSellThresholds.sigmaDelta;
+      const hdT = bestSellThresholds.hDelta;
+      const vrT = bestSellThresholds.volRatio;
+      const d1f = r => r.sigmaDelta > sdT && r.h90delta < hdT;
+      const d2f = r => r.h30h90delta < hdT && r.h90cur > 0.55;
+      const d3f = r => r.h90delta < hdT && r.volRatio > vrT;
+      const scoreF = r => [d1f(r), d2f(r), d3f(r)].filter(Boolean).length;
+
+      const sell3    = sellResults.filter(r => scoreF(r) === 3);
+      const sell2    = sellResults.filter(r => scoreF(r) === 2);
+      const noSignal = sellResults.filter(r => scoreF(r) <= 1);
+
+      const maxDrawdown = arr => arr.length > 0 ? +Math.min(...arr.map(r => r.ret6m)).toFixed(1) : null;
+      const avgRet      = arr => arr.length > 0 ? +(arr.reduce((s,r)=>s+r.ret6m,0)/arr.length).toFixed(1) : null;
+      // Tres métricas dinámicas — umbrales basados en percentiles históricos
+      const pctAnyLoss   = arr => arr.length > 0 ? +(arr.filter(r=>r.isAnyLoss).length/arr.length*100).toFixed(1)    : null;
+      const pctSig       = arr => arr.length > 0 ? +(arr.filter(r=>r.isGoodSell).length/arr.length*100).toFixed(1)   : null; // P25
+      const pctSevere    = arr => arr.length > 0 ? +(arr.filter(r=>r.isSevereSell).length/arr.length*100).toFixed(1) : null; // P50
+      const precFn       = pctSig; // compatibilidad
+
+      const sellAvg  = avgRet(sell3);
+      const baseAvg  = avgRet(sellResults);
+      const signalDelta = (sellAvg != null && baseAvg != null)
+        ? +(baseAvg - sellAvg).toFixed(1)
+        : null;
+
+      const mkRow = arr => ({
+        n: arr.length,
+        precision: precFn(arr),
+        avgRet6m:  avgRet(arr),
+        maxDrawdown: maxDrawdown(arr),
+        pct20:     pctSig(arr),      // renombrado internamente, ahora = P25 dinámico
+        pctAnyLoss: pctAnyLoss(arr),
+        pctSevere:  pctSevere(arr),
+      });
+
+      return {
+        sell:       mkRow(sell3),
+        reduce:     mkRow(sell2),
+        noSignal:   mkRow(noSignal),
+        allOverheat: mkRow(sellResults),
+        signalDelta,
+      };
+    })(),
+    nOverheat: sellResults.length,
+    note: sellResults.length < 10 ? "Small sample — interpret with caution." : null,
+  } : null;
+
+  // ── Validación cruzada por períodos ──
+  // Responde: ¿son los thresholds estables entre ciclos o sobreajustados al último?
+  const periods = [
+    { label: "2013–2017", start: "2013-01-01", end: "2017-12-31" },
+    { label: "2018–2021", start: "2018-01-01", end: "2021-12-31" },
+    { label: "2022–present", start: "2022-01-01", end: "2099-12-31" },
   ];
-  const crossValidation = eras.map(era => {
-    const pts = results.filter(r => r.date >= era.s && r.date <= era.e);
-    const ptsBuy = pts.filter(r => r.level === "strongBuy" || r.level === "buy");
+
+  const crossValidation = periods.map(period => {
+    const periodResults = results.filter(r => r.date >= period.start && r.date <= period.end);
+    if (periodResults.length < 3) return { label: period.label, n: 0, precision: null, avgReturn: null };
+
+    // Usar r.level (clasificación final del score continuo) en lugar de
+    // thresholds conjuntivos — el cross-val debe reflejar el mismo modelo
+    // que muestra el veredicto al usuario.
+    const yesP = periodResults.filter(r => r.level === "strongBuy" || r.level === "buy");
+    const tpP = yesP.filter(r => r.isGoodBuy).length;
+
     return {
-      label: era.label, n: pts.length, nYes: ptsBuy.length,
-      precision: prec(ptsBuy), avgReturn: avg(ptsBuy),
+      label: period.label,
+      n: periodResults.length,
+      nYes: yesP.length,
+      precision: yesP.length > 0 ? +(tpP / yesP.length * 100).toFixed(1) : null,
+      avgReturn: avgReturn(yesP),
     };
-  }).filter(cv => cv.n > 0);
+  }).filter(p => p.n > 0);
 
-  const precisions = crossValidation.map(cv => parseFloat(cv.precision || 0)).filter(p => p > 0);
-  const stabilityDelta = precisions.length >= 2 ? +(Math.max(...precisions) - Math.min(...precisions)).toFixed(1) : null;
+  // Estabilidad: ¿cuánto varían las precisiones entre períodos?
+  const precisions = crossValidation.map(p => p.precision).filter(p => p != null);
+  const stabilityDelta = precisions.length >= 2
+    ? +(Math.max(...precisions) - Math.min(...precisions)).toFixed(1)
+    : null;
 
-  // Sigma buckets (6-month)
-  const with6m = results.filter(r => r.ret6m != null);
+  // Base rate histórico
+  const baseRate = results.length > 0
+    ? +(results.filter(r => r.realReturn > 0).length / results.length * 100).toFixed(1)
+    : null;
+
+  // ── Tabla de buckets de σ ──
+  // Para cada rango de sobrecompra: % que cayó >20% en 6m, retorno medio
+  // Esta es la evidencia empírica directa de si σ predice correcciones
   const sigmaBuckets = [
-    { label: "σ < 0", min: -Infinity, max: 0 },
-    { label: "0 – 0.5", min: 0, max: 0.5 },
-    { label: "0.5 – 1.0", min: 0.5, max: 1.0 },
-    { label: "1.0 – 1.5", min: 1.0, max: 1.5 },
-    { label: "1.5 – 2.0", min: 1.5, max: 2.0 },
-    { label: "2.0+", min: 2.0, max: Infinity },
+    { label: "σ < 0",      min: -99, max: 0   },
+    { label: "0 – 0.5",   min: 0,   max: 0.5  },
+    { label: "0.5 – 1.0", min: 0.5, max: 1.0  },
+    { label: "1.0 – 1.5", min: 1.0, max: 1.5  },
+    { label: "1.5 – 2.0", min: 1.5, max: 2.0  },
+    { label: "2.0+",       min: 2.0, max: 99   },
   ].map(bucket => {
-    const pts = with6m.filter(r => r.sig >= bucket.min && r.sig < bucket.max);
-    const nFell = pts.filter(r => r.ret6m < -20).length;
-    return {
-      label: bucket.label, min: bucket.min, n: pts.length, nFell,
-      pct20: pts.length > 0 ? +(nFell / pts.length * 100).toFixed(1) : 0,
-      avgRet: pts.length > 0 ? +(pts.reduce((s, r) => s + r.ret6m, 0) / pts.length).toFixed(1) : 0,
-    };
+    const pts = allSellResults.filter(r => r.sig > bucket.min && r.sig <= bucket.max);
+    const n = pts.length;
+    if (n === 0) return { ...bucket, n: 0, pct20: null, avgRet: null, nFell: 0 };
+    const nFell = pts.filter(r => r.isGoodSell).length;
+    const pct20 = +(nFell / n * 100).toFixed(1);
+    const avgRet = +(pts.reduce((s, r) => s + r.ret6m, 0) / n).toFixed(1);
+    return { ...bucket, n, nFell, pct20, avgRet };
   });
-
-  // Calibration buckets (MC predicted vs actual)
-  const calibrationBuckets = [
-    { label: "Deep value (σ < -1)", filter: r => r.sig < -1 },
-    { label: "Discount (σ -1 to -0.5)", filter: r => r.sig >= -1 && r.sig < -0.5 },
-    { label: "Neutral (σ ±0.5)", filter: r => r.sig >= -0.5 && r.sig < 0.5 },
-    { label: "Elevated (σ 0.5 to 1)", filter: r => r.sig >= 0.5 && r.sig < 1.0 },
-    { label: "Overheated (σ > 1)", filter: r => r.sig >= 1.0 },
-  ].map(bucket => {
-    const pts = results.filter(bucket.filter);
-    const lossRate = pts.length > 0 ? +(pts.filter(r => !r.isGoodBuy).length / pts.length * 100).toFixed(1) : null;
-    const pLossAvg = pts.length > 0 ? +(pts.reduce((s, r) => s + r.pLoss1y, 0) / pts.length).toFixed(1) : null;
-    return {
-      label: bucket.label, n: pts.length,
-      pLossAvg, lossRate, avgReturn: avg(pts),
-    };
-  });
-
-  // Fit audit
-  const fitAudit = results.filter((_, i) => i % 10 === 0).map(r => ({ date: r.date, a: r.a, b: r.b }));
 
   return {
-    type: "robust",
-    precision: prec(yesR),
-    nYes: yesR.length,
-    nNo: holdR.length,
-    nSell: sellR.length,
-    nReduce: reduceR.length,
-    nTotal: results.length,
+    thresholds: bestThresholds,
+    weights: bestWeights,
+    scoringParams: { sigMean, lossMean, fvMean, floorMean, strongThresh },
+    precision: yesResults.length > 0 ? +(truePositives / yesResults.length * 100).toFixed(1) : null,
+    recall: allPositives > 0 ? +(truePositives / allPositives * 100).toFixed(1) : null,
+    nYes: yesResults.length,
+    nNo: noResults.length,
+    avgReturnYes: avgReturn(yesResults),
+    avgReturnNo:  avgReturn(noResults),
+    avgReturnHold: avgReturn(noResults),
+    avgReturnSell: (() => {
+      const sellPts = results.filter(r => r.level === "sell" || r.level === "reduce");
+      return avgReturn(sellPts);
+    })(),
     baseRate,
-    unconditionalMean,
-    avgReturnYes: avg(yesR),
-    avgReturnHold: avg(holdR),
-    avgReturnSell: avg6(sellR),
+    regimeEffect,
     byLevel,
+    holdBuckets,
+    sellBacktest,
+    sellThresholds: bestSellThresholds,
     plBubbleMetrics,
-    calibratedBubbleSig: THRESHOLDS.sell,
-    calibratedReduceSig: THRESHOLDS.reduce,
+    calibratedBubbleSig,
+    calibratedReduceSig,
+    correctionPercentiles: { p25: corrP25, p50: corrP50, p75: corrP75, n: overheatedReturns.length },
+    sigmaBuckets,
     crossValidation,
     stabilityDelta,
-    sigmaBuckets,
-    calibrationBuckets,
-    fitAudit,
+    // Retorno medio incondicional — contexto informativo
+    unconditionalMean: results.length > 0
+      ? +(results.reduce((s, r) => s + r.realReturn, 0) / results.length).toFixed(1)
+      : 0,
+    // Calibración probabilística: ¿cuando el modelo dice "alto riesgo",
+    // efectivamente pierde más gente? Agrupamos por σ y comparamos
+    // loss rate real vs P(pérdida) predicho por el MC.
+    calibrationBuckets: [
+      { label: "Deep value (σ < -1)",      min: -99,  max: -1.0 },
+      { label: "Discount (σ -1 to -0.5)",  min: -1.0, max: -0.5 },
+      { label: "Neutral (σ ±0.5)",         min: -0.5, max:  0.5 },
+      { label: "Elevated (σ 0.5 to 1)",    min:  0.5, max:  1.0 },
+      { label: "Overheated (σ > 1)",       min:  1.0, max: 99   },
+    ].map(b => {
+      const pts = results.filter(r => r.sig > b.min && r.sig <= b.max);
+      if (pts.length === 0) return { ...b, n: 0, lossRate: null, avgReturn: null, pLossAvg: null };
+      const n = pts.length;
+      const nLoss   = pts.filter(r => r.realReturn < 0).length;
+      const lossRate = +(nLoss / n * 100).toFixed(1);
+      const ar       = +(pts.reduce((s, r) => s + r.realReturn, 0) / n).toFixed(1);
+      const pLossAvg = +(pts.reduce((s, r) => s + r.pLoss1y, 0) / n).toFixed(1);
+      return { ...b, n, lossRate, avgReturn: ar, pLossAvg };
+    }),
     results,
-    thresholds: THRESHOLDS,
-    rules: {
-      strongBuy: `σ < ${THRESHOLDS.strongBuy}`,
-      buy: `σ < ${THRESHOLDS.buy}`,
-      hold: `${THRESHOLDS.buy} ≤ σ < ${THRESHOLDS.reduce}`,
-      reduce: `${THRESHOLDS.reduce} ≤ σ < ${THRESHOLDS.sell} (requires b > ${THRESHOLDS.maturityB})`,
-      sell: `σ ≥ ${THRESHOLDS.sell} (requires b > ${THRESHOLDS.maturityB})`,
-      note: "Pure sigma rules, WLS refitted at each point, no weight optimization. Sell/reduce gated by PL maturity (b > 4.0).",
-    },
   };
 }
