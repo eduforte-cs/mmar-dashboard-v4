@@ -222,6 +222,8 @@ export default function useEngine() {
       conditionalRemaining: episode.conditionalRemaining,
       sigImproving: episode.sigImproving,
       sigWorsening: episode.sigWorsening,
+      episodeDays: episode.episodeDays,
+      episodeHistory: episode.episodeHistory,
       domRegime, deviationPct,
     });
 
