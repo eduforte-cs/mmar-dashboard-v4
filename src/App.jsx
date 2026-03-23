@@ -12,6 +12,7 @@ import MonteCarlo from "./sections/MonteCarlo";
 import Backtest from "./sections/Backtest";
 import BacktestCompare from "./sections/BacktestCompare";
 import Whitepaper from "./sections/Whitepaper";
+import About from "./sections/About";
 import Footer from "./sections/Footer";
 
 function Loading({ msg }) {
@@ -131,12 +132,12 @@ function Dashboard() {
           {heroTabs.includes(tab) && <Hero d={d} derived={derived} />}
           <div style={{ animation: "fi 0.3s ease" }}>
             {tab === "lite" && <Lite d={d} derived={derived} setTab={setTab} />}
-            {tab === "pro" && <Pro d={d} derived={derived} />}
+            {tab === "pro" && <Pro d={d} derived={derived} setTab={setTab} />}
             {tab === "backtest" && <Backtest d={d} />}
             {tab === "compare" && <BacktestCompare d={d} />}
             {tab === "faq" && <Faq />}
             {tab === "whitepaper" && <Whitepaper d={d} />}
-            {tab === "about" && <Placeholder label="About — CommonSense & Edu Forte" />}
+            {tab === "about" && <About />}
           </div>
           <Footer lastRefresh={lastRefresh} />
         </div>
