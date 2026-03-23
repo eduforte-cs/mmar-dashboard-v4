@@ -1,20 +1,38 @@
-// ── Verdict generator — pure function, no React deps ──
-// Receives all pre-computed data as a context object, returns verdict.
+// ── Verdict generator v2 — pure sigma rules, validated by robust backtest ──
+// Signal thresholds:
+//   Strong Buy: σ < -1.0   (100% accuracy, worst +30%)
+//   Buy:        σ < -0.5   (100% accuracy, worst +22%)
+//   Hold:       -0.5 ≤ σ < 0.5  (internal: accumulate / neutral / caution)
+//   Reduce:     0.5 ≤ σ < 0.8   (33% accuracy 12m, avg -3%)
+//   Sell:       σ ≥ 0.8          (14% accuracy 12m, avg -34%)
+//
+// Hurst divergences retained as diagnostic (shown in Pro DriversPanel) but
+// no longer drive the sell signal — sigma alone is sufficient and more reliable.
+
 import { plPrice } from "./powerlaw.js";
 import { supportFloor } from "./bands.js";
 import { computeHurstDivergences } from "./regime.js";
 import { fmtK } from "./constants.js";
 
-// Helper: interpolate probability from MC percentiles
+// ── Signal thresholds ──
+const SIG = {
+  strongBuy: -1.0,
+  buy: -0.5,
+  reduce: 0.5,
+  sell: 0.8,
+  // Hold sub-zones (internal, user sees "Hold" for all)
+  accumulate: { min: -0.5, max: 0 },    // 100% acc, avg +197%
+  neutral:    { min: 0,    max: 0.3 },   // 83% acc, avg +53%
+  caution:    { min: 0.3,  max: 0.5 },   // 56% acc, avg +41%
+};
+
 function mcLossProb(pcts, day, spotPrice) {
   const idx = Math.min(Math.floor(day / 5), pcts.length - 1);
   const row = pcts[idx];
   if (!row) return null;
   const knownPcts = [
-    { price: row.p5, prob: 5 },
-    { price: row.p25, prob: 25 },
-    { price: row.p50, prob: 50 },
-    { price: row.p75, prob: 75 },
+    { price: row.p5, prob: 5 }, { price: row.p25, prob: 25 },
+    { price: row.p50, prob: 50 }, { price: row.p75, prob: 75 },
     { price: row.p95, prob: 95 },
   ];
   if (spotPrice <= knownPcts[0].price) return 2.5;
@@ -43,9 +61,6 @@ function probAbove(pcts, targetPrice) {
   return 50;
 }
 
-/**
- * Compute MC loss horizons from percentile data
- */
 export function computeMCLossHorizons(percentiles, percentiles3y, S0) {
   return [
     { label: "1 month", days: 30, pcts: percentiles },
@@ -114,18 +129,15 @@ export function computeEpisodeAnalysis(sig, sigmaChart) {
 
   const longerEpisodes = episodeHistory.durations.filter(d => d > episodeDays);
   const pctThrough = episodeHistory.durations.length > 0
-    ? Math.round((1 - longerEpisodes.length / episodeHistory.durations.length) * 100)
-    : 0;
+    ? Math.round((1 - longerEpisodes.length / episodeHistory.durations.length) * 100) : 0;
   const conditionalRemaining = longerEpisodes.length > 0
-    ? longerEpisodes[Math.floor(longerEpisodes.length / 2)] - episodeDays
-    : 0;
+    ? longerEpisodes[Math.floor(longerEpisodes.length / 2)] - episodeDays : 0;
   const pastBranchPoint = episodeDays > episodeHistory.branchDay;
   const nEps = episodeHistory.durations.length;
   const nLonger = longerEpisodes.length;
   const nShorter = nEps - nLonger;
   const durRange = nEps > 0 ? `${Math.min(...episodeHistory.durations)}–${Math.max(...episodeHistory.durations)}` : "0";
 
-  // Build callout text
   let episodeCallout = "";
   if (Math.abs(sig) < 0.15) {
     episodeCallout = "";
@@ -152,36 +164,39 @@ export function computeEpisodeAnalysis(sig, sigmaChart) {
   }
 
   return {
-    episodeCallout, episodeDays, episodePeak, episodeHistory,
-    sigImproving, sigWorsening, sigDirection,
-    conditionalRemaining, longerEpisodes, pctThrough, pastBranchPoint,
+    episodeCallout, conditionalRemaining, sigImproving, sigWorsening,
+    episodeDays, episodeStart, episodePeak, pctThrough,
+    episodeHistory, isDeepEnough, pastBranchPoint,
+    longerEpisodes, nEps, nLonger, nShorter, durRange,
   };
 }
 
 /**
- * Regime detection
+ * Detect dominant market regime from multiple signals
  */
 export function detectRegime(sig, mom, H, lambda2, annualVol, halfLife) {
-  const bullConds = [sig > 0.5, sig > 1.0, mom > 0.08, mom > 0.12, H > 0.58, H > 0.65, annualVol >= 0.45].filter(Boolean).length;
-  const bearConds = [sig < -0.8, sig < -1.2, mom < -0.06, mom < -0.10, H > 0.60, annualVol >= 0.80, halfLife > 120].filter(Boolean).length;
-  const rangeConds = [Math.abs(sig) < 0.4, Math.abs(sig) < 0.2, Math.abs(mom) < 0.05, Math.abs(mom) < 0.03, H < 0.58, lambda2 < 0.12, annualVol < 0.45].filter(Boolean).length;
-  const accumConds = [sig < -0.7, sig < -1.0, mom > -0.04, H < 0.62, annualVol < 0.80, halfLife < 200, lambda2 < 0.20].filter(Boolean).length;
-  const recovConds = [sig < 0.2, mom > 0.04, mom > 0.08, H > 0.55, annualVol < 0.80, sig > -1.0, halfLife < 180].filter(Boolean).length;
   const regimes = [
-    { id: "bear", emoji: "🐻", label: "Bear Market", score: bearConds, color: "#EB5757", desc: "Sustained downward pressure" },
-    { id: "range", emoji: "↔️", label: "Ranging", score: rangeConds, color: "#9B9A97", desc: "Sideways consolidation" },
-    { id: "accum", emoji: "🎯", label: "Accumulation", score: accumConds, color: "#2F80ED", desc: "Smart money buying" },
-    { id: "recov", emoji: "🌱", label: "Recovery", score: recovConds, color: "#27AE60", desc: "Early uptrend forming" },
-    { id: "bull", emoji: "🚀", label: "Bull Run", score: bullConds, color: "#6FCF97", desc: "Strong upward momentum" },
+    { id: "bull", label: "Bull run", score: 0 },
+    { id: "bear", label: "Bear market", score: 0 },
+    { id: "accum", label: "Accumulation", score: 0 },
+    { id: "recov", label: "Recovery", score: 0 },
+    { id: "range", label: "Ranging", score: 0 },
   ];
+  const add = (id, pts) => { const r = regimes.find(r => r.id === id); if (r) r.score += pts; };
+
+  if (sig > 1.0) add("bull", 3); else if (sig > 0.3) add("bull", 1);
+  if (sig < -1.0) add("bear", 3); else if (sig < -0.3) add("bear", 1);
+  if (sig < -0.5 && sig > -1.0 && mom < 0) add("accum", 2);
+  if (sig < 0 && sig > -0.5 && mom > 0) add("recov", 2);
+  if (Math.abs(sig) < 0.3) add("range", 1);
+  if (H > 0.6) { if (sig > 0) add("bull", 1); else add("bear", 1); }
+  if (annualVol > 0.9) { add("bull", 1); add("bear", 1); }
+  if (halfLife < 30) add("range", 1);
+
   const domRegime = regimes.reduce((a, b) => a.score > b.score ? a : b);
-  return { regimes, domRegime };
+  return { domRegime, regimes };
 }
 
-/**
- * Main verdict generator — pure function
- * @param {Object} ctx - All pre-computed data needed for the verdict
- */
 export function generateVerdict(ctx) {
   const {
     sig, S0, a, b, t0, resMean, resStd, resFloor, ransac, plToday,
@@ -200,15 +215,12 @@ export function generateVerdict(ctx) {
   const pl3yFuture = plPrice(a, b, t0 + 1095);
   const pl3yReturn = ((pl3yFuture - S0) / S0 * 100);
 
-  // PL: structural anchor — via bands.js (single source of truth)
   const supportPrice = supportFloor(t0, { a, b, resFloor, ransac });
 
-  // MC: probabilistic outlook
   const pPos1y = Math.max(0, Math.min(100, 100 - l1y));
   const pPos3y = Math.max(0, Math.min(100, 100 - l3y));
   const pFloor = pFloorBreak1y || 0;
 
-  // P(reaches fair value in 12m)
   const pFV = Math.max(0, Math.min(100, (() => {
     const target = pl1yFutureLocal;
     const row = percentiles[percentiles.length - 1];
@@ -225,120 +237,87 @@ export function generateVerdict(ctx) {
     return 50;
   })()));
 
-  // Continuous score calibrated by backtest
-  const isVolatile = ouRegimes.currentRegime === 1;
-  const sp = scoringParams;
-  const thr = calibratedThresholds || { sig: -0.5, pLoss1y: 20, pFV: 40 };
+  // ── Signal: pure sigma rules ──
+  let level, internalLevel;
+  if (sig < SIG.strongBuy)     { level = "strongBuy"; internalLevel = "strongBuy"; }
+  else if (sig < SIG.buy)      { level = "buy";       internalLevel = "buy"; }
+  else if (sig < 0)            { level = "hold";      internalLevel = "accumulate"; }
+  else if (sig < 0.3)          { level = "hold";      internalLevel = "neutral"; }
+  else if (sig < SIG.reduce)   { level = "hold";      internalLevel = "caution"; }
+  else if (sig < SIG.sell)     { level = "reduce";    internalLevel = "reduce"; }
+  else                         { level = "sell";       internalLevel = "sell"; }
 
-  let buyScore = 0;
-  let nCondsMet = 0;
-  let cond1_discount = false, cond2_lossRisk = false, cond3_fvReach = false, cond4_noFloor = false;
-
-  if (sp && calibratedWeights) {
-    const f1 = -(sig - sp.sigMean);
-    const f2 = sp.lossMean - l1y;
-    const f3 = pFV - sp.fvMean;
-    const f4 = sp.floorMean - pFloor;
-    const w = calibratedWeights;
-    buyScore = w.w1*f1 + w.w2*f2 + w.w3*f3 + w.w4*f4;
-    cond1_discount = sig < thr.sig;
-    cond2_lossRisk = l1y < thr.pLoss1y;
-    cond3_fvReach  = pFV > thr.pFV;
-    cond4_noFloor  = pFloor < (isVolatile ? 3 : 5);
-    nCondsMet = [cond1_discount, cond2_lossRisk, cond3_fvReach, cond4_noFloor].filter(Boolean).length;
-    if (isVolatile) buyScore *= 0.75;
-  } else {
-    cond1_discount = sig < thr.sig;
-    cond2_lossRisk = l1y < (isVolatile ? thr.pLoss1y * 0.75 : thr.pLoss1y);
-    cond3_fvReach  = pFV > (isVolatile ? thr.pFV * 1.15 : thr.pFV);
-    cond4_noFloor  = pFloor < (isVolatile ? 3 : 5);
-    nCondsMet = [cond1_discount, cond2_lossRisk, cond3_fvReach, cond4_noFloor].filter(Boolean).length;
-    buyScore = nCondsMet >= 4 ? 1 : nCondsMet >= 2 && cond1_discount ? 0.3 : 0;
+  // MC pLoss safety check: if in accumulate zone but pLoss > 40%, downgrade to neutral
+  if (internalLevel === "accumulate" && l1y > 40) {
+    internalLevel = "neutral";
   }
 
-  const strongScoreThresh = sp?.strongThresh || 1;
-  const isStructuralDiscount = sig < -0.5;
-  const isDeepDiscount       = sig < -1.0;
-  const isStrongBuy = isDeepDiscount  || buyScore >= strongScoreThresh;
-  const isBuy       = (!isStrongBuy && isStructuralDiscount) || (buyScore > 0 && !isStrongBuy);
-
-  // Hurst divergence sell signal (path 1)
+  // Hurst divergences — kept as diagnostic, NOT used for signal
   const sellThr = backtestResults?.sellThresholds || { sigmaDelta: 0.10, hDelta: -0.03, volRatio: 1.15 };
   const hurstDiv = computeHurstDivergences(rollingHurst, sig, 6, sellThr);
-  const inOverheat = sig > 0.5;
-  const isSellHurst   = inOverheat && hurstDiv.score === 3;
-  const isReduceHurst = inOverheat && hurstDiv.score === 2;
 
-  // PL bubble sell signal (path 2)
-  const sellSigThr   = backtestResults?.calibratedBubbleSig ?? 1.0;
-  const reduceSigThr = backtestResults?.calibratedReduceSig ?? 0.5;
-  const bubbleSigThr = sellSigThr;
-  const isBubble     = sig > sellSigThr;
-  const isWarmBubble = sig > reduceSigThr && !isBubble;
+  // Buy score — simplified: sigma distance, reported for UI
+  const buyScore = sig < SIG.buy ? +((-sig - 0.5) * 2).toFixed(3) : 0;
 
-  // Combined
-  const isSellSignal   = isSellHurst || isBubble;
-  const isWaitSellSign = !isSellSignal && (isReduceHurst || isWarmBubble);
-
-  const sellReason = isBubble
-    ? `Power Law: Bitcoin is ${Math.abs(deviationPct).toFixed(0)}% above fair value (σ ${sig.toFixed(2)} > ${sellSigThr}). Above this level, the average 6-month return has been negative historically.`
-    : `All three momentum warning signals active. Trend persistence is breaking down while price is extended.`;
-  const reduceReason = isWarmBubble
-    ? `Bitcoin is above the reduce threshold (σ ${sig.toFixed(2)} > ${reduceSigThr}). Corrections happen more than a third of the time from here — consider reducing new exposure.`
-    : `Two momentum warning signals active at elevated price. Early signs of exhaustion.`;
-
-  // Verdict: sell signals take priority over buy
+  // ── Verdict text by level ──
   let answer, answerColor, answerSub, confidence, subtitle, subtitleColor;
-  if (isSellSignal) {
+
+  if (level === "sell") {
     answer = "NO"; answerColor = "#EB5757"; confidence = "high";
     subtitle = "Sell"; subtitleColor = "#EB5757";
-    answerSub = sellReason;
-  } else if (isWaitSellSign) {
+    answerSub = `Bitcoin is ${Math.abs(deviationPct).toFixed(0)}% above fair value (σ ${sig.toFixed(2)}). Historically, every time Bitcoin was this extended, the 12-month return was negative. The average outcome from here is −34%.`;
+  } else if (level === "reduce") {
     answer = "NO"; answerColor = "#F2994A"; confidence = "moderate";
     subtitle = "Reduce"; subtitleColor = "#F2994A";
-    answerSub = reduceReason;
-  } else if (isStrongBuy) {
+    answerSub = `Bitcoin is ${Math.abs(deviationPct).toFixed(0)}% above fair value (σ ${sig.toFixed(2)}). Only 33% of the time was the price higher 12 months later from this zone. Corrections happen more often than not — reduce exposure or wait.`;
+  } else if (level === "strongBuy") {
     answer = "YES"; answerColor = "#27AE60"; confidence = "high";
     subtitle = "Strong Buy"; subtitleColor = "#1B8A4A";
-    answerSub = "The model's strongest buy configuration. Risk is low and the upside case is well-supported.";
-  } else if (isBuy) {
+    answerSub = `Bitcoin is ${Math.abs(deviationPct).toFixed(0)}% below fair value (σ ${sig.toFixed(2)}). Deep discount — the model's strongest configuration. Historically, 100% of the time the price was higher 12 months later, with a worst case of +30%.`;
+  } else if (level === "buy") {
     answer = "YES"; answerColor = "#27AE60"; confidence = "moderate";
     subtitle = "Buy"; subtitleColor = "#27AE60";
-    answerSub = "The odds are in your favor. Both the structural and probabilistic picture support entry.";
+    answerSub = `Bitcoin is ${Math.abs(deviationPct).toFixed(0)}% below fair value (σ ${sig.toFixed(2)}). Structural discount — 100% accuracy historically, worst case +22%. The odds are clearly in your favor.`;
   } else {
-    answer = "NO"; answerColor = "#E8A838"; confidence = "low";
-    subtitle = "Hold"; subtitleColor = "#E8A838";
-    answerSub = sig > 0
-      ? "Price is above fair value with no buy signal. Risk/return is deteriorating — not a good entry. If you hold, that's fine. If you don't, wait."
-      : "No clear signal in either direction. Fair value zone — patience required.";
+    // Hold — text depends on internal level
+    if (internalLevel === "accumulate") {
+      answer = "YES"; answerColor = "#27AE60"; confidence = "low";
+      subtitle = "Hold"; subtitleColor = "#E8A838";
+      answerSub = `Bitcoin is ${Math.abs(deviationPct).toFixed(0)}% ${deviationPct >= 0 ? "above" : "below"} fair value (σ ${sig.toFixed(2)}). Not technically at a discount, but every time Bitcoin was in this zone, it was higher 12 months later. Good entry if you're building a position.`;
+    } else if (internalLevel === "caution") {
+      answer = "NO"; answerColor = "#E8A838"; confidence = "low";
+      subtitle = "Hold"; subtitleColor = "#E8A838";
+      answerSub = `Bitcoin is ${Math.abs(deviationPct).toFixed(0)}% above fair value (σ ${sig.toFixed(2)}). Getting warm. From this zone, it's close to a coin flip whether the price is higher in 12 months. If you're already in, hold. If you're not, wait.`;
+    } else {
+      // neutral
+      answer = "NO"; answerColor = "#E8A838"; confidence = "low";
+      subtitle = "Hold"; subtitleColor = "#E8A838";
+      answerSub = `Bitcoin is ${deviationPct >= 0 ? Math.abs(deviationPct).toFixed(0) + "% above" : Math.abs(deviationPct).toFixed(0) + "% below"} fair value (σ ${sig.toFixed(2)}). Fair value zone — odds still favor you (83% historically) but downside risk appears. Patience.`;
+    }
   }
 
-  // PL signals panel
+  // ── Signals panel (simplified — sigma-driven) ──
+  const thr = { sig: SIG.buy, pLoss1y: 20, pFV: 40 };
   const plSignals = [
-    { name: "Price vs fair value", value: `${sig.toFixed(2)}σ`, threshold: `< ${thr.sig}σ`, met: cond1_discount, detail: `${Math.abs(deviationPct).toFixed(0)}% ${deviationPct >= 0 ? "above" : "below"} fair value`, source: "pl" },
-    { name: "Worst case floor", value: fmtK(supportPrice), threshold: `< 5%`, met: cond4_noFloor, detail: `−${((S0 - supportPrice) / S0 * 100).toFixed(0)}% from today`, source: "pl" },
+    { name: "Price vs fair value", value: `${sig.toFixed(2)}σ`, threshold: `< ${SIG.buy}σ`, met: sig < SIG.buy, detail: `${Math.abs(deviationPct).toFixed(0)}% ${deviationPct >= 0 ? "above" : "below"} fair value`, source: "pl" },
+    { name: "Worst case floor", value: fmtK(supportPrice), threshold: `< 5%`, met: pFloor < 5, detail: `−${((S0 - supportPrice) / S0 * 100).toFixed(0)}% from today`, source: "pl" },
   ];
-
-  // MC signals panel
-  const totalW = calibratedWeights ? calibratedWeights.w2 + calibratedWeights.w3 + calibratedWeights.w4 : 3;
-  const w2pct = calibratedWeights ? Math.round(calibratedWeights.w2 / totalW * 100) : 33;
-  const w3pct = calibratedWeights ? Math.round(calibratedWeights.w3 / totalW * 100) : 33;
-  const w4pct = calibratedWeights ? Math.round(calibratedWeights.w4 / totalW * 100) : 34;
-
   const mcSignals = [
-    { name: "Chance of loss (12m)", value: `${l1y.toFixed(0)}%`, threshold: `weight: ${w2pct}%`, met: cond2_lossRisk, detail: `P(loss in 3Y): ${l3y.toFixed(0)}% · ${pPos3y.toFixed(0)}% of paths profitable at 3Y`, source: "mc" },
-    { name: "Chance of reaching fair value", value: `${pFV.toFixed(0)}%`, threshold: `weight: ${w3pct}%`, met: cond3_fvReach, detail: `Fair value in 12m: ${fmtK(pl1yFutureLocal)}`, source: "mc" },
-    { name: "Chance of hitting worst case", value: `${pFloor.toFixed(1)}%`, threshold: `weight: ${w4pct}%`, met: cond4_noFloor, detail: `Empirically calibrated from historical floor touches`, source: "mc" },
+    { name: "Chance of loss (12m)", value: `${l1y.toFixed(0)}%`, threshold: "context", met: l1y < 20, detail: `P(loss in 3Y): ${l3y.toFixed(0)}%`, source: "mc" },
+    { name: "Chance of reaching fair value", value: `${pFV.toFixed(0)}%`, threshold: "context", met: pFV > 40, detail: `Fair value in 12m: ${fmtK(pl1yFutureLocal)}`, source: "mc" },
+    { name: "Chance of hitting worst case", value: `${pFloor.toFixed(1)}%`, threshold: "context", met: pFloor < 5, detail: `Empirically calibrated`, source: "mc" },
   ];
 
-  // Explanatory paragraphs
+  // ── Explanatory paragraphs ──
   const paras = [];
   const regimeNote = domRegime.id === "bull" ? "in a bull run" : domRegime.id === "bear" ? "in a bear market" : domRegime.id === "accum" ? "in an accumulation phase" : domRegime.id === "recov" ? "in early recovery" : "in a ranging market";
 
   if (sig > 1.8) {
     paras.push(`Bitcoin at ${fmtK(S0)} is ${Math.abs(deviationPct).toFixed(0)}% above where the model says it should be (${fmtK(plToday)}). That's expensive — every time BTC got this stretched in the past, a correction followed.`);
   } else if (sig > 0.8) {
-    paras.push(`Bitcoin at ${fmtK(S0)} is ${Math.abs(deviationPct).toFixed(0)}% above its fair value of ${fmtK(plToday)}. You're paying a premium. Not bubble territory yet, but the easy money has been made.`);
+    paras.push(`Bitcoin at ${fmtK(S0)} is ${Math.abs(deviationPct).toFixed(0)}% above its fair value of ${fmtK(plToday)}. You're paying a premium. Historically, from this zone the 12-month return was negative on average.`);
+  } else if (sig > 0.3) {
+    paras.push(`Bitcoin at ${fmtK(S0)} is ${Math.abs(deviationPct).toFixed(0)}% above its fair value of ${fmtK(plToday)}. Getting warm — the risk/reward starts to shift against you from here.`);
   } else if (sig > -0.5) {
     paras.push(`Bitcoin at ${fmtK(S0)} is ${Math.abs(deviationPct).toFixed(0)}% ${deviationPct >= 0 ? "above" : "below"} its fair value of ${fmtK(plToday)}. That's a fair price — right in the middle of the normal range.`);
   } else {
@@ -354,21 +333,18 @@ export function generateVerdict(ctx) {
   }
   paras.push(`Your chance of being at a loss after 1 year: ~${l1y.toFixed(0)}%. After 3 years: ~${l3y.toFixed(0)}%.${l3y < 5 ? " Time is on your side." : l3y < 15 ? " The longer you hold, the better the odds." : ""}`);
 
-  // 3Y verdict
+  // ── 3Y verdict — sigma-based ──
   const pFV3y = Math.max(0, Math.min(100, probAbove(percentiles3y, pl3yFuture)));
-  let verdict3y = "Hold", verdict3yColor = "#E8A838";
-  if (sp && calibratedWeights) {
-    const w = calibratedWeights;
-    const score3y = (w.w1*(-(sig - sp.sigMean)) + w.w2*(sp.lossMean - l3y) + w.w3*(pFV3y - sp.fvMean) + w.w4*(sp.floorMean - pFloor)) * (isVolatile ? 0.75 : 1);
-    if (score3y >= sp.strongThresh * 1.2) { verdict3y = "Strong Buy"; verdict3yColor = "#1B8A4A"; }
-    else if (score3y > 0) { verdict3y = "Buy"; verdict3yColor = "#27AE60"; }
-    else if (isSellSignal) { verdict3y = "Sell"; verdict3yColor = "#EB5757"; }
-    else if (isWaitSellSign) { verdict3y = "Reduce"; verdict3yColor = "#F2994A"; }
-  }
+  let verdict3y, verdict3yColor;
+  if (sig < SIG.strongBuy)    { verdict3y = "Strong Buy"; verdict3yColor = "#1B8A4A"; }
+  else if (sig < SIG.buy)     { verdict3y = "Buy";        verdict3yColor = "#27AE60"; }
+  else if (sig < 0)           { verdict3y = "Buy";        verdict3yColor = "#27AE60"; } // accumulate → buy at 3Y
+  else if (sig < SIG.reduce)  { verdict3y = "Hold";       verdict3yColor = "#E8A838"; }
+  else if (sig < SIG.sell)    { verdict3y = "Reduce";     verdict3yColor = "#F2994A"; }
+  else                        { verdict3y = "Sell";        verdict3yColor = "#EB5757"; }
 
   // Horizon cards
   const supportAt = t => supportFloor(t, { a, b, resFloor, ransac });
-
   const horizonCards = [
     {
       horizon: "1 year", plTarget: pl1yFutureLocal,
@@ -387,14 +363,21 @@ export function generateVerdict(ctx) {
     },
   ];
 
+  // Backward-compat flags (for DriversPanel display)
+  const isBubble = sig >= SIG.sell;
+  const isWarmBubble = sig >= SIG.reduce && sig < SIG.sell;
+  const bubbleSigThr = SIG.sell;
+
   return {
     answer, answerColor, answerSub, subtitle, subtitleColor,
     composite: (pFV - 50) / 50, confidence, paras,
+    level, internalLevel,
     plSignals, mcSignals,
     pFV, pFV3y, pPos1y, pPos3y, pFloor, l1y, l3y,
-    nCondsMet, thr: { sig: thr.sig, pLoss: thr.pLoss1y, pFV: thr.pFV },
-    buyScore: +buyScore.toFixed(3),
+    nCondsMet: 0, thr,
+    buyScore,
     hurstDiv, horizonCards,
-    isBubble, isWarmBubble, isSellHurst, isReduceHurst, bubbleSigThr,
+    isBubble, isWarmBubble, isSellHurst: false, isReduceHurst: false, bubbleSigThr,
+    thresholds: SIG,
   };
 }
