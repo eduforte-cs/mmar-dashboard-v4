@@ -9,6 +9,7 @@ import Pro from "./sections/Pro";
 import Faq from "./sections/Faq";
 import PowerLaw from "./sections/PowerLaw";
 import MonteCarlo from "./sections/MonteCarlo";
+import Backtest from "./sections/Backtest";
 import Footer from "./sections/Footer";
 
 function Loading({ msg }) {
@@ -86,7 +87,7 @@ function Dashboard() {
   const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
 
   // ── Preview toggle: set to true to see Landing, false for dashboard ──
-  const showLanding = false;
+  const showLanding = true;
 
   if (phase === "loading") return <Loading msg={msg} />;
   if (phase === "error") return <ErrorScreen msg={msg} onRetry={retry} />;
@@ -109,7 +110,7 @@ function Dashboard() {
   // Full-bleed tabs (no page-pad)
   const fullBleedTabs = ["pl", "mc"];
   // Tabs that show Hero
-  const heroTabs = ["pro", "backtest"];
+  const heroTabs = ["pro"];
 
   return (
     <div style={{
@@ -129,7 +130,7 @@ function Dashboard() {
           <div style={{ animation: "fi 0.3s ease" }}>
             {tab === "lite" && <Lite d={d} derived={derived} setTab={setTab} />}
             {tab === "pro" && <Pro d={d} derived={derived} />}
-            {tab === "backtest" && <Placeholder label="Backtest — Walk-Forward Validation" />}
+            {tab === "backtest" && <Backtest d={d} />}
             {tab === "faq" && <Faq />}
             {tab === "whitepaper" && <Placeholder label="Whitepaper — The MMAR Model" />}
             {tab === "about" && <Placeholder label="About — CommonSense & Edu Forte" />}
