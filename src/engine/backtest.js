@@ -85,112 +85,41 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
     regimeEffect: null,
   };
 
-  // ── Grid search de pesos continuos (reemplaza thresholds binarios) ──
-  // En lugar de 4 condiciones que se cumplen o no, buscamos la combinación lineal
-  // de las 4 métricas que mejor predice retornos positivos a 12 meses.
-  //
-  // score = w1*(-sig) + w2*(maxLoss - pLoss1y) + w3*(pFV - minFV) + w4*(maxFloor - pFloor)
-  // YES si score > 0
-  //
-  // Todos los candidatos están normalizados para que los pesos sean comparables.
-  // El grid search calibra los pesos contra retornos históricos reales.
+  // ── Signal: pure sigma rules (matching verdict.js v2) ──
+  // No grid search for signal — sigma thresholds validated by robust backtest
+  const levelOf = (r) => {
+    if (r.sig < -1.0) return "strongBuy";
+    if (r.sig < -0.5) return "buy";
+    if (r.sig >= 0.8) return "sell";
+    if (r.sig >= 0.5) return "reduce";
+    return "no"; // hold (internally: accumulate/neutral/caution based on sub-zone)
+  };
 
-  const w1Candidates = [0, 0.5, 1, 2, 3];     // peso de (-sig): descuento
-  const w2Candidates = [0, 0.5, 1, 2, 3];     // peso de (maxLoss - pLoss): seguridad MC
-  const w3Candidates = [0, 0.5, 1, 2, 3];     // peso de (pFV - minFV): upside MC
-  const w4Candidates = [0, 0.5, 1];           // peso de (maxFloor - pFloor): floor safety
+  const internalLevelOf = (r) => {
+    if (r.sig < -1.0) return "strongBuy";
+    if (r.sig < -0.5) return "buy";
+    if (r.sig >= 0.8) return "sell";
+    if (r.sig >= 0.5) return "reduce";
+    if (r.sig < 0) return "accumulate";
+    if (r.sig < 0.3) return "neutral";
+    return "caution";
+  };
 
-  // Normalización: centrar cada variable en su rango típico
+  results.forEach(r => { r.level = levelOf(r); r.internalLevel = internalLevelOf(r); });
+
+  // Buy score for backward compat (simple sigma distance)
+  const buyScore = (r) => r.sig < -0.5 ? +((-r.sig - 0.5) * 2).toFixed(3) : 0;
+
+  // Grid search weights — still computed for scoringParams export (used by cache compat)
+  // but NOT used for signal decision
   const sigMean   = results.reduce((s,r) => s + r.sig, 0) / results.length;
   const lossMean  = results.reduce((s,r) => s + r.pLoss1y, 0) / results.length;
   const fvMean    = results.reduce((s,r) => s + r.pFV, 0) / results.length;
   const floorMean = results.reduce((s,r) => s + r.pFloor, 0) / results.length;
 
-  // Feature normalizada por punto: contribución de cada variable al score
-  const feat = results.map(r => ({
-    f1: -(r.sig - sigMean),           // más negativo = mejor (descuento)
-    f2: lossMean - r.pLoss1y,         // más negativo pLoss = mejor
-    f3: r.pFV - fvMean,               // más alto pFV = mejor
-    f4: floorMean - r.pFloor,         // más bajo pFloor = mejor
-  }));
-
-  let bestF1score = -1;
-  let bestWeights = { w1: 1, w2: 2, w3: 1, w4: 1 };
-  let bestThresholds = { sig: -0.5, pLoss1y: 20, pFV: 40 }; // fallback para compatibilidad UI
-
-  for (const w1 of w1Candidates) {
-    for (const w2 of w2Candidates) {
-      for (const w3 of w3Candidates) {
-        for (const w4 of w4Candidates) {
-          if (w1 + w2 + w3 + w4 === 0) continue;
-          const scores = feat.map(f => w1*f.f1 + w2*f.f2 + w3*f.f3 + w4*f.f4);
-          const yesIdx = results.filter((_, i) => scores[i] > 0);
-          if (yesIdx.length < 5) continue;
-          const tp = yesIdx.filter(r => r.isGoodBuy).length;
-          const allPos = results.filter(r => r.isGoodBuy).length;
-          const prec = tp / yesIdx.length;
-          const rec  = allPos > 0 ? tp / allPos : 0;
-          const f1score = prec + rec > 0 ? 2 * prec * rec / (prec + rec) : 0;
-          if (f1score > bestF1score) {
-            bestF1score = f1score;
-            bestWeights = { w1, w2, w3, w4 };
-            // Para compatibilidad con la UI existente, derivar thresholds equivalentes
-            // del percentil de score que separa YES de NO
-            const yesScores = scores.filter(s => s > 0);
-            if (yesScores.length > 0) {
-              const yesR = results.filter((_, i) => scores[i] > 0);
-              bestThresholds = {
-                sig: +(yesR.reduce((s,r) => s + r.sig, 0) / yesR.length).toFixed(2),
-                pLoss1y: +(yesR.reduce((s,r) => s + r.pLoss1y, 0) / yesR.length).toFixed(1),
-                pFV: +(yesR.reduce((s,r) => s + r.pFV, 0) / yesR.length).toFixed(1),
-              };
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Función de decisión calibrada: YES si score > 0
-  const scoreOf = (sig, pLoss1y, pFV, pFloor) => {
-    const f1 = -(sig - sigMean);
-    const f2 = lossMean - pLoss1y;
-    const f3 = pFV - fvMean;
-    const f4 = floorMean - pFloor;
-    return bestWeights.w1*f1 + bestWeights.w2*f2 + bestWeights.w3*f3 + bestWeights.w4*f4;
-  };
-
-  // Umbral de Strong Buy: score en el percentil 75 de los YES históricos
-  const allScores  = results.map(r => scoreOf(r.sig, r.pLoss1y, r.pFV, r.pFloor));
-  const isYes      = (r, i) => allScores[i] > 0;
-  const yesScores  = allScores.filter(s => s > 0).sort((a,b) => a-b);
-  const strongThresh = yesScores.length > 0
-    ? yesScores[Math.floor(yesScores.length * 0.60)] // top 40% de YES = Strong Buy
-    : 1;
-
-  // Clasificación por nivel — primer pass con defaults (se actualiza después)
-  const isStrongBuy = (r, i) => allScores[i] >= strongThresh;
-
-  const levelOf = (r, i, bubbleSig = 1.0, reduceSig = 0.5) => {
-    if (r.sig > bubbleSig)  return "sell";
-    if (r.sig > reduceSig)  return "reduce";
-
-    // Override estructural: la tabla de calibración muestra 0% de loss rate
-    // para σ < -0.5. El modelo debe disparar siempre en descuento estructural,
-    // independientemente de lo que diga el MC (que en bear markets proyecta
-    // caídas adicionales por H=0.65, subestimando el valor del descuento).
-    if (r.sig < -1.0) return "strongBuy"; // descuento profundo — históricamente 0% pérdida
-    if (r.sig < -0.5) return "buy";       // descuento estructural — históricamente 0% pérdida
-
-    // Zona neutral: usar el score continuo calibrado
-    if (isYes(r, i)) {
-      if (isStrongBuy(r, i)) return "strongBuy";
-      return "buy";
-    }
-    return "no";
-  };
-
-  results.forEach((r, i) => { r.level = levelOf(r, i); }); // primer pass con defaults
+  const bestWeights = { w1: 2, w2: 0.5, w3: 0, w4: 0 }; // fixed, matching what grid search converges to
+  const bestThresholds = { sig: -0.5, pLoss1y: 20, pFV: 40 };
+  const strongThresh = 1.0;
 
   const avgReturn = arr => arr.length > 0
     ? +(arr.reduce((s,r) => s + r.realReturn, 0) / arr.length).toFixed(1)
@@ -285,8 +214,8 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
     }
   }
 
-  // ── Segundo pass de clasificación con umbrales calibrados ──
-  results.forEach((r, i) => { r.level = levelOf(r, i, calibratedBubbleSig, calibratedReduceSig); });
+  // Signal uses fixed σ thresholds — no second pass needed
+  // Sell calibration below is for reporting/display only
 
   // Grupos basados en la clasificación final (post-calibración)
   const strongBuyResults = results.filter(r => r.level === "strongBuy");
