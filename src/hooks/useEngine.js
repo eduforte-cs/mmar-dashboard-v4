@@ -209,7 +209,7 @@ export default function useEngine() {
 
     const mcLossHorizons = computeMCLossHorizons(percentiles, percentiles3y, S0);
     const episode = computeEpisodeAnalysis(sig, sigmaChart);
-    const { domRegime, regimes: _allRegimes } = detectRegime(sig, mom, H, lambda2, annualVol, halfLife);
+    const { domRegime, regimes: _allRegimes, diagnostics: regimeDiagnostics } = detectRegime(sig, mom, H, lambda2, annualVol, halfLife);
 
     const supportPriceVal = supportFloor(t0, { a, b, resFloor, ransac });
 
@@ -229,7 +229,7 @@ export default function useEngine() {
 
     return {
       sig, deviationPct, udRatio, pl1yBands, pl1yFuture,
-      mcLossHorizons, episode, domRegime, _allRegimes, supportPrice: supportPriceVal,
+      mcLossHorizons, episode, domRegime, _allRegimes, regimeDiagnostics, supportPrice: supportPriceVal,
       verdict, mcP5, mcP95,
       volInfo: getVolLabel(annualVol),
       verdictPlain: getVerdictPlain(sig),
