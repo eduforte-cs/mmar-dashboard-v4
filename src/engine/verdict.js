@@ -172,28 +172,90 @@ export function computeEpisodeAnalysis(sig, sigmaChart) {
 }
 
 /**
- * Detect dominant market regime from multiple signals
+ * Detect dominant market regime from multiple signals.
+ * Returns individual conditions for each regime (for UI checklist).
  */
 export function detectRegime(sig, mom, H, lambda2, annualVol, halfLife) {
-  const regimes = [
-    { id: "bull", label: "Bull run", score: 0 },
-    { id: "bear", label: "Bear market", score: 0 },
-    { id: "accum", label: "Accumulation", score: 0 },
-    { id: "recov", label: "Recovery", score: 0 },
-    { id: "range", label: "Ranging", score: 0 },
-  ];
-  const add = (id, pts) => { const r = regimes.find(r => r.id === id); if (r) r.score += pts; };
+  // Individual conditions — each has a label and a boolean
+  const conditions = {
+    bull: [
+      { label: "Price well above fair value", test: sig > 1.0, detail: `σ = ${sig.toFixed(2)} (threshold: > 1.0)`, pts: 3 },
+      { label: "Price above fair value", test: sig > 0.3 && sig <= 1.0, detail: `σ = ${sig.toFixed(2)} (threshold: > 0.3)`, pts: 1 },
+      { label: "Strong trend persistence", test: H > 0.6 && sig > 0, detail: `H = ${H.toFixed(2)} with positive σ`, pts: 1 },
+      { label: "High volatility", test: annualVol > 0.9, detail: `Ann. vol = ${(annualVol * 100).toFixed(0)}%`, pts: 1 },
+    ],
+    bear: [
+      { label: "Price well below fair value", test: sig < -1.0, detail: `σ = ${sig.toFixed(2)} (threshold: < -1.0)`, pts: 3 },
+      { label: "Price below fair value", test: sig < -0.3 && sig >= -1.0, detail: `σ = ${sig.toFixed(2)} (threshold: < -0.3)`, pts: 1 },
+      { label: "Strong trend persistence (downward)", test: H > 0.6 && sig < 0, detail: `H = ${H.toFixed(2)} with negative σ`, pts: 1 },
+      { label: "High volatility", test: annualVol > 0.9, detail: `Ann. vol = ${(annualVol * 100).toFixed(0)}%`, pts: 1 },
+    ],
+    accum: [
+      { label: "Below fair value but not deep", test: sig < -0.5 && sig > -1.0, detail: `σ = ${sig.toFixed(2)} (between -1.0 and -0.5)`, pts: 2 },
+      { label: "Negative or flat momentum", test: mom < 0, detail: `Momentum = ${mom.toFixed(3)}`, pts: 0 },
+    ],
+    recov: [
+      { label: "Near fair value from below", test: sig < 0 && sig > -0.5, detail: `σ = ${sig.toFixed(2)} (between -0.5 and 0)`, pts: 2 },
+      { label: "Positive momentum", test: mom > 0, detail: `Momentum = ${mom.toFixed(3)}`, pts: 0 },
+    ],
+    range: [
+      { label: "Close to fair value", test: Math.abs(sig) < 0.3, detail: `|σ| = ${Math.abs(sig).toFixed(2)} (threshold: < 0.3)`, pts: 1 },
+      { label: "Fast mean-reversion", test: halfLife < 30, detail: `Half-life = ${halfLife} days (threshold: < 30)`, pts: 1 },
+    ],
+  };
 
-  if (sig > 1.0) add("bull", 3); else if (sig > 0.3) add("bull", 1);
-  if (sig < -1.0) add("bear", 3); else if (sig < -0.3) add("bear", 1);
-  if (sig < -0.5 && sig > -1.0 && mom < 0) add("accum", 2);
-  if (sig < 0 && sig > -0.5 && mom > 0) add("recov", 2);
-  if (Math.abs(sig) < 0.3) add("range", 1);
-  if (H > 0.6) { if (sig > 0) add("bull", 1); else add("bear", 1); }
-  if (annualVol > 0.9) { add("bull", 1); add("bear", 1); }
-  if (halfLife < 30) add("range", 1);
+  // Compute scores
+  const regimes = [
+    { id: "bull", label: "Bull run", score: 0, conditions: conditions.bull },
+    { id: "bear", label: "Bear market", score: 0, conditions: conditions.bear },
+    { id: "accum", label: "Accumulation", score: 0, conditions: conditions.accum },
+    { id: "recov", label: "Recovery", score: 0, conditions: conditions.recov },
+    { id: "range", label: "Ranging", score: 0, conditions: conditions.range },
+  ];
+
+  // Score using same logic as before
+  if (sig > 1.0) regimes[0].score += 3; else if (sig > 0.3) regimes[0].score += 1;
+  if (sig < -1.0) regimes[1].score += 3; else if (sig < -0.3) regimes[1].score += 1;
+  if (sig < -0.5 && sig > -1.0 && mom < 0) regimes[2].score += 2;
+  if (sig < 0 && sig > -0.5 && mom > 0) regimes[3].score += 2;
+  if (Math.abs(sig) < 0.3) regimes[4].score += 1;
+  if (H > 0.6) { if (sig > 0) regimes[0].score += 1; else regimes[1].score += 1; }
+  if (annualVol > 0.9) { regimes[0].score += 1; regimes[1].score += 1; }
+  if (halfLife < 30) regimes[4].score += 1;
 
   const domRegime = regimes.reduce((a, b) => a.score > b.score ? a : b);
+
+  // Regime narratives and historical context
+  const narratives = {
+    bull: {
+      desc: "Bitcoin is trading significantly above its structural fair value with strong upward momentum. Bull runs are driven by FOMO, leverage, and media attention. They end with corrections of 40-70%.",
+      history: "Previous bull runs lasted 64–500 days above σ > 0.5. The longer the run, the sharper the eventual correction.",
+      implication: "Not the time to add positions. If you're holding, consider your exit strategy.",
+    },
+    bear: {
+      desc: "Bitcoin is trading below fair value with persistent downward momentum. Bear markets are driven by forced selling, deleveraging, and capitulation. They create the best buying opportunities.",
+      history: "Previous bear markets lasted 93–860 days below σ < -0.5. Every single one ended with a rally to new highs.",
+      implication: "Historically the best time to accumulate. Every bear market bottom has been higher than the previous one.",
+    },
+    accum: {
+      desc: "Bitcoin is below fair value but momentum has stalled — price isn't falling anymore, but it isn't recovering either. Smart money is accumulating while retail has capitulated.",
+      history: "Accumulation phases typically last 3-12 months. They're the quiet period between capitulation and recovery, characterized by low volatility and sideways price action.",
+      implication: "Strong buying opportunity if you have patience. The price may drift sideways for months before moving up.",
+    },
+    recov: {
+      desc: "Bitcoin is starting to recover from below fair value. Momentum has turned positive but the price hasn't reached fair value yet. Early signs of a new trend forming.",
+      history: "Recovery phases are typically short (1-3 months) as the market transitions from accumulation to fair value. They often accelerate as confidence builds.",
+      implication: "Good entry but with less discount than accumulation. The trend is in your favor.",
+    },
+    range: {
+      desc: "Bitcoin is trading near its structural fair value with no clear directional bias. The market is in equilibrium — waiting for the next catalyst.",
+      history: "Ranging periods can last weeks to months. They typically resolve into either a bull run (if external catalysts appear) or a correction (if momentum fades).",
+      implication: "No strong edge in either direction. Hold existing positions, avoid adding at this level.",
+    },
+  };
+
+  domRegime.narrative = narratives[domRegime.id] || narratives.range;
+
   return { domRegime, regimes };
 }
 
