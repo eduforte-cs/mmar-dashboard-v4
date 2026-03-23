@@ -11,6 +11,7 @@ import PowerLaw from "./sections/PowerLaw";
 import MonteCarlo from "./sections/MonteCarlo";
 import Backtest from "./sections/Backtest";
 import BacktestCompare from "./sections/BacktestCompare";
+import Whitepaper from "./sections/Whitepaper";
 import Footer from "./sections/Footer";
 
 function Loading({ msg }) {
@@ -134,7 +135,7 @@ function Dashboard() {
             {tab === "backtest" && <Backtest d={d} />}
             {tab === "compare" && <BacktestCompare d={d} />}
             {tab === "faq" && <Faq />}
-            {tab === "whitepaper" && <Placeholder label="Whitepaper — The MMAR Model" />}
+            {tab === "whitepaper" && <Whitepaper d={d} />}
             {tab === "about" && <Placeholder label="About — CommonSense & Edu Forte" />}
           </div>
           <Footer lastRefresh={lastRefresh} />
