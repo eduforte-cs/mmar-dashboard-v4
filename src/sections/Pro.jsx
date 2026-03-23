@@ -38,7 +38,7 @@ export default function Pro({ d, derived }) {
   const metrics = [
     { l: "Hurst (90d)", v: H.toFixed(2), s: H > 0.55 ? "Persistent" : "Mean-reverting" },
     { l: "λ² multifractal", v: lambda2.toFixed(2), s: "Partition fn" },
-    { l: "Buy score", v: verdict.buyScore.toFixed(2), s: `Threshold ${(backtestResults?.scoringParams?.strongThresh || 1).toFixed(2)}` },
+    { l: "Buy score", v: verdict.buyScore.toFixed(2), s: `Signal: ${verdict.subtitle}` },
     { l: "Regime", v: domRegime.label.split(" ")[0], s: `${domRegime.score}/7 conditions` },
   ];
 
