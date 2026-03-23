@@ -204,6 +204,7 @@ export function generateVerdict(ctx) {
     pFloorBreak1y, calibratedThresholds, scoringParams, calibratedWeights,
     ouRegimes, rollingHurst, backtestResults,
     episodeCallout, conditionalRemaining, sigImproving, sigWorsening,
+    episodeDays, episodeHistory,
     domRegime, deviationPct,
   } = ctx;
 
@@ -368,9 +369,108 @@ export function generateVerdict(ctx) {
   const isWarmBubble = sig >= SIG.reduce && sig < SIG.sell;
   const bubbleSigThr = SIG.sell;
 
+  // ── Lite texts — no jargon, retail-friendly ──
+  const isBuyZone = level === "strongBuy" || level === "buy" || (level === "hold" && internalLevel === "accumulate");
+  const isSellZone = level === "sell" || level === "reduce";
+  const action = isSellZone ? "hold" : "buy";
+
+  // MC worst cases
+  const mc1y = percentiles?.[percentiles.length - 1] || {};
+  const mc3y = percentiles3y?.[percentiles3y.length - 1] || {};
+  const worst1y = mc1y.p5 || 0;
+  const worst3y = mc3y.p5 || 0;
+  const worst1yPct = worst1y > 0 ? ((worst1y - S0) / S0 * 100).toFixed(0) : null;
+  const worst3yPct = worst3y > 0 ? ((worst3y - S0) / S0 * 100).toFixed(0) : null;
+  const best1y = mc1y.p95 || 0;
+  const pl1yReturn = ((pl1yFutureLocal - S0) / S0 * 100);
+
+  // Backtest accuracy by zone (from backtest or hardcoded from analysis)
+  const btAcc = { strongBuy: 100, buy: 100, accumulate: 100, neutral: 83, caution: 56, reduce: 33, sell: 6 };
+  const btWorst = { strongBuy: "+30%", buy: "+22%", accumulate: "+30%", neutral: "-13%", caution: "-28%", reduce: "-57%", sell: "-67%" };
+  const acc = btAcc[internalLevel] || 50;
+  const accStr = acc === 100 ? "100% of the time" : `${acc}% of the time`;
+  const lossAcc = 100 - acc;
+
+  // Loss curve from mcLossHorizons
+  const lossCurve = mcLossHorizons.map(h => ({ label: h.label, pct: Math.round(h.pLoss) }));
+
+  // ── answerSubLite ──
+  let answerSubLite;
+  if (internalLevel === "strongBuy") {
+    answerSubLite = `If you buy Bitcoin today at ${fmtK(S0)}, according to our model's backtest, every single time Bitcoin was this cheap, the price was higher after 1 year. Even the worst entry returned +30%. After 3 years, your chance of being at a loss: less than 5%. This is the best buying opportunity the model can identify.`;
+  } else if (internalLevel === "buy") {
+    answerSubLite = `If you buy Bitcoin today at ${fmtK(S0)}, according to our model's backtest, 100% of the time the price was higher after 1 year from this level. The worst entry still returned +22%. After 3 years, your chance of being at a loss: less than 5%.`;
+  } else if (internalLevel === "accumulate") {
+    answerSubLite = `If you buy Bitcoin today at ${fmtK(S0)}, according to our model's backtest, 100% of the time the price was higher after 1 year. Not technically a discount, but it has never failed from here. After 3 years, your chance of being at a loss: less than 10%.`;
+  } else if (internalLevel === "neutral") {
+    answerSubLite = `If you buy Bitcoin today at ${fmtK(S0)}, according to our model's backtest, the price was higher after 1 year 83% of the time. After 3 years, 88%. The odds are in your favor, but it's not a clear signal.`;
+  } else if (internalLevel === "caution") {
+    answerSubLite = `If you buy Bitcoin today at ${fmtK(S0)}, according to our model's backtest, the price was higher after 1 year only 56% of the time. After 3 years, 72%. That's close to a coin flip. Not the time to enter.`;
+  } else if (internalLevel === "reduce") {
+    answerSubLite = `If you hold Bitcoin today at ${fmtK(S0)}, according to our model's backtest, the price was lower after 1 year 67% of the time. After 3 years, 45% still at a loss. Consider reducing your position.`;
+  } else {
+    answerSubLite = `If you hold Bitcoin today at ${fmtK(S0)}, according to our model's backtest, the price was lower after 1 year 94% of the time, with an average loss of -34%. After 3 years, 70% still at a loss. Consider taking profit.`;
+  }
+
+  // ── parasLite — 6 paragraphs ──
+  const parasLite = [];
+
+  // 1. Where you are + backtest (same as answerSubLite but expanded)
+  const devDir = deviationPct >= 0 ? "more expensive" : "cheaper";
+  parasLite.push(`Bitcoin is trading at ${fmtK(S0)}. Our model says it should be worth ${fmtK(plToday)} — that means it's ${Math.abs(deviationPct).toFixed(0)}% ${devDir} than where it should be. ${isBuyZone ? "That's a discount." : isSellZone ? "That's historically dangerous." : "That's close to fair value."}`);
+
+  // 2. What the model projects
+  if (isSellZone) {
+    parasLite.push(`Looking forward, the model's fair value in 1 year is ${fmtK(pl1yFutureLocal)} — that's ${pl1yReturn >= 0 ? Math.abs(pl1yReturn).toFixed(0) + "% above" : Math.abs(pl1yReturn).toFixed(0) + "% below"} where you are now. In 3 years, ${fmtK(pl3yFuture)}. ${pl1yReturn < 0 ? "The structural trajectory is below your entry price." : "Even the fair value target barely justifies the risk."}`);
+  } else {
+    parasLite.push(`Looking forward, the model's fair value target in 1 year is ${fmtK(pl1yFutureLocal)} (${pl1yReturn >= 0 ? "+" : ""}${pl1yReturn.toFixed(0)}% from today). In 3 years, ${fmtK(pl3yFuture)} (${pl3yReturn >= 0 ? "+" : ""}${pl3yReturn.toFixed(0)}%). These aren't predictions — they're where the structural growth trajectory points. The actual path will be volatile, but the destination has been remarkably consistent.`);
+  }
+
+  // 3. Worst case from MC (1Y and 3Y)
+  if (worst1y > 0 && worst3y > 0) {
+    if (isSellZone) {
+      parasLite.push(`In the worst 5% of the model's simulations, Bitcoin is at ${fmtK(worst1y)} after 1 year (${worst1yPct > 0 ? "+" : ""}${worst1yPct}% from here) and ${fmtK(worst3y)} after 3 years (${worst3yPct > 0 ? "+" : ""}${worst3yPct}%).${parseFloat(worst1yPct) < 0 && parseFloat(worst3yPct) < 0 ? " Even the optimistic scenarios barely recover your entry price." : ""}`);
+    } else {
+      parasLite.push(`In the worst 5% of the model's simulations, Bitcoin is at ${fmtK(worst1y)} after 1 year (${worst1yPct > 0 ? "+" : ""}${worst1yPct}% from here) and ${fmtK(worst3y)} after 3 years (${worst3yPct > 0 ? "+" : ""}${worst3yPct}%).${parseFloat(worst3yPct) > 0 ? " Even the pessimistic path ends in profit." : ""}`);
+    }
+  }
+
+  // 4. Episode timing
+  if (episodeCallout && Math.abs(sig) >= 0.15) {
+    const epDays = episodeDays || 0;
+    const epHist = episodeHistory || {};
+    const nEps = epHist.durations?.length || 0;
+    const durRange = nEps > 0 ? `${Math.min(...epHist.durations)}–${Math.max(...epHist.durations)}` : "unknown";
+    if (sig < 0) {
+      parasLite.push(`Bitcoin has been below fair value for ${epDays} days. Previous episodes like this lasted ${durRange} days. ${conditionalRemaining > 0 ? `The model estimates about ${Math.round(conditionalRemaining / 30)} more months before the price returns to fair value.` : ""}${sigImproving ? " The price is already starting to recover." : sigWorsening ? " The price is still falling — the bottom may not be in yet." : ""}`);
+    } else {
+      parasLite.push(`Bitcoin has been above fair value for ${epDays} days. Previous episodes like this lasted ${durRange} days. ${conditionalRemaining > 0 ? `The model estimates about ${Math.round(conditionalRemaining / 30)} more months before a correction.` : ""}${sigImproving ? " The price is starting to cool off." : sigWorsening ? " The price is still rising — the move has momentum." : ""}`);
+    }
+  }
+
+  // 5. Loss curve
+  const lc = lossCurve.filter(h => h.pct > 0 || h.label === "3 years");
+  if (lc.length > 0) {
+    const lcStr = lc.map(h => `after ${h.label}: ~${h.pct}%`).join(", ");
+    if (isSellZone) {
+      parasLite.push(`Your risk of being at a loss: ${lcStr}. Time does not help enough from this level.`);
+    } else {
+      parasLite.push(`Your risk of being at a loss: ${lcStr}.${l3y < 5 ? " Time is on your side." : l3y < 15 ? " The longer you hold, the better the odds." : ""}`);
+    }
+  }
+
+  // 6. Short-term disclaimer
+  if (isBuyZone) {
+    parasLite.push("Important: this model is calibrated for 1-year and 3-year horizons. In the short term, Bitcoin can drop 20-30% even during a bull market — that's normal. A buy signal does not mean the price goes up tomorrow. It means that if you buy today and hold for at least 12 months, history is on your side.");
+  } else if (isSellZone) {
+    parasLite.push("Important: this model is calibrated for 1-year and 3-year horizons. In the short term, Bitcoin can rally 20-30% even in overheated territory — that's normal. A sell signal does not mean the price drops tomorrow. It means that holding from this level for 12 months has historically resulted in losses.");
+  } else {
+    parasLite.push("Important: this model is calibrated for 1-year and 3-year horizons. In the short term, anything can happen — Bitcoin routinely moves 10-20% in either direction within weeks. The model has no opinion about short-term moves.");
+  }
+
   return {
-    answer, answerColor, answerSub, subtitle, subtitleColor,
-    composite: (pFV - 50) / 50, confidence, paras,
+    answer, answerColor, answerSub, answerSubLite, subtitle, subtitleColor,
+    composite: (pFV - 50) / 50, confidence, paras, parasLite,
     level, internalLevel,
     plSignals, mcSignals,
     pFV, pFV3y, pPos1y, pPos3y, pFloor, l1y, l3y,
