@@ -4,7 +4,7 @@ import { bd, mn } from "../theme/tokens";
 import Chevron from "./Chevron";
 
 export default function Toggle({
-  label, badge, children,
+  label, badge, children, sub,
   defaultOpen = false, section, textOnly,
 }) {
   const { t } = useTheme();
@@ -27,6 +27,7 @@ export default function Toggle({
           color: t.cream, lineHeight: 1.3,
         }}>
           {label}
+          {sub && <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, fontWeight: 400, marginTop: 2 }}>{sub}</div>}
         </span>
 
         {badge && (
