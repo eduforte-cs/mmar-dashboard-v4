@@ -19,6 +19,29 @@ body { margin: 0; }
 .header-desktop { display: none !important; }
 .header-mobile  { display: flex !important; }
 
+/* Tables: horizontal scroll on mobile */
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tbl-wrap table { min-width: 500px; }
+
+/* All tables inside toggles get scroll wrapper behavior */
+.toggle-content table { display: table; width: 100%; }
+
+/* Grid helpers — mobile defaults */
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: 0; }
+.grid-3 { display: grid; grid-template-columns: 1fr; gap: 0; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.grid-2 > *:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.06); }
+.grid-3 > *:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.06); }
+
+/* Hero horizon card stats — stack on mobile */
+.hz-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+
+/* Smart DCA rules — wrap on mobile */
+.smart-rules { display: flex; flex-wrap: wrap; gap: 0; }
+
+/* Backtest signal cards — stack on mobile */
+.signal-cards { display: grid; grid-template-columns: 1fr; gap: 0; }
+
 @media (min-width: 768px) {
   .header-desktop  { display: flex !important; }
   .header-mobile   { display: none !important; }
@@ -29,11 +52,27 @@ body { margin: 0; }
   .horizon-grid    { grid-template-columns: 1fr 1fr !important; }
   .inner-grid      { grid-template-columns: 1fr 1fr !important; }
   .faq-expanded    { grid-template-columns: 1fr 2fr !important; gap: 40px !important; }
+  .lite-title      { font-size: 56px !important; }
+  .lite-answer     { font-size: 120px !important; }
+
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-2 > *:not(:last-child) { border-bottom: none; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-3 > *:not(:last-child) { border-bottom: none; }
+  .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .hz-stats { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .signal-cards { grid-template-columns: 1fr 1fr; }
 }
 
 @media (min-width: 1100px) {
   .page-pad      { padding-left: 64px !important; padding-right: 64px !important; }
   .hero-title    { font-size: 64px !important; }
   .verdict-num   { font-size: 96px !important; }
+  .lite-title    { font-size: 7vw !important; }
+  .lite-answer   { font-size: 12vw !important; }
   .faq-expanded  { grid-template-columns: 1fr 2fr !important; gap: 64px !important; }
 }
+
+/* Lite title + answer: mobile defaults */
+.lite-title  { font-size: 36px; }
+.lite-answer { font-size: 80px; }
