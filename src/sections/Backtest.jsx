@@ -47,7 +47,7 @@ export default function Backtest({ d }) {
 
   // Metric row helper
   const MetricRow = ({ label, value, color }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0" }}>
       <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>{label}</span>
       <span style={{ fontFamily: mn, fontSize: 13, fontWeight: 500, color: color || t.cream }}>{value}</span>
     </div>
@@ -72,7 +72,7 @@ export default function Backtest({ d }) {
       {/* ── Buy + Sell signal cards ── */}
       <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
         {/* Buy signal */}
-        <div style={{ padding: "20px 20px 20px 0", borderRight: `1px solid ${t.border}` }}>
+        <div style={{ padding: "20px 0" }}>
           <div style={{ fontFamily: bd, fontSize: 9, color: "#27AE60", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Buy signal accuracy</div>
           <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>When the model said "buy", was it right?</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#27AE60", marginBottom: 4 }}>100%</div>
@@ -88,7 +88,7 @@ export default function Backtest({ d }) {
         </div>
 
         {/* Sell signal */}
-        <div style={{ padding: "20px 0 20px 20px" }}>
+        <div style={{ padding: "20px 0" }}>
           <div style={{ fontFamily: bd, fontSize: 9, color: "#EB5757", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Sell signal accuracy</div>
           <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>When the model said "sell", did it protect you?</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#EB5757", marginBottom: 4 }}>{sellLossRate}%</div>
@@ -105,7 +105,7 @@ export default function Backtest({ d }) {
       </div>
 
       {/* ── Context paragraph ── */}
-      <div style={{ padding: "16px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
+      <div style={{ padding: "16px 0" }}>
         <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: 0 }}>
           Without the model, if you picked a random day to buy Bitcoin and held 12 months, you'd have lost money <span style={{ fontWeight: 500, color: t.cream }}>30% of the time</span>. Our buy signal eliminates that entirely. Our sell signal would have saved you from an average <span style={{ fontWeight: 500, color: t.cream }}>-16% loss</span> — and in the worst case, <span style={{ fontWeight: 500, color: t.cream }}>-67%</span>.
         </p>
@@ -114,41 +114,37 @@ export default function Backtest({ d }) {
       {/* ── Full spectrum ── */}
       <Toggle label="Full signal spectrum — all 7 zones" defaultOpen>
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 580 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 440 }}>
           <thead>
             <tr>
               <th style={th}>Zone</th>
-              <th style={thR}>σ range</th>
               <th style={thR}>Days</th>
-              <th style={thR}>Signal</th>
               <th style={thR}>Accuracy</th>
               <th style={thR}>Avg return</th>
-              <th style={thR}>Worst entry</th>
+              <th style={thR}>Worst</th>
             </tr>
           </thead>
           <tbody>
             {spectrum.map((s, idx) => {
               const n = s.data?.n || 0;
               const isSell = s.horizon === "6m";
-              const accLabel = isSell ? `${s.data?.precision || "–"}% saved` : `${s.data?.precision || "–"}%`;
-              const isBuyGroup = s.signal === "Buy";
-              const borderAbove = idx === 2 || idx === 5; // separators between buy/hold and hold/sell
+              const accLabel = isSell ? `${s.data?.precision || "–"}%` : `${s.data?.precision || "–"}%`;
+              const borderAbove = idx === 2 || idx === 5;
               return (
                 <tr key={s.label} style={borderAbove ? { borderTop: `2px solid ${t.border}` } : {}}>
-                  <td style={{ ...td, fontFamily: bd, fontWeight: 500 }}>
-                    <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: s.color, marginRight: 8, verticalAlign: "middle" }} />
+                  <td style={{ ...td, fontFamily: bd, fontWeight: 500, whiteSpace: "nowrap" }}>
+                    <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: s.color, marginRight: 6, verticalAlign: "middle" }} />
                     {s.label}
+                    {isSell && <span style={{ fontFamily: mn, fontSize: 9, color: t.dim, marginLeft: 4 }}>6m</span>}
                   </td>
-                  <td style={tdR}>{s.range}</td>
                   <td style={tdR}>{n.toLocaleString()}</td>
-                  <td style={{ ...tdR, color: s.signal === "Buy" ? "#27AE60" : s.signal === "Sell" ? "#EB5757" : t.faint }}>{s.signal}</td>
-                  <td style={{ ...tdR, color: isSell ? t.faint : parseFloat(s.data?.precision) >= 99 ? "#27AE60" : parseFloat(s.data?.precision) >= 80 ? "#E8A838" : t.faint }}>
-                    {accLabel}
+                  <td style={{ ...tdR, color: isSell ? t.faint : parseFloat(s.data?.precision) >= 99 ? "#27AE60" : parseFloat(s.data?.precision) >= 80 ? "#E8A838" : t.faint, whiteSpace: "nowrap" }}>
+                    {accLabel}{isSell && <span style={{ fontSize: 9, color: t.dim }}> saved</span>}
                   </td>
-                  <td style={{ ...tdR, color: (s.data?.avgReturn || 0) > 0 ? "#27AE60" : "#EB5757" }}>
+                  <td style={{ ...tdR, color: (s.data?.avgReturn || 0) > 0 ? "#27AE60" : "#EB5757", whiteSpace: "nowrap" }}>
                     {s.data?.avgReturn != null ? `${s.data.avgReturn > 0 ? "+" : ""}${s.data.avgReturn}%` : "–"}
                   </td>
-                  <td style={{ ...tdR, color: (s.data?.minReturn || 0) < 0 ? "#EB5757" : "#27AE60" }}>
+                  <td style={{ ...tdR, color: (s.data?.minReturn || 0) < 0 ? "#EB5757" : "#27AE60", whiteSpace: "nowrap" }}>
                     {s.data?.minReturn != null ? `${s.data.minReturn > 0 ? "+" : ""}${s.data.minReturn}%` : "–"}
                   </td>
                 </tr>
@@ -224,12 +220,12 @@ export default function Backtest({ d }) {
       {/* ── Smart DCA hero metrics ── */}
       {bm.dca && (
         <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
-          <div style={{ padding: "20px 16px 20px 0", borderRight: `1px solid ${t.border}` }}>
+          <div style={{ padding: "20px 0" }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA return</div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>+{bm.dca.smartDcaReturn}%</div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs +{bm.dca.dcaReturn}% blind DCA</div>
           </div>
-          <div style={{ padding: "20px 0 20px 16px" }}>
+          <div style={{ padding: "20px 0" }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA Sortino</div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs {bm.dca.dca.sortino ?? "–"} blind DCA</div>
