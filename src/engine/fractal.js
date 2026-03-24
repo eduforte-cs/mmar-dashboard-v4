@@ -121,15 +121,16 @@ export function partitionFunction(returns) {
 }
 
 export function fitLambda2(tauData) {
+  // Fit τ(q) = α·q + β·q² via OLS. λ² = -2β.
+  // Normal equations: [Σq² Σq³; Σq³ Σq⁴] · [α; β] = [Σ(τq); Σ(τq²)]
   const pts = tauData.filter(t => t.q > 0 && t.q <= 4);
   if (pts.length < 3) return 0.08;
-  let sQ2 = 0, sQ4 = 0, sTQ = 0, sTQ2 = 0;
-  const n = pts.length;
-  pts.forEach(({ q, tau }) => { sQ2 += q * q; sQ4 += q ** 4; sTQ += tau * q; sTQ2 += tau * q * q; });
-  const det = n * sQ4 - sQ2 * sQ2;
+  let sQ2 = 0, sQ3 = 0, sQ4 = 0, sTQ = 0, sTQ2 = 0;
+  pts.forEach(({ q, tau }) => { sQ2 += q * q; sQ3 += q ** 3; sQ4 += q ** 4; sTQ += tau * q; sTQ2 += tau * q * q; });
+  const det = sQ2 * sQ4 - sQ3 * sQ3;
   if (Math.abs(det) < 1e-10) return 0.08;
-  const b = (n * sTQ2 - sQ2 * sTQ) / det;
-  return Math.max(0.02, Math.min(-2 * b, 0.45));
+  const beta = (sQ2 * sTQ2 - sQ3 * sTQ) / det;
+  return Math.max(0.02, Math.min(-2 * beta, 0.45));
 }
 
 export function generateCascade(nSteps, lambda2) {
