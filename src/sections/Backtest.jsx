@@ -35,8 +35,8 @@ export default function Backtest({ d }) {
     { label: "Accumulate", range: "-0.5 to 0", data: bl.accumulate, color: "#6FCF97" },
     { label: "Neutral", range: "0 to 0.3", data: bl.neutral, color: "#E8A838" },
     { label: "Caution", range: "0.3 to 0.5", data: bl.caution, color: "#F2994A" },
-    { label: "Reduce", range: "0.5 to 0.8", data: { n: bt.nReduce, precision: null, avgReturn: null }, color: "#E07338" },
-    { label: "Sell", range: "σ > 0.8", data: { n: bt.nSell, precision: null, avgReturn: null }, color: "#EB5757" },
+    { label: "Reduce", range: "0.5 to 0.8", data: bl.reduce, color: "#E07338", horizon: "6m" },
+    { label: "Sell", range: "σ > 0.8", data: bl.sell, color: "#EB5757", horizon: "6m" },
   ];
 
   return (
@@ -112,19 +112,136 @@ export default function Backtest({ d }) {
         {/* DCA comparison */}
         {bm.dca && (
           <div style={{ marginTop: 16, padding: "14px 0", borderTop: `1px solid ${t.borderFaint}` }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>DCA comparison (${bm.dca.dcaPeriods} periods)</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
-              <div style={{ padding: "10px 14px 10px 0", borderRight: `1px solid ${t.borderFaint}` }}>
-                <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 4 }}>Blind DCA (every month)</div>
-                <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: t.cream }}>+{bm.dca.dcaReturn}%</div>
-                <div style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>${bm.dca.dcaInvested.toLocaleString()} → ${bm.dca.dcaValue.toLocaleString()}</div>
-              </div>
-              <div style={{ padding: "10px 0 10px 14px" }}>
-                <div style={{ fontFamily: bd, fontSize: 11, color: "#27AE60", marginBottom: 4 }}>Signal DCA (only when σ &lt; -0.5)</div>
-                <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: "#27AE60" }}>+{bm.dca.sigDcaReturn}%</div>
-                <div style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>${bm.dca.sigInvested.toLocaleString()} → ${bm.dca.sigValue.toLocaleString()}</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>DCA strategies compared ({bm.dca.dcaPeriods} monthly periods, $100/period, same total budget)</div>
+
+            {/* Strategy cards */}
+            <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 12 }}>
+              <thead>
+                <tr>
+                  <th style={th}>Strategy</th>
+                  <th style={thR}>Return</th>
+                  <th style={thR}>Portfolio</th>
+                  <th style={thR}>Sharpe</th>
+                  <th style={thR}>Max DD</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={tdL}>Blind DCA <span style={{ fontFamily: mn, fontSize: 9, color: t.dim }}>— buy every month</span></td>
+                  <td style={tdR}>+{bm.dca.dcaReturn}%</td>
+                  <td style={tdR}>${bm.dca.dca.portfolio.toLocaleString()}</td>
+                  <td style={tdR}>{bm.dca.dca.sharpe ?? "–"}</td>
+                  <td style={tdR}>{bm.dca.dca.maxDD}%</td>
+                </tr>
+                <tr style={{ background: "rgba(39,174,96,0.06)" }}>
+                  <td style={{ ...tdL, color: "#27AE60" }}>Signal DCA <span style={{ fontFamily: mn, fontSize: 9, color: t.dim }}>— only when σ &lt; -0.5</span></td>
+                  <td style={tdBoldR}>+{bm.dca.sigDcaReturn}%</td>
+                  <td style={tdR}>${bm.dca.signal.portfolio.toLocaleString()}</td>
+                  <td style={tdBoldR}>{bm.dca.signal.sharpe ?? "–"}</td>
+                  <td style={tdR}>{bm.dca.signal.maxDD}%</td>
+                </tr>
+                <tr style={{ background: "rgba(187,107,217,0.06)" }}>
+                  <td style={{ ...tdL, color: "#BB6BD9" }}>Smart DCA <span style={{ fontFamily: mn, fontSize: 9, color: t.dim }}>— modulate + sell</span></td>
+                  <td style={tdBoldR}>+{bm.dca.smartDcaReturn}%</td>
+                  <td style={tdR}>${bm.dca.smart.portfolio.toLocaleString()}</td>
+                  <td style={tdBoldR}>{bm.dca.smart.sharpe ?? "–"}</td>
+                  <td style={tdR}>{bm.dca.smart.maxDD}%</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style={{ fontFamily: mn, fontSize: 11, color: t.dim, marginBottom: 12 }}>
+              Total budget: ${bm.dca.totalBudget.toLocaleString()} · Uninvested cash counts in portfolio.
+              {bm.dca.smart.cash > 0 && ` Smart DCA holds $${bm.dca.smart.cash.toLocaleString()} in cash from sells.`}
+            </div>
+
+            {/* Smart DCA zone multipliers */}
+            <div style={{ marginTop: 12, padding: "10px 0", borderTop: `1px solid ${t.borderFaint}` }}>
+              <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Smart DCA rules</div>
+              <div style={{ display: "flex", gap: 0, flexWrap: "wrap" }}>
+                {[
+                  { zone: "Strong Buy", mult: "3×", color: "#1B8A4A" },
+                  { zone: "Buy", mult: "2×", color: "#27AE60" },
+                  { zone: "Accumulate", mult: "1×", color: "#6FCF97" },
+                  { zone: "Neutral", mult: "0.5×", color: "#E8A838" },
+                  { zone: "Caution", mult: "Skip", color: "#F2994A" },
+                  { zone: "Reduce", mult: "Sell 25%", color: "#E07338" },
+                  { zone: "Sell", mult: "Sell 50%", color: "#EB5757" },
+                ].map((r, i) => (
+                  <div key={r.zone} style={{ padding: "4px 10px", borderRight: i < 6 ? `1px solid ${t.borderFaint}` : "none", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: r.color }} />
+                    <span style={{ fontFamily: bd, fontSize: 10, color: t.dim }}>{r.zone}</span>
+                    <span style={{ fontFamily: mn, fontSize: 11, fontWeight: 500, color: r.mult.startsWith("Sell") ? "#EB5757" : r.mult === "Skip" ? t.faint : t.cream }}>{r.mult}</span>
+                  </div>
+                ))}
               </div>
             </div>
+
+            {/* DCA Time Series Chart */}
+            {bm.dca.timeSeries?.length > 2 && (() => {
+              const ts = bm.dca.timeSeries;
+              const W = 700, H = 220, pad = { t: 20, r: 50, b: 30, l: 50 };
+              const chartW = W - pad.l - pad.r, chartH = H - pad.t - pad.b;
+
+              const maxR = Math.max(
+                Math.max(...ts.map(d => d.dcaReturn)),
+                Math.max(...ts.map(d => d.sigReturn)),
+                Math.max(...ts.map(d => d.smartReturn)),
+                1
+              );
+              const minR = Math.min(
+                Math.min(...ts.map(d => d.dcaReturn)),
+                Math.min(...ts.map(d => d.sigReturn)),
+                Math.min(...ts.map(d => d.smartReturn)),
+                0
+              );
+              const range = maxR - minR || 1;
+              const x = (i) => pad.l + (i / (ts.length - 1)) * chartW;
+              const y = (v) => pad.t + chartH - ((v - minR) / range) * chartH;
+
+              const pathStr = (key) => ts.map((d, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join("");
+
+              const years = [];
+              let lastYear = "";
+              ts.forEach((d, i) => {
+                const yr = d.date.slice(0, 4);
+                if (yr !== lastYear) { years.push({ i, yr }); lastYear = yr; }
+              });
+
+              return (
+                <div style={{ marginTop: 12, borderTop: `1px solid ${t.borderFaint}`, paddingTop: 12 }}>
+                  <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Portfolio value over time (return vs total budget)</div>
+                  <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto" }}>
+                    {/* Grid */}
+                    {(() => {
+                      const step = range > 2000 ? 500 : range > 800 ? 200 : range > 400 ? 100 : 50;
+                      const lines = [];
+                      for (let v = Math.ceil(minR / step) * step; v <= maxR; v += step) lines.push(v);
+                      return lines.map(val => (
+                        <g key={val}>
+                          <line x1={pad.l} y1={y(val)} x2={W - pad.r} y2={y(val)} stroke={t.borderFaint} strokeWidth="0.5" />
+                          <text x={pad.l - 4} y={y(val) + 3} textAnchor="end" fill={t.faint} fontSize="9" fontFamily={mn}>{val > 999 ? `${(val/1000).toFixed(0)}k` : `${val}`}%</text>
+                        </g>
+                      ));
+                    })()}
+                    {years.map(({ i, yr }) => (
+                      <text key={yr} x={x(i)} y={H - 6} textAnchor="middle" fill={t.faint} fontSize="9" fontFamily={bd}>{yr}</text>
+                    ))}
+                    {minR < 0 && <line x1={pad.l} y1={y(0)} x2={W - pad.r} y2={y(0)} stroke={t.border} strokeWidth="1" strokeDasharray="3,3" />}
+                    <path d={pathStr("dcaReturn")} fill="none" stroke={t.dim} strokeWidth="1.5" opacity="0.5" />
+                    <path d={pathStr("sigReturn")} fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                    <path d={pathStr("smartReturn")} fill="none" stroke="#BB6BD9" strokeWidth="1.5" />
+                    <text x={W - pad.r + 2} y={y(ts[ts.length - 1].dcaReturn) + 3} fill={t.dim} fontSize="9" fontFamily={mn}>DCA</text>
+                    <text x={W - pad.r + 2} y={y(ts[ts.length - 1].sigReturn) + 3} fill="#27AE60" fontSize="9" fontFamily={mn}>Signal</text>
+                    <text x={W - pad.r + 2} y={y(ts[ts.length - 1].smartReturn) + 3} fill="#BB6BD9" fontSize="9" fontFamily={mn}>Smart</text>
+                  </svg>
+                </div>
+              );
+            })()}
+
+            <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 8, lineHeight: 1.6, fontStyle: "italic" }}>
+              All three strategies receive the same $100/month budget. Uninvested months stay in cash (counted in portfolio). Sharpe ratio is annualized from monthly portfolio returns. Max drawdown is peak-to-trough of total portfolio value.
+            </p>
           </div>
         )}
       </Toggle>
@@ -176,7 +293,8 @@ export default function Backtest({ d }) {
               <th style={th}>Zone</th>
               <th style={thR}>σ range</th>
               <th style={thR}>Days</th>
-              <th style={thR}>Accuracy</th>
+              <th style={thR}>Horizon</th>
+              <th style={thR}>Lost money</th>
               <th style={thR}>Avg return</th>
               <th style={thR}>Worst</th>
               <th style={thR}>Sharpe</th>
@@ -185,6 +303,8 @@ export default function Backtest({ d }) {
           <tbody>
             {spectrum.map(s => {
               const n = s.data?.n || 0;
+              const isSell = s.horizon === "6m";
+              const lostPct = s.data?.precision != null ? (isSell ? s.data.precision : +(100 - parseFloat(s.data.precision)).toFixed(1)) : null;
               return (
                 <tr key={s.label}>
                   <td style={{ ...td, fontFamily: bd, fontWeight: 500 }}>
@@ -193,8 +313,9 @@ export default function Backtest({ d }) {
                   </td>
                   <td style={tdR}>{s.range}</td>
                   <td style={tdR}>{n.toLocaleString()}</td>
-                  <td style={{ ...tdR, color: s.data?.precision >= 90 ? "#27AE60" : s.data?.precision >= 70 ? "#E8A838" : s.data?.precision != null ? "#EB5757" : t.faint }}>
-                    {s.data?.precision != null ? `${s.data.precision}%` : "–"}
+                  <td style={{ ...tdR, color: t.faint }}>{s.horizon || "12m"}</td>
+                  <td style={{ ...tdR, color: lostPct === 0 ? "#27AE60" : lostPct != null && lostPct < 20 ? "#27AE60" : lostPct != null && lostPct < 40 ? "#E8A838" : lostPct != null ? "#EB5757" : t.faint }}>
+                    {lostPct != null ? `${lostPct}%` : "–"}
                   </td>
                   <td style={{ ...tdR, color: (s.data?.avgReturn || 0) > 0 ? "#27AE60" : "#EB5757" }}>
                     {s.data?.avgReturn != null ? `${s.data.avgReturn > 0 ? "+" : ""}${s.data.avgReturn}%` : "–"}
@@ -209,7 +330,7 @@ export default function Backtest({ d }) {
           </tbody>
         </table>
         <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 12, lineHeight: 1.6 }}>
-          Signal uses pure σ thresholds: buy at σ &lt; -0.5, sell at σ ≥ 0.8. Each day is tested independently against its 12-month forward return. Methodology: hold for exactly 365 days from entry.
+          Buy zones (σ &lt; -0.5) measured at 12-month horizon. Reduce/Sell zones measured at 6-month horizon — these positions should be exited sooner. "Lost money" = % of days where the forward return was negative.
         </p>
       </Toggle>
 
