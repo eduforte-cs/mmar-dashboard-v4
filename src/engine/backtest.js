@@ -170,7 +170,36 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
     worstMaxDD: maxDDOf(arr),
     avgUnderwaterDays: avgUW(arr),
     sharpe: sharpe(arr),
+    horizon: "12m",
   });
+
+  // For reduce/sell: use 6m horizon
+  const levelStats6m = (arr) => {
+    const with6 = arr.filter(r => r.ret6m != null);
+    const prec6 = with6.length > 0 ? +(with6.filter(r => r.ret6m < 0).length / with6.length * 100).toFixed(1) : null;
+    const avgRet6 = with6.length > 0 ? +(with6.reduce((s, r) => s + r.ret6m, 0) / with6.length).toFixed(1) : null;
+    const minRet6 = with6.length > 0 ? +Math.min(...with6.map(r => r.ret6m)).toFixed(1) : null;
+    const maxRet6 = with6.length > 0 ? +Math.max(...with6.map(r => r.ret6m)).toFixed(1) : null;
+    const sharpe6 = (() => {
+      if (with6.length < 5) return null;
+      const rets = with6.map(r => r.ret6m / 100);
+      const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
+      const std = Math.sqrt(rets.reduce((s, r) => s + (r - mean) ** 2, 0) / rets.length);
+      return std > 1e-6 ? +((mean / std) * Math.sqrt(2)).toFixed(2) : null; // annualized from 6m
+    })();
+    return {
+      n: arr.length,
+      precision: prec6, // % that lost money (inverted: sell accuracy = loss rate)
+      avgReturn: avgRet6,
+      minReturn: minRet6,
+      maxReturn: maxRet6,
+      avgMaxDD: avgDD(arr),
+      worstMaxDD: maxDDOf(arr),
+      avgUnderwaterDays: avgUW(arr),
+      sharpe: sharpe6,
+      horizon: "6m",
+    };
+  };
 
   const byLevel = {
     strongBuy: levelStats(strongBuyR),
@@ -179,6 +208,8 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
     accumulate: levelStats(accumR),
     neutral: levelStats(neutralR),
     caution: levelStats(cautionR),
+    reduce: levelStats6m(reduceR),
+    sell: levelStats6m(sellR),
   };
 
   // ── Episodes (independent) ──
@@ -282,36 +313,144 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
     nEpisodes: countEpisodes(results, r => r.zLevel === "strongBuy" || r.zLevel === "buy"),
   };
 
-  // 3. DCA benchmark: invest fixed amount every 30 days vs signal-only
+  // 3. DCA benchmark: blind vs signal-only vs Smart DCA
+  // Fair comparison: everyone gets $100/period budget. Uninvested cash counts in portfolio.
   const dcaInterval = 30;
-  let dcaTotal = 0, dcaBtc = 0, sigTotal = 0, sigBtc = 0;
   const dcaAmount = 100; // $100 per period
+  let dcaBtc = 0, dcaCash = 0;
+  let sigBtc = 0, sigCash = 0;
+  let smartBtc = 0, smartCash = 0;
+  let totalBudget = 0; // same for all three
+
+  // Smart DCA multipliers
+  const SMART_MULT = { strongBuy: 3.0, buy: 2.0, accumulate: 1.0, neutral: 0.5, caution: 0, reduce: -0.25, sell: -0.50 };
+
+  // Time series for chart
+  const dcaTimeSeries = [];
+
   for (let i = minTrainDays; i < prices.length; i += dcaInterval) {
     const p = prices[i];
     if (!p || p.price <= 0) continue;
-    // DCA: always buy
-    dcaTotal += dcaAmount;
-    dcaBtc += dcaAmount / p.price;
-    // Signal DCA: only buy when signal says buy
     const t0 = daysSinceGenesis(p.date);
     const plNow = plPrice(a, b, t0);
     const sig = (Math.log(p.price) - Math.log(plNow) - resMean) / resStd;
+    const iLevel = internalLevelOf(sig);
+
+    // Everyone gets $100 budget this period
+    totalBudget += dcaAmount;
+
+    // Blind DCA: always buy with full amount
+    dcaBtc += dcaAmount / p.price;
+    // dcaCash stays 0
+
+    // Signal DCA: buy only when σ < -0.5, else cash
     if (sig < SIG.buy) {
-      sigTotal += dcaAmount;
       sigBtc += dcaAmount / p.price;
+    } else {
+      sigCash += dcaAmount;
     }
+
+    // Smart DCA: modulate by zone
+    const mult = SMART_MULT[iLevel] ?? 0;
+    if (mult > 0) {
+      const invest = dcaAmount * mult;
+      if (invest <= dcaAmount) {
+        // Partial invest, rest to cash
+        smartBtc += invest / p.price;
+        smartCash += (dcaAmount - invest);
+      } else {
+        // Invest more than base — use this period's budget fully + extra from cash if available
+        const extra = invest - dcaAmount;
+        const fromCash = Math.min(extra, smartCash);
+        const actualInvest = dcaAmount + fromCash;
+        smartBtc += actualInvest / p.price;
+        smartCash -= fromCash;
+      }
+    } else if (mult < 0 && smartBtc > 0) {
+      // Sell fraction of BTC, add proceeds + this period's budget to cash
+      const sellFrac = Math.abs(mult);
+      const btcToSell = smartBtc * sellFrac;
+      smartCash += btcToSell * p.price;
+      smartBtc -= btcToSell;
+      smartCash += dcaAmount; // this period's budget goes to cash
+    } else {
+      // Skip (caution) — budget goes to cash
+      smartCash += dcaAmount;
+    }
+
+    // Portfolio values (BTC + cash)
+    const dcaPortfolio = dcaBtc * p.price + dcaCash;
+    const sigPortfolio = sigBtc * p.price + sigCash;
+    const smartPortfolio = smartBtc * p.price + smartCash;
+
+    dcaTimeSeries.push({
+      date: p.date,
+      price: +p.price.toFixed(0),
+      sig: +sig.toFixed(2),
+      zone: iLevel,
+      // Total portfolio (BTC + cash) vs total budget deployed
+      dcaPortfolio: Math.round(dcaPortfolio),
+      sigPortfolio: Math.round(sigPortfolio),
+      smartPortfolio: Math.round(smartPortfolio),
+      totalBudget: Math.round(totalBudget),
+      // Portfolio return (vs total budget — same denominator for all)
+      dcaReturn: totalBudget > 0 ? +((dcaPortfolio - totalBudget) / totalBudget * 100).toFixed(1) : 0,
+      sigReturn: totalBudget > 0 ? +((sigPortfolio - totalBudget) / totalBudget * 100).toFixed(1) : 0,
+      smartReturn: totalBudget > 0 ? +((smartPortfolio - totalBudget) / totalBudget * 100).toFixed(1) : 0,
+    });
   }
+
   const lastPrice = prices[prices.length - 1].price;
-  const dcaReturn = dcaTotal > 0 ? +((dcaBtc * lastPrice - dcaTotal) / dcaTotal * 100).toFixed(1) : 0;
-  const sigDcaReturn = sigTotal > 0 ? +((sigBtc * lastPrice - sigTotal) / sigTotal * 100).toFixed(1) : 0;
+  const dcaFinalPortfolio = dcaBtc * lastPrice + dcaCash;
+  const sigFinalPortfolio = sigBtc * lastPrice + sigCash;
+  const smartFinalPortfolio = smartBtc * lastPrice + smartCash;
+  const dcaReturn = totalBudget > 0 ? +((dcaFinalPortfolio - totalBudget) / totalBudget * 100).toFixed(1) : 0;
+  const sigDcaReturn = totalBudget > 0 ? +((sigFinalPortfolio - totalBudget) / totalBudget * 100).toFixed(1) : 0;
+  const smartDcaReturn = totalBudget > 0 ? +((smartFinalPortfolio - totalBudget) / totalBudget * 100).toFixed(1) : 0;
+
+  // Risk-adjusted returns: Sharpe and max drawdown of each portfolio
+  function portfolioSharpe(ts, key) {
+    if (ts.length < 5) return null;
+    const rets = [];
+    for (let i = 1; i < ts.length; i++) {
+      const prev = ts[i - 1][key] || 1;
+      if (prev > 0) rets.push((ts[i][key] - prev) / prev);
+    }
+    if (rets.length < 3) return null;
+    const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
+    const std = Math.sqrt(rets.reduce((s, r) => s + (r - mean) ** 2, 0) / rets.length);
+    if (std < 1e-8) return null;
+    return +((mean / std) * Math.sqrt(12)).toFixed(2); // annualized from monthly
+  }
+
+  function portfolioMaxDD(ts, key) {
+    let peak = 0, maxDD = 0;
+    for (const d of ts) {
+      const v = d[key] || 0;
+      if (v > peak) peak = v;
+      if (peak > 0) {
+        const dd = (peak - v) / peak;
+        if (dd > maxDD) maxDD = dd;
+      }
+    }
+    return +(maxDD * 100).toFixed(1);
+  }
+
+  const dcaSharpe = portfolioSharpe(dcaTimeSeries, "dcaPortfolio");
+  const sigSharpe = portfolioSharpe(dcaTimeSeries, "sigPortfolio");
+  const smartSharpe = portfolioSharpe(dcaTimeSeries, "smartPortfolio");
+  const dcaMaxDD = portfolioMaxDD(dcaTimeSeries, "dcaPortfolio");
+  const sigMaxDD = portfolioMaxDD(dcaTimeSeries, "sigPortfolio");
+  const smartMaxDD = portfolioMaxDD(dcaTimeSeries, "smartPortfolio");
+
   const dcaBenchmark = {
-    dcaReturn, sigDcaReturn,
-    dcaInvested: Math.round(dcaTotal),
-    dcaValue: Math.round(dcaBtc * lastPrice),
-    sigInvested: Math.round(sigTotal),
-    sigValue: Math.round(sigBtc * lastPrice),
-    dcaPeriods: Math.floor((prices.length - minTrainDays) / dcaInterval),
-    sigPeriods: Math.round(sigTotal / dcaAmount),
+    dcaReturn, sigDcaReturn, smartDcaReturn,
+    totalBudget: Math.round(totalBudget),
+    dca: { portfolio: Math.round(dcaFinalPortfolio), btcValue: Math.round(dcaBtc * lastPrice), cash: Math.round(dcaCash), sharpe: dcaSharpe, maxDD: dcaMaxDD },
+    signal: { portfolio: Math.round(sigFinalPortfolio), btcValue: Math.round(sigBtc * lastPrice), cash: Math.round(sigCash), sharpe: sigSharpe, maxDD: sigMaxDD },
+    smart: { portfolio: Math.round(smartFinalPortfolio), btcValue: Math.round(smartBtc * lastPrice), cash: Math.round(smartCash), sharpe: smartSharpe, maxDD: smartMaxDD },
+    dcaPeriods: dcaTimeSeries.length,
+    timeSeries: dcaTimeSeries,
   };
 
   // ═══ RISK METRICS ═══
