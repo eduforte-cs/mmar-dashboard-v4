@@ -324,7 +324,7 @@ export default function Whitepaper({ d }) {
         <h2 style={{ fontFamily: bd, fontSize: 56, fontWeight: 800, color: t.cream, letterSpacing: "-0.04em", lineHeight: 0.95, margin: 0 }}>Whitepaper</h2>
         <p style={{ fontFamily: bd, fontSize: 15, color: t.faint, lineHeight: 1.5, margin: "12px 0 0", maxWidth: 560 }}>A quantitative framework for answering the only question that matters</p>
       </div>
-      <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${t.border}`, gap: 0, overflowX: "auto" }}>
+      <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${t.border}`, gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <span style={{ fontFamily: mn, fontSize: 10, color: t.ghost, padding: "14px 0", marginRight: "auto", whiteSpace: "nowrap" }}>7 sections</span>
         {SECTIONS.map(cat => (
           <span key={cat} onClick={() => { setActiveCat(cat); document.getElementById("wp-" + cat)?.scrollIntoView({ behavior: "smooth", block: "start" }); }} style={{

@@ -70,7 +70,7 @@ export default function Backtest({ d }) {
       <CatLabel label="How accurate is the signal?" />
 
       {/* ── Buy + Sell signal cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${t.border}` }}>
+      <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
         {/* Buy signal */}
         <div style={{ padding: "20px 20px 20px 0", borderRight: `1px solid ${t.border}` }}>
           <div style={{ fontFamily: bd, fontSize: 9, color: "#27AE60", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Buy signal accuracy</div>
@@ -113,7 +113,8 @@ export default function Backtest({ d }) {
 
       {/* ── Full spectrum ── */}
       <Toggle label="Full signal spectrum — all 7 zones" defaultOpen>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 580 }}>
           <thead>
             <tr>
               <th style={th}>Zone</th>
@@ -155,6 +156,7 @@ export default function Backtest({ d }) {
             })}
           </tbody>
         </table>
+        </div>
         <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 12, lineHeight: 1.6 }}>
           Buy zones: accuracy = % profitable at 12 months. Sell zones: "saved" = % where holding would have lost money within 6 months. Avg return and worst entry for sell zones show what would have happened if you ignored the signal.
         </p>
@@ -162,7 +164,8 @@ export default function Backtest({ d }) {
 
       {/* ── Evidence toggles ── */}
       <Toggle label="Stability across market cycles" badge={`${bt.stabilityDelta || 0}pp delta`}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
           <thead>
             <tr>
               <th style={th}>Era</th>
@@ -186,6 +189,7 @@ export default function Backtest({ d }) {
             ))}
           </tbody>
         </table>
+        </div>
         {bt.stabilityDelta != null && (
           <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 12, lineHeight: 1.6 }}>
             {bt.stabilityDelta === 0 ? "Perfect stability — same accuracy in every era across 3 market cycles." : bt.stabilityDelta < 5 ? "Strong stability across eras." : "Some variation between eras."}
@@ -195,7 +199,7 @@ export default function Backtest({ d }) {
 
       {rb && (
         <Toggle label="Validated without look-ahead" badge={`${rb.buyPrecision}%`}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 12 }}>
+          <div className="grid-3" style={{ borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 12 }}>
             {[
               { l: "Points tested", v: rb.nTotal.toLocaleString(), s: `Step: ${rb.step} days` },
               { l: "Buy accuracy", v: `${rb.nBuyCorrect}/${rb.nBuy} = ${rb.buyPrecision}%`, s: `${rb.nEpisodes} episodes` },
@@ -219,7 +223,7 @@ export default function Backtest({ d }) {
 
       {/* ── Smart DCA hero metrics ── */}
       {bm.dca && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${t.border}` }}>
+        <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
           <div style={{ padding: "20px 16px 20px 0", borderRight: `1px solid ${t.border}` }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA return</div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>+{bm.dca.smartDcaReturn}%</div>
@@ -272,7 +276,8 @@ export default function Backtest({ d }) {
         {/* DCA Table */}
         {bm.dca && (
           <>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
               <thead>
                 <tr>
                   <th style={th}></th>
@@ -310,6 +315,7 @@ export default function Backtest({ d }) {
                 </tr>
               </tbody>
             </table>
+            </div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 10, lineHeight: 1.6 }}>
               Same $100/month budget (${bm.dca.totalBudget.toLocaleString()} total). Cash from skipped months and sell proceeds stays in portfolio. Smart DCA compounds: sell proceeds build a "war chest" that gets redeployed at discounts.
             </div>
@@ -347,7 +353,8 @@ export default function Backtest({ d }) {
       {/* ── Risk profile ── */}
       <Toggle label="Risk profile — what it feels like">
         {bm.dca && (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 440 }}>
             <thead>
               <tr>
                 <th style={th}></th>
@@ -381,6 +388,7 @@ export default function Backtest({ d }) {
               </tr>
             </tbody>
           </table>
+          </div>
         )}
         <p style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 12, lineHeight: 1.6, fontStyle: "italic" }}>
           Blind DCA lost {bm.dca?.dca?.maxDD}% peak-to-trough during the worst crash. Smart DCA lost {bm.dca?.smart?.maxDD}% — and was actively buying at those lows with cash from previous sells. Same $100/month budget, dramatically different experience.
@@ -389,7 +397,8 @@ export default function Backtest({ d }) {
 
       {/* ── Signal vs alternatives ── */}
       <Toggle label="Signal vs alternatives">
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 380 }}>
           <thead>
             <tr>
               <th style={th}></th>
@@ -419,6 +428,7 @@ export default function Backtest({ d }) {
             </tr>
           </tbody>
         </table>
+        </div>
       </Toggle>
 
       {/* ── Footer ── */}

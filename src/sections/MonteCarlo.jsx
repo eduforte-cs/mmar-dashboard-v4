@@ -275,7 +275,7 @@ export default function MonteCarlo({ d, derived }) {
 
       {/* ── Strip ── */}
       <div className="page-pad" style={{ padding: "0 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: `1px solid ${t.border}` }}>
+        <div className="grid-3" style={{ borderTop: `1px solid ${t.border}` }}>
           {/* Hold 1 year */}
           <div style={{ padding: "24px 20px", borderRight: `1px solid ${t.border}` }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>

@@ -275,8 +275,7 @@ export default function Landing({ d, onAuth }) {
             </div>
           ))}
         </div>
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16,
+        <div className="grid-4" style={{
           textAlign: "center", marginTop: 36, paddingTop: 24, borderTop: `1px solid ${t.border}`,
         }}>
           {[{ v: "16yr", l: "of daily data" }, { v: "2,000", l: "MC paths" }, { v: "98%", l: "buy accuracy" }, { v: "5", l: "signal levels" }].map(({ v, l }) => (

@@ -531,8 +531,7 @@ export default function PowerLaw({ d, derived }) {
 
       {/* Horizons strip */}
       <div className="page-pad" style={{ padding: "0 24px" }}>
-      <div style={{
-        display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+      <div className="grid-3" style={{
         borderTop: `1px solid ${t.border}`,
       }}>
         {/* Today */}
