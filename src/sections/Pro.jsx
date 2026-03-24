@@ -221,7 +221,7 @@ export default function Pro({ d, derived, setTab }) {
       {/* ── Monte Carlo (unified) ── */}
       <Toggle label="Monte Carlo">
         {/* Summary strip */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${t.border}`, marginBottom: 16 }}>
+        <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}`, marginBottom: 16 }}>
           {/* 1Y */}
           <div style={{ padding: "0 16px 14px 0", borderRight: `1px solid ${t.border}` }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>1 year outcome</div>
