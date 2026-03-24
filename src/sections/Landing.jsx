@@ -19,16 +19,18 @@ export default function Landing({ d, onAuth, setTab }) {
   const scrollTo = (ref) => ref.current?.scrollIntoView({ behavior: "smooth" });
 
   const BacktestCTA = () => (
-    <div className="cta-backtest" onClick={() => setTab && setTab("backtest")} style={{
-      borderTop: `1px solid ${t.border}`, cursor: "pointer",
+    <div onClick={() => setTab && setTab("backtest")} style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "clamp(10px, 1.2vh, 16px) 0",
+      borderTop: `1px solid ${t.border}`,
+      cursor: "pointer",
     }}>
-      <div style={{ padding: "12px 0", fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
-        Backtested. 100% buy signal accuracy and Smart DCA +1,118%
+      <div>
+        <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
+          Backtested. 100% buy signal accuracy and Smart DCA +1,118%
+        </div>
       </div>
-      <div style={{
-        padding: "12px 0", borderTop: `1px solid ${t.border}`,
-        fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream,
-      }}>
+      <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream, whiteSpace: "nowrap", marginLeft: 16 }}>
         See backtest →
       </div>
     </div>
@@ -191,14 +193,15 @@ export default function Landing({ d, onAuth, setTab }) {
           )}
 
           {/* Backtest CTA */}
-          <BacktestCTA />
+          <div style={{ marginTop: "clamp(6px, 0.8vh, 10px)" }}>
+            <BacktestCTA />
+          </div>
 
           {/* Anchors */}
           <div onClick={() => scrollTo(whatRef)} style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "clamp(10px, 1.2vh, 16px) 0",
             borderTop: `1px solid ${t.border}`,
-            marginTop: "clamp(6px, 0.8vh, 10px)",
             cursor: "pointer",
           }}>
             <div>
@@ -333,3 +336,4 @@ export default function Landing({ d, onAuth, setTab }) {
     </>
   );
 }
+∫
