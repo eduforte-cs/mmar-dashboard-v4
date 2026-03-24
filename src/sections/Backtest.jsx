@@ -72,7 +72,7 @@ export default function Backtest({ d }) {
       {/* ── Buy + Sell signal cards ── */}
       <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
         {/* Buy signal */}
-        <div style={{ padding: "20px 0" }}>
+        <div style={{ padding: "20px 20px 20px 0", borderRight: `1px solid ${t.border}` }}>
           <div style={{ fontFamily: bd, fontSize: 9, color: "#27AE60", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Buy signal accuracy</div>
           <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>When the model said "buy", was it right?</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#27AE60", marginBottom: 4 }}>100%</div>
@@ -88,7 +88,7 @@ export default function Backtest({ d }) {
         </div>
 
         {/* Sell signal */}
-        <div style={{ padding: "20px 0" }}>
+        <div style={{ padding: "20px 0 20px 20px" }}>
           <div style={{ fontFamily: bd, fontSize: 9, color: "#EB5757", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Sell signal accuracy</div>
           <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>When the model said "sell", did it protect you?</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#EB5757", marginBottom: 4 }}>{sellLossRate}%</div>
@@ -220,12 +220,12 @@ export default function Backtest({ d }) {
       {/* ── Smart DCA hero metrics ── */}
       {bm.dca && (
         <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
-          <div style={{ padding: "20px 0" }}>
+          <div style={{ padding: "20px 16px 20px 0", borderRight: `1px solid ${t.border}` }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA return</div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>+{bm.dca.smartDcaReturn}%</div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs +{bm.dca.dcaReturn}% blind DCA</div>
           </div>
-          <div style={{ padding: "20px 0" }}>
+          <div style={{ padding: "20px 0 20px 16px" }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA Sortino</div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs {bm.dca.dca.sortino ?? "–"} blind DCA</div>
