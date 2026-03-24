@@ -3,6 +3,10 @@ import { useTheme } from "../../theme/ThemeContext";
 import { bd, mn } from "../../theme/tokens";
 import Chevron from "../../components/Chevron";
 
+function ScrollWrap({ children, minW = 400 }) {
+  return <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>{children}</div>;
+}
+
 export default function ValidationPanel({ bt, calibratedWeights }) {
   const { t } = useTheme();
   const [showDetails, setShowDetails] = useState(false);
@@ -15,6 +19,17 @@ export default function ValidationPanel({ bt, calibratedWeights }) {
   const bl = bt.byLevel;
   const nSell = (bt.plBubbleMetrics?.sell?.n ?? 0) + (bt.plBubbleMetrics?.reduce?.n ?? 0);
   const stable = bt.stabilityDelta != null && bt.stabilityDelta < 15;
+
+  // Grid row helper
+  const GridRow = ({ cols, items, header, minW }) => (
+    <div style={{ display: "grid", gridTemplateColumns: cols, padding: "8px 0", borderBottom: `1px solid ${header ? t.border : t.borderFaint}`, minWidth: minW || 0 }}>
+      {items.map((item, i) => (
+        <div key={i} style={{ ...item.style, fontFamily: header ? bd : mn, fontSize: header ? 9 : 12, color: header ? t.faint : (item.color || t.cream), textTransform: header ? "uppercase" : "none", letterSpacing: header ? "0.04em" : "normal", textAlign: i === 0 ? "left" : "right", fontWeight: item.bold ? 600 : 400 }}>
+          {item.v}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -106,144 +121,114 @@ export default function ValidationPanel({ bt, calibratedWeights }) {
             );
           })()}
 
-          {/* ── Signal spectrum table ── */}
+          {/* ── Signal spectrum ── */}
           {bl && (
-            <>
+            <ScrollWrap>
               <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>
                 Signal spectrum — from strong buy to sell
               </div>
-              {/* Header */}
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.6fr 0.8fr 0.8fr 0.7fr", padding: "8px 0", borderBottom: `1px solid ${t.border}` }}>
-                {["Signal", "n", "Worked", "Avg return", "Worst"].map(h => (
-                  <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Signal" ? "left" : "right" }}>{h}</div>
-                ))}
-              </div>
-              {/* Buy rows */}
+              <GridRow cols="1.2fr 0.6fr 0.8fr 0.8fr 0.7fr" header minW={420} items={[
+                { v: "Level" }, { v: "n" }, { v: "Accuracy" }, { v: "Avg return" }, { v: "Worst" },
+              ]} />
               {[
-                { label: "Strong Buy", data: bl.strongBuy, color: "#1B8A4A" },
-                { label: "Buy", data: bl.buy, color: "#27AE60" },
-                { label: "Hold", data: bl.no, color: t.faint },
-              ].filter(r => r.data?.n > 0).map(r => {
-                const nW = r.data.precision != null ? Math.round(parseFloat(r.data.precision) / 100 * r.data.n) : null;
-                return (
-                  <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1.2fr 0.6fr 0.8fr 0.8fr 0.7fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-                    <div style={{ fontFamily: bd, fontSize: 12, fontWeight: 600, color: r.color }}>{r.label}</div>
-                    <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{r.data.n}</div>
-                    <div style={{ fontFamily: mn, fontSize: 12, color: t.dim, textAlign: "right" }}>{nW != null ? `${nW}/${r.data.n}` : "—"}</div>
-                    <div style={{ fontFamily: mn, fontSize: 12, color: r.data.avgReturn > 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>
-                      {r.data.avgReturn != null ? `${r.data.avgReturn > 0 ? "+" : ""}${r.data.avgReturn}%` : "—"}
-                    </div>
-                    <div style={{ fontFamily: mn, fontSize: 11, color: r.data.minReturn >= 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>
-                      {r.data.minReturn != null ? `${r.data.minReturn > 0 ? "+" : ""}${r.data.minReturn}%` : "—"}
-                    </div>
-                  </div>
-                );
-              })}
-              {/* Sell rows */}
-              {bt.plBubbleMetrics && [
-                { label: "Reduce", data: bt.plBubbleMetrics.reduce, tag: `σ > ${bt.calibratedReduceSig}`, color: "#F2994A" },
-                { label: "Sell", data: bt.plBubbleMetrics.sell, tag: `σ > ${bt.calibratedBubbleSig}`, color: "#EB5757" },
+                { label: "Strong Buy", tag: "σ < -1.0", data: bl.strongBuy, color: "#1B8A4A" },
+                { label: "Buy", tag: "-1.0 to -0.5", data: bl.buy, color: "#27AE60" },
+                { label: "Accumulate", tag: "-0.5 to 0", data: bl.accumulate, color: "#6FCF97" },
+                { label: "Neutral", tag: "0 to 0.3", data: bl.neutral, color: "#E8A838" },
+                { label: "Caution", tag: "0.3 to 0.5", data: bl.caution, color: "#F2994A" },
               ].filter(r => r.data?.n > 0).map(r => (
-                <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1.2fr 0.6fr 0.8fr 0.8fr 0.7fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-                  <div style={{ fontFamily: bd, fontSize: 12, fontWeight: 600, color: r.color }}>{r.label} <span style={{ fontSize: 9, fontWeight: 400, color: t.faint }}>{r.tag}</span></div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{r.data.n}</div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: t.dim, textAlign: "right" }}>{r.data.pctAnyLoss ?? "—"}%</div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: r.data.avgRet6m < 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>
-                    {r.data.avgRet6m != null ? `${r.data.avgRet6m > 0 ? "+" : ""}${r.data.avgRet6m}%` : "—"}
-                  </div>
-                  <div style={{ fontFamily: mn, fontSize: 11, color: "#EB5757", textAlign: "right" }}>
-                    {r.data.maxDrawdown != null ? `${r.data.maxDrawdown}%` : "—"}
-                  </div>
-                </div>
+                <GridRow key={r.label} cols="1.2fr 0.6fr 0.8fr 0.8fr 0.7fr" minW={420} items={[
+                  { v: <><span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: r.color, marginRight: 6, verticalAlign: "middle" }} />{r.label} <span style={{ fontSize: 9, color: t.faint }}>{r.tag}</span></>, color: r.color, bold: true },
+                  { v: r.data.n, color: t.faint },
+                  { v: `${r.data.precision}%`, color: r.data.precision >= 90 ? "#27AE60" : r.data.precision >= 70 ? "#E8A838" : "#EB5757" },
+                  { v: `${r.data.avgReturn > 0 ? "+" : ""}${r.data.avgReturn}%`, color: r.data.avgReturn > 0 ? "#27AE60" : "#EB5757" },
+                  { v: r.data.minReturn != null ? `${r.data.minReturn > 0 ? "+" : ""}${r.data.minReturn}%` : "—", color: (r.data.minReturn || 0) < 0 ? "#EB5757" : "#27AE60" },
+                ]} />
               ))}
-            </>
+              {/* Sell zones */}
+              {bt.plBubbleMetrics && [
+                { label: "Reduce", tag: "0.5–0.8", data: bt.plBubbleMetrics.reduce, color: "#E07338" },
+                { label: "Sell", tag: "σ > 0.8", data: bt.plBubbleMetrics.sell, color: "#EB5757" },
+              ].filter(r => r.data?.n > 0).map(r => (
+                <GridRow key={r.label} cols="1.2fr 0.6fr 0.8fr 0.8fr 0.7fr" minW={420} items={[
+                  { v: <><span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: r.color, marginRight: 6, verticalAlign: "middle" }} />{r.label} <span style={{ fontSize: 9, color: t.faint }}>{r.tag}</span></>, color: r.color, bold: true },
+                  { v: r.data.n, color: t.faint },
+                  { v: r.data.pctAnyLoss != null ? `${r.data.pctAnyLoss}%` : "—", color: t.dim },
+                  { v: r.data.avgRet6m != null ? `${r.data.avgRet6m > 0 ? "+" : ""}${r.data.avgRet6m}%` : "—", color: (r.data.avgRet6m || 0) < 0 ? "#27AE60" : "#EB5757" },
+                  { v: r.data.maxDrawdown != null ? `${r.data.maxDrawdown}%` : "—", color: "#EB5757" },
+                ]} />
+              ))}
+            </ScrollWrap>
           )}
 
           {/* ── Sigma buckets ── */}
           {bt.sigmaBuckets?.length > 0 && (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>
+            <ScrollWrap>
+              <div style={{ marginTop: 20, fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>
                 Does higher σ predict more corrections?
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.7fr 1fr 0.8fr", padding: "8px 0", borderBottom: `1px solid ${t.border}` }}>
-                {["Price level", "n", "Fell >P25", "Avg ret 6m"].map(h => (
-                  <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Price level" ? "left" : "right" }}>{h}</div>
-                ))}
-              </div>
+              <GridRow cols="1.2fr 0.7fr 1fr 0.8fr" header minW={360} items={[
+                { v: "Price level" }, { v: "n" }, { v: "Fell >P25" }, { v: "Avg ret 6m" },
+              ]} />
               {bt.sigmaBuckets.filter(b => b.n > 0).map(b => (
-                <div key={b.label} style={{ display: "grid", gridTemplateColumns: "1.2fr 0.7fr 1fr 0.8fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-                  <div style={{ fontFamily: bd, fontSize: 12, fontWeight: b.min >= 0.5 ? 600 : 400, color: t.cream }}>{b.label}</div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{b.n}</div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: b.pct20 > 50 ? "#EB5757" : b.pct20 > 30 ? "#F2994A" : "#27AE60", textAlign: "right" }}>
-                    {b.nFell}/{b.n} ({b.pct20}%)
-                  </div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: b.avgRet < 0 ? "#27AE60" : t.dim, textAlign: "right" }}>
-                    {b.avgRet > 0 ? "+" : ""}{b.avgRet}%
-                  </div>
-                </div>
+                <GridRow key={b.label} cols="1.2fr 0.7fr 1fr 0.8fr" minW={360} items={[
+                  { v: b.label, bold: b.min >= 0.5 },
+                  { v: b.n, color: t.faint },
+                  { v: `${b.nFell}/${b.n} (${b.pct20}%)`, color: b.pct20 > 50 ? "#EB5757" : b.pct20 > 30 ? "#F2994A" : "#27AE60" },
+                  { v: `${b.avgRet > 0 ? "+" : ""}${b.avgRet}%`, color: b.avgRet < 0 ? "#27AE60" : t.dim },
+                ]} />
               ))}
-            </div>
+            </ScrollWrap>
           )}
 
           {/* ── Cross-validation ── */}
           {bt.crossValidation?.length > 0 && (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>
+            <ScrollWrap>
+              <div style={{ marginTop: 20, fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>
                 Did it work across different market eras?
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.6fr 0.6fr 0.7fr 0.8fr", padding: "8px 0", borderBottom: `1px solid ${t.border}` }}>
-                {["Period", "n", "Buy", "Accuracy", "Avg return"].map(h => (
-                  <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Period" ? "left" : "right" }}>{h}</div>
-                ))}
-              </div>
+              <GridRow cols="1.2fr 0.6fr 0.6fr 0.7fr 0.8fr" header minW={400} items={[
+                { v: "Period" }, { v: "n" }, { v: "Buy" }, { v: "Accuracy" }, { v: "Avg return" },
+              ]} />
               {bt.crossValidation.map(cv => (
-                <div key={cv.label} style={{ display: "grid", gridTemplateColumns: "1.2fr 0.6fr 0.6fr 0.7fr 0.8fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-                  <div style={{ fontFamily: bd, fontSize: 12, color: t.cream }}>{cv.label}</div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{cv.n}</div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{cv.nYes ?? "—"}</div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: cv.precision > 60 ? "#27AE60" : "#F2994A", textAlign: "right" }}>{cv.precision ?? "—"}%</div>
-                  <div style={{ fontFamily: mn, fontSize: 12, color: cv.avgReturn > 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>
-                    {cv.avgReturn != null ? `${cv.avgReturn > 0 ? "+" : ""}${cv.avgReturn}%` : "—"}
-                  </div>
-                </div>
+                <GridRow key={cv.label} cols="1.2fr 0.6fr 0.6fr 0.7fr 0.8fr" minW={400} items={[
+                  { v: cv.label },
+                  { v: cv.n, color: t.faint },
+                  { v: cv.nYes ?? "—", color: t.faint },
+                  { v: `${cv.precision ?? "—"}%`, color: cv.precision > 60 ? "#27AE60" : "#F2994A" },
+                  { v: cv.avgReturn != null ? `${cv.avgReturn > 0 ? "+" : ""}${cv.avgReturn}%` : "—", color: (cv.avgReturn || 0) > 0 ? "#27AE60" : "#EB5757" },
+                ]} />
               ))}
               {bt.stabilityDelta != null && (
                 <div style={{ fontFamily: bd, fontSize: 11, color: bt.stabilityDelta < 15 ? "#27AE60" : "#F2994A", marginTop: 6 }}>
                   {bt.stabilityDelta < 15 ? "✓" : "⚠"} Spread between best and worst era: {bt.stabilityDelta}pp
                 </div>
               )}
-            </div>
+            </ScrollWrap>
           )}
 
-          {/* ── Calibration — MC predicted vs actual ── */}
+          {/* ── Calibration ── */}
           {bt.calibrationBuckets?.some(b => b.n > 0) && (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>
+            <ScrollWrap>
+              <div style={{ marginTop: 20, fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>
                 Probabilistic calibration — does the model know when it's wrong?
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1.5fr 0.5fr 0.8fr 0.8fr 0.8fr", padding: "8px 0", borderBottom: `1px solid ${t.border}` }}>
-                {["Zone", "n", "MC predicted", "Actual loss", "Avg return"].map(h => (
-                  <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Zone" ? "left" : "right" }}>{h}</div>
-                ))}
-              </div>
+              <GridRow cols="1.5fr 0.5fr 0.8fr 0.8fr 0.8fr" header minW={420} items={[
+                { v: "Zone" }, { v: "n" }, { v: "MC predicted" }, { v: "Actual loss" }, { v: "Avg return" },
+              ]} />
               {bt.calibrationBuckets.filter(b => b.n > 0).map(b => {
                 const gap = b.pLossAvg != null && b.lossRate != null ? +(b.lossRate - b.pLossAvg).toFixed(1) : null;
                 return (
-                  <div key={b.label} style={{ display: "grid", gridTemplateColumns: "1.5fr 0.5fr 0.8fr 0.8fr 0.8fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-                    <div style={{ fontFamily: bd, fontSize: 11, fontWeight: 500, color: t.cream }}>{b.label}</div>
-                    <div style={{ fontFamily: mn, fontSize: 12, color: t.faint, textAlign: "right" }}>{b.n}</div>
-                    <div style={{ fontFamily: mn, fontSize: 12, color: t.dim, textAlign: "right" }}>{b.pLossAvg != null ? `${b.pLossAvg}%` : "—"}</div>
-                    <div style={{ fontFamily: mn, fontSize: 12, textAlign: "right" }}>
-                      <span style={{ color: b.lossRate > 30 ? "#EB5757" : b.lossRate > 15 ? "#F2994A" : "#27AE60" }}>{b.lossRate != null ? `${b.lossRate}%` : "—"}</span>
-                      {gap != null && <span style={{ fontFamily: mn, fontSize: 9, color: Math.abs(gap) < 10 ? "#27AE60" : "#F2994A", marginLeft: 4 }}>{gap > 0 ? "+" : ""}{gap}pp</span>}
-                    </div>
-                    <div style={{ fontFamily: mn, fontSize: 12, color: b.avgReturn > 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>
-                      {b.avgReturn != null ? `${b.avgReturn > 0 ? "+" : ""}${b.avgReturn}%` : "—"}
-                    </div>
-                  </div>
+                  <GridRow key={b.label} cols="1.5fr 0.5fr 0.8fr 0.8fr 0.8fr" minW={420} items={[
+                    { v: b.label, bold: true },
+                    { v: b.n, color: t.faint },
+                    { v: b.pLossAvg != null ? `${b.pLossAvg}%` : "—", color: t.dim },
+                    { v: b.lossRate != null ? `${b.lossRate}%` : "—", color: b.lossRate > 30 ? "#EB5757" : b.lossRate > 15 ? "#F2994A" : "#27AE60" },
+                    { v: b.avgReturn != null ? `${b.avgReturn > 0 ? "+" : ""}${b.avgReturn}%` : "—", color: (b.avgReturn || 0) > 0 ? "#27AE60" : "#EB5757" },
+                  ]} />
                 );
               })}
-            </div>
+            </ScrollWrap>
           )}
 
           {/* ── Methodology note ── */}

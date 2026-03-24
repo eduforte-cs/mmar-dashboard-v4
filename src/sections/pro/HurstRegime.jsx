@@ -90,7 +90,7 @@ export default function HurstRegime({ d }) {
         <div style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.5 }}>{volSignal.desc}</div>
       </div>
 
-      <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0 }}>
+      <div className="grid-3" style={{ borderBottom: `1px solid ${t.borderFaint}` }}>
         {[
           { l: "Vol 30d", v: `${cur.vol30}%` },
           { l: "Vol 90d", v: `${cur.vol90}%` },

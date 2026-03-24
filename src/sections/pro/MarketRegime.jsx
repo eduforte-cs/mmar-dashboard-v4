@@ -147,7 +147,7 @@ export default function MarketRegime({ d, derived }) {
       <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
         Volatility regime (Ornstein-Uhlenbeck)
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 0, marginBottom: 8 }}>
+      <div className="grid-4" style={{ marginBottom: 8 }}>
         {[
           { label: "Current state", value: currentOURegime, color: currentOURegime === "Volatile" ? "#F2994A" : "#27AE60" },
           { label: "Half-life", value: `${halfLife}d`, sub: halfLife < 30 ? "Fast reversion" : halfLife < 90 ? "Moderate" : "Slow" },

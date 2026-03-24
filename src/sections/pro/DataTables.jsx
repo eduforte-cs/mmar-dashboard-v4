@@ -69,15 +69,16 @@ export function ForwardProjections({ d }) {
       <p style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.6, margin: "0 0 14px" }}>
         Power Law fair value at each horizon with the full σ-band structure. All percentages relative to today's {fmtK(S0)}.
       </p>
+      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       {/* Header */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}` }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}`, minWidth: 500 }}>
         {["Horizon", "Support", "Discount", "Fair Value", "Ceiling", "Bubble"].map(h => (
           <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Horizon" ? "left" : "right" }}>{h}</div>
         ))}
       </div>
       {/* Rows */}
       {horizons.map(h => (
-        <div key={h.label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr", padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
+        <div key={h.label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr", padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}`, minWidth: 500 }}>
           <div style={{ fontFamily: bd, fontSize: 12, fontWeight: 500, color: t.cream }}>{h.label}</div>
           {[h.support, h.discount, h.plF, h.ceiling, h.bubble].map((price, i) => (
             <div key={i} style={{ textAlign: "right" }}>
@@ -87,6 +88,7 @@ export function ForwardProjections({ d }) {
           ))}
         </div>
       ))}
+      </div>
     </>
   );
 }
@@ -114,20 +116,22 @@ export function RiskMatrix({ d }) {
       <p style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.6, margin: "0 0 14px" }}>
         Power Law statistical distribution vs Monte Carlo simulation at each percentile (1Y horizon).
       </p>
+      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       {/* Header */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}` }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}`, minWidth: 360 }}>
         {["Percentile", "PL + σ", "Monte Carlo", "Δ"].map(h => (
           <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Percentile" ? "left" : "right" }}>{h}</div>
         ))}
       </div>
       {rows.map(r => (
-        <div key={r.rl} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
+        <div key={r.rl} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}`, minWidth: 360 }}>
           <div style={{ fontFamily: mn, fontSize: 12, color: r.rl < 25 ? "#EB5757" : r.rl > 75 ? "#27AE60" : t.cream, fontWeight: r.rl === 50 ? 600 : 400 }}>P{r.rl}</div>
           <div style={{ fontFamily: mn, fontSize: 12, color: t.cream, textAlign: "right" }}>{fmtK(r.plP)}</div>
           <div style={{ fontFamily: mn, fontSize: 12, color: t.cream, textAlign: "right", fontWeight: r.rl === 50 ? 600 : 400 }}>{fmtK(r.mcP)}</div>
           <div style={{ fontFamily: mn, fontSize: 11, color: r.diff >= 0 ? "#27AE60" : "#EB5757", textAlign: "right" }}>{r.diff >= 0 ? "+" : ""}{r.diff.toFixed(1)}%</div>
         </div>
       ))}
+      </div>
     </>
   );
 }

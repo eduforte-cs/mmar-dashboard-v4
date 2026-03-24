@@ -125,9 +125,9 @@ export function MCHorizonTable({ d, t }) {
   ];
 
   return (
-    <>
+    <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       {/* Header */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}` }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}`, minWidth: 400 }}>
         {["Horizon", "PL Target", "Bear (P5)", "Base (P50)", "Bull (P95)"].map(h => (
           <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Horizon" ? "left" : "right" }}>{h}</div>
         ))}
@@ -136,7 +136,7 @@ export function MCHorizonTable({ d, t }) {
         const idx = Math.min(Math.floor(r.days / 5), r.pcts.length - 1);
         const row = r.days === 0 ? { p5: S0, p50: S0, p95: S0 } : r.pcts[idx] || {};
         return (
-          <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
+          <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}`, minWidth: 400 }}>
             <div style={{ fontFamily: bd, fontSize: 12, fontWeight: r.days === 0 ? 600 : 400, color: t.cream }}>{r.label}</div>
             <div style={{ fontFamily: mn, fontSize: 12, color: "#27AE60", textAlign: "right" }}>{fmtK(r.plV)}</div>
             <div style={{ fontFamily: mn, fontSize: 12, color: "#EB5757", textAlign: "right" }}>{fmtK(row.p5)}</div>
@@ -145,6 +145,6 @@ export function MCHorizonTable({ d, t }) {
           </div>
         );
       })}
-    </>
+    </div>
   );
 }
