@@ -4,7 +4,7 @@ import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import Chevron from "../components/Chevron";
 
-export default function Landing({ d, onAuth }) {
+export default function Landing({ d, onAuth, setTab }) {
   const { t } = useTheme();
   const topRef = useRef(null);
   const whatRef = useRef(null);
@@ -17,6 +17,22 @@ export default function Landing({ d, onAuth }) {
   const S0 = d?.S0;
 
   const scrollTo = (ref) => ref.current?.scrollIntoView({ behavior: "smooth" });
+
+  const BacktestCTA = () => (
+    <div className="cta-backtest" onClick={() => setTab && setTab("backtest")} style={{
+      borderTop: `1px solid ${t.border}`, cursor: "pointer",
+    }}>
+      <div style={{ padding: "12px 0", fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
+        Backtested. 100% buy signal accuracy and Smart DCA +1,118%
+      </div>
+      <div style={{
+        padding: "12px 0", borderTop: `1px solid ${t.border}`,
+        fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream,
+      }}>
+        See backtest →
+      </div>
+    </div>
+  );
 
   const handleGoogle = () => onAuth?.("google");
   const handleApple = () => onAuth?.("apple");
@@ -161,7 +177,7 @@ export default function Landing({ d, onAuth }) {
                   cursor: phase === "sending" ? "wait" : "pointer",
                   opacity: phase === "sending" ? 0.5 : 1, whiteSpace: "nowrap",
                 }}>
-                  {phase === "sending" ? "Sending..." : "Send magic link"}
+                  {phase === "sending" ? "Sending..." : "Get access link"}
                 </div>
               </div>
 
@@ -173,6 +189,9 @@ export default function Landing({ d, onAuth }) {
               </div>
             </>
           )}
+
+          {/* Backtest CTA */}
+          <BacktestCTA />
 
           {/* Anchors */}
           <div onClick={() => scrollTo(whatRef)} style={{
@@ -227,13 +246,17 @@ export default function Landing({ d, onAuth }) {
             { title: "A clear signal based on probabilities, not opinions", desc: "The model weighs price position, loss risk, and upside potential across 2,000 simulated scenarios — and gives you one actionable answer: buy, hold, reduce, or get out. No gut feeling, no guesswork." },
             { title: "A warning before the correction, not after", desc: "Most tools only tell you when to buy. This one also flags when the price is dangerously stretched above its fair value — so you can reduce before the market does it for you." },
             { title: "Your real odds of losing money at each horizon", desc: "If you buy today, what's the probability you're down in 6 months? In a year? In three years? The model runs 2,000 scenarios and gives you an actual number, not a feeling." },
-            { title: "Backtested against every month since 2016", desc: "When it said \"buy,\" the price was higher 12 months later 98% of the time. When it said \"reduce\" or \"sell,\" every major correction followed. No hindsight — only data available at that moment was used. Everything is shown openly inside." },
+            { title: "Backtested against every day since 2017", desc: "When it said \"buy,\" the price was higher 12 months later 100% of the time. When it said \"reduce\" or \"sell,\" holding would have lost money 72% of the time. No hindsight — only data available at that moment was used. Everything is shown openly inside." },
           ].map((item) => (
             <div key={item.title}>
               <div style={{ fontFamily: bd, fontSize: "clamp(16px, 1.5vw, 19px)", fontWeight: 500, color: t.cream, marginBottom: 6 }}>{item.title}</div>
               <div style={{ fontFamily: bd, fontSize: "clamp(14px, 1.3vw, 16px)", color: t.faint, lineHeight: 1.65 }}>{item.desc}</div>
             </div>
           ))}
+        </div>
+        {/* Backtest CTA */}
+        <div style={{ marginTop: 40 }}>
+          <BacktestCTA />
         </div>
         {/* Navigate to next */}
         <div onClick={() => scrollTo(hoodRef)} style={{
@@ -278,12 +301,16 @@ export default function Landing({ d, onAuth }) {
         <div className="grid-4" style={{
           textAlign: "center", marginTop: 36, paddingTop: 24, borderTop: `1px solid ${t.border}`,
         }}>
-          {[{ v: "16yr", l: "of daily data" }, { v: "2,000", l: "MC paths" }, { v: "98%", l: "buy accuracy" }, { v: "5", l: "signal levels" }].map(({ v, l }) => (
+          {[{ v: "16yr", l: "of daily data" }, { v: "2,000", l: "MC paths" }, { v: "100%", l: "buy accuracy" }, { v: "7", l: "signal zones" }].map(({ v, l }) => (
             <div key={l}>
-              <div style={{ fontFamily: mn, fontSize: 22, fontWeight: 700, color: t.cream }}>{v}</div>
+              <div style={{ fontFamily: mn, fontSize: 22, fontWeight: 700, color: v === "100%" ? "#27AE60" : t.cream }}>{v}</div>
               <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>{l}</div>
             </div>
           ))}
+        </div>
+        {/* Backtest CTA */}
+        <div style={{ marginTop: 32 }}>
+          <BacktestCTA />
         </div>
         {/* Back to top */}
         <div onClick={() => scrollTo(topRef)} style={{
@@ -301,7 +328,7 @@ export default function Landing({ d, onAuth }) {
 
       {/* ── Disclaimer ── */}
       <div style={{ fontFamily: bd, fontSize: 12, color: "#3A3B36", lineHeight: 1.6, padding: "16px 0" }}>
-        <span style={{ color: t.faint }}>Not financial advice.</span> Past signal accuracy doesn't guarantee future results. Bitcoin is volatile and the model can be wrong. The 98% accuracy figure is historical and based on data the model was partially trained on.
+        <span style={{ color: t.faint }}>Not financial advice.</span> Past signal accuracy doesn't guarantee future results. Bitcoin is volatile and the model can be wrong. The 100% accuracy figure is historical and based on daily sampling from 2017 to present.
       </div>
     </>
   );
