@@ -26,14 +26,26 @@ body { margin: 0; }
 /* All tables inside toggles get scroll wrapper behavior */
 .toggle-content table { display: table; width: 100%; }
 
+/* GLOBAL FIX: hide borderRight and reset padding on ALL grid children at mobile only */
+@media (max-width: 767px) {
+  .grid-2 > *, .grid-3 > *, .grid-4 > *,
+  .data-grid-4 > *, .data-grid-2 > *,
+  .signal-cards > *, .hz-stats > * {
+    border-right: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
 /* Grid helpers — mobile defaults */
 .grid-2 { display: grid; grid-template-columns: 1fr; gap: 0; }
+.grid-2 > *:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.08); }
 .grid-3 { display: grid; grid-template-columns: 1fr; gap: 0; }
 .grid-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-.grid-2 > *:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.06); }
-.grid-3 > *:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.06); }
+.grid-3 > * { padding: 14px 0; }
+.grid-3 > *:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.08); }
 
-/* Hero horizon card stats — stack on mobile */
+/* Hero horizon card stats — 2x2 on mobile */
 .hz-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
 
 /* Smart DCA rules — wrap on mobile */
@@ -41,6 +53,8 @@ body { margin: 0; }
 
 /* Backtest signal cards — stack on mobile */
 .signal-cards { display: grid; grid-template-columns: 1fr; gap: 0; }
+.signal-cards > *:first-child { border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 20px; }
+.signal-cards > *:last-child { padding-top: 20px; }
 
 @media (min-width: 768px) {
   .header-desktop  { display: flex !important; }
@@ -55,13 +69,19 @@ body { margin: 0; }
   .lite-title      { font-size: 56px !important; }
   .lite-answer     { font-size: 120px !important; }
 
+  /* Restore borderRight at desktop — handled by inline styles naturally */
+
   .grid-2 { grid-template-columns: 1fr 1fr; }
   .grid-2 > *:not(:last-child) { border-bottom: none; }
   .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-  .grid-3 > *:not(:last-child) { border-bottom: none; }
+  .grid-3 > * { padding: 14px 0; }
+  .grid-3 > *:not(:last-child) { border-bottom: none; border-right: 1px solid rgba(255,255,255,0.08); padding-right: 16px; }
+  .grid-3 > *:not(:first-child) { padding-left: 16px; }
   .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .hz-stats { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .signal-cards { grid-template-columns: 1fr 1fr; }
+  .signal-cards > *:first-child { border-bottom: none; border-right: 1px solid rgba(255,255,255,0.08); padding-right: 20px; padding-bottom: 0; }
+  .signal-cards > *:last-child { padding-left: 20px; padding-top: 0; }
 }
 
 @media (min-width: 1100px) {
