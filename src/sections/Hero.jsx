@@ -113,7 +113,7 @@ export default function Hero({ d, derived }) {
               </div>
               <span style={{ fontFamily: bd, fontSize: 11, color: t.dim }}>{c.verdict}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr" }}>
+            <div className="hz-stats">
               {[
                 { l: "Profit", v: `${c.pProfit.toFixed(0)}%` },
                 { l: "Loss", v: `${c.pLoss.toFixed(0)}%` },
