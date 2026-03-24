@@ -51,6 +51,9 @@ body { margin: 0; }
 /* Smart DCA rules — wrap on mobile */
 .smart-rules { display: flex; flex-wrap: wrap; gap: 0; }
 
+/* Backtest CTA — stack on mobile, grid on desktop */
+.cta-backtest { display: block; }
+
 /* Backtest signal cards — stack on mobile */
 .signal-cards { display: grid; grid-template-columns: 1fr; gap: 0; }
 
@@ -78,6 +81,8 @@ body { margin: 0; }
   .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .hz-stats { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .signal-cards { grid-template-columns: 1fr 1fr; }
+  .cta-backtest { display: grid; grid-template-columns: 1fr auto; align-items: center; }
+  .cta-backtest > *:last-child { border-top: none !important; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 24px; }
 }
 
 @media (min-width: 1100px) {
