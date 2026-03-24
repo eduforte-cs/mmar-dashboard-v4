@@ -217,10 +217,26 @@ export default function Backtest({ d }) {
       {/* ═══════════ PART 2 — WHAT HAPPENS IF YOU FOLLOW IT? ═══════════ */}
       <CatLabel label="What happens if you follow it?" />
 
-      {/* ── DCA strategies ── */}
-      <Toggle label={`$100/month for ${bm.dca?.dcaPeriods || "–"} months — three approaches`} defaultOpen>
+      {/* ── Smart DCA hero metrics ── */}
+      {bm.dca && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${t.border}` }}>
+          <div style={{ padding: "20px 16px 20px 0", borderRight: `1px solid ${t.border}` }}>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA return</div>
+            <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>+{bm.dca.smartDcaReturn}%</div>
+            <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs +{bm.dca.dcaReturn}% blind DCA</div>
+          </div>
+          <div style={{ padding: "20px 0 20px 16px" }}>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA Sortino</div>
+            <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</div>
+            <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs {bm.dca.dca.sortino ?? "–"} blind DCA</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Strategy comparison ── */}
+      <Toggle label={`$100/month for ${bm.dca?.dcaPeriods || "–"} months — three approaches, same budget`} defaultOpen>
         <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: "0 0 16px" }}>
-          Same budget, different rules. Blind DCA buys every month. Signal DCA buys only at discounts. Smart DCA goes further — it sells at overheated levels and redeploys those profits at the next crash. Each sell-high, buy-low cycle compounds the next.
+          If you'd invested $100 every month since 2017, you'd have ${bm.dca ? `$${Math.round(bm.dca.dca.portfolio / 1000)}k` : "–"} today. If you'd only invested when our model said "buy", you'd have ${bm.dca ? `$${Math.round(bm.dca.signal.portfolio / 1000)}k` : "–"} (but most of your budget sat in cash). If you'd followed Smart DCA — buying more at discounts, selling at overheated levels, and redeploying those profits at the next crash — you'd have <span style={{ fontWeight: 500, color: t.cream }}>${bm.dca ? `$${Math.round(bm.dca.smart.portfolio / 1000)}k from the same $${Math.round(bm.dca.totalBudget / 1000)}k budget` : "–"}</span>.
         </p>
 
         {/* DCA Chart */}
@@ -255,46 +271,50 @@ export default function Backtest({ d }) {
 
         {/* DCA Table */}
         {bm.dca && (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={th}></th>
-                <th style={thR}>Return</th>
-                <th style={thR}>Final value</th>
-                <th style={thR}>Sortino</th>
-                <th style={thR}>Max drawdown</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={tdL}>Blind DCA <span style={{ fontFamily: mn, fontSize: 9, color: t.dim }}>— every month</span></td>
-                <td style={tdR}>+{bm.dca.dcaReturn}%</td>
-                <td style={tdR}>${bm.dca.dca.portfolio.toLocaleString()}</td>
-                <td style={tdR}>{bm.dca.dca.sortino ?? "–"}</td>
-                <td style={{ ...tdR, color: "#EB5757" }}>{bm.dca.dca.maxDD}%</td>
-              </tr>
-              <tr>
-                <td style={{ ...tdL, color: "#27AE60" }}>Signal DCA <span style={{ fontFamily: mn, fontSize: 9, color: t.dim }}>— buy at σ &lt; -0.5</span></td>
-                <td style={tdR}>+{bm.dca.sigDcaReturn}%</td>
-                <td style={tdR}>${bm.dca.signal.portfolio.toLocaleString()}</td>
-                <td style={tdR}>{bm.dca.signal.sortino ?? "–"}</td>
-                <td style={tdR}>{bm.dca.signal.maxDD}%</td>
-              </tr>
-              <tr style={{ background: "rgba(187,107,217,0.04)" }}>
-                <td style={{ ...tdL, color: "#BB6BD9", fontWeight: 500 }}>Smart DCA <span style={{ fontFamily: mn, fontSize: 9, color: t.dim }}>— compound</span></td>
-                <td style={tdBoldR}>+{bm.dca.smartDcaReturn}%</td>
-                <td style={tdBoldR}>${bm.dca.smart.portfolio.toLocaleString()}</td>
-                <td style={{ ...tdBoldR, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</td>
-                <td style={{ ...tdBoldR, color: "#27AE60" }}>{bm.dca.smart.maxDD}%</td>
-              </tr>
-            </tbody>
-          </table>
+          <>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={th}></th>
+                  <th style={thR}>Return</th>
+                  <th style={thR}>Final value</th>
+                  <th style={thR}>Sortino</th>
+                  <th style={thR}>Max drawdown</th>
+                  <th style={thR}>Cash held</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={tdL}>Blind DCA</td>
+                  <td style={tdR}>+{bm.dca.dcaReturn}%</td>
+                  <td style={tdR}>${bm.dca.dca.portfolio.toLocaleString()}</td>
+                  <td style={tdR}>{bm.dca.dca.sortino ?? "–"}</td>
+                  <td style={{ ...tdR, color: "#EB5757" }}>{bm.dca.dca.maxDD}%</td>
+                  <td style={tdR}>$0</td>
+                </tr>
+                <tr>
+                  <td style={{ ...tdL, color: "#27AE60" }}>Signal DCA</td>
+                  <td style={tdR}>+{bm.dca.sigDcaReturn}%</td>
+                  <td style={tdR}>${bm.dca.signal.portfolio.toLocaleString()}</td>
+                  <td style={tdR}>{bm.dca.signal.sortino ?? "–"}</td>
+                  <td style={tdR}>{bm.dca.signal.maxDD}%</td>
+                  <td style={tdR}>${bm.dca.signal.cash.toLocaleString()}</td>
+                </tr>
+                <tr style={{ background: "rgba(187,107,217,0.04)" }}>
+                  <td style={{ ...tdL, color: "#BB6BD9", fontWeight: 500 }}>Smart DCA</td>
+                  <td style={tdBoldR}>+{bm.dca.smartDcaReturn}%</td>
+                  <td style={tdBoldR}>${bm.dca.smart.portfolio.toLocaleString()}</td>
+                  <td style={{ ...tdBoldR, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</td>
+                  <td style={{ ...tdBoldR, color: "#27AE60" }}>{bm.dca.smart.maxDD}%</td>
+                  <td style={tdBoldR}>${bm.dca.smart.cash.toLocaleString()}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 10, lineHeight: 1.6 }}>
+              Same $100/month budget (${bm.dca.totalBudget.toLocaleString()} total). Cash from skipped months and sell proceeds stays in portfolio. Smart DCA compounds: sell proceeds build a "war chest" that gets redeployed at discounts.
+            </div>
+          </>
         )}
-
-        <div style={{ fontFamily: mn, fontSize: 11, color: t.dim, marginTop: 10 }}>
-          Total budget: ${bm.dca?.totalBudget?.toLocaleString() || "–"} · Uninvested cash counts in portfolio.
-          {bm.dca?.smart?.cash > 0 && ` Smart DCA holds $${bm.dca.smart.cash.toLocaleString()} in cash.`}
-        </div>
       </Toggle>
 
       {/* ── How Smart DCA works ── */}
@@ -326,43 +346,79 @@ export default function Backtest({ d }) {
 
       {/* ── Risk profile ── */}
       <Toggle label="Risk profile — what it feels like">
+        {bm.dca && (
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={th}></th>
+                <th style={thR}>Return</th>
+                <th style={thR}>Max drawdown</th>
+                <th style={thR}>Sortino</th>
+                <th style={thR}>Final value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={tdL}>Blind DCA</td>
+                <td style={tdR}>+{bm.dca.dcaReturn}%</td>
+                <td style={{ ...tdR, color: "#EB5757" }}>{bm.dca.dca.maxDD}%</td>
+                <td style={tdR}>{bm.dca.dca.sortino ?? "–"}</td>
+                <td style={tdR}>${bm.dca.dca.portfolio.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td style={{ ...tdL, color: "#27AE60" }}>Signal DCA</td>
+                <td style={tdR}>+{bm.dca.sigDcaReturn}%</td>
+                <td style={tdR}>{bm.dca.signal.maxDD}%</td>
+                <td style={tdR}>{bm.dca.signal.sortino ?? "–"}</td>
+                <td style={tdR}>${bm.dca.signal.portfolio.toLocaleString()}</td>
+              </tr>
+              <tr style={{ background: "rgba(187,107,217,0.04)" }}>
+                <td style={{ ...tdL, color: "#BB6BD9", fontWeight: 500 }}>Smart DCA</td>
+                <td style={tdBoldR}>+{bm.dca.smartDcaReturn}%</td>
+                <td style={{ ...tdBoldR, color: "#27AE60" }}>{bm.dca.smart.maxDD}%</td>
+                <td style={{ ...tdBoldR, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</td>
+                <td style={tdBoldR}>${bm.dca.smart.portfolio.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+        <p style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 12, lineHeight: 1.6, fontStyle: "italic" }}>
+          Blind DCA lost {bm.dca?.dca?.maxDD}% peak-to-trough during the worst crash. Smart DCA lost {bm.dca?.smart?.maxDD}% — and was actively buying at those lows with cash from previous sells. Same $100/month budget, dramatically different experience.
+        </p>
+      </Toggle>
+
+      {/* ── Signal vs alternatives ── */}
+      <Toggle label="Signal vs alternatives">
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
               <th style={th}></th>
-              <th style={thR}>Return</th>
-              <th style={thR}>Max drawdown</th>
+              <th style={thR}>Accuracy (12m)</th>
+              <th style={thR}>Avg return</th>
               <th style={thR}>Sortino</th>
-              <th style={thR}>Final value</th>
             </tr>
           </thead>
           <tbody>
+            <tr style={{ background: "rgba(39,174,96,0.04)" }}>
+              <td style={{ ...tdL, color: "#27AE60", fontWeight: 500 }}>Our signal (σ &lt; -0.5)</td>
+              <td style={{ ...tdBoldR, color: "#27AE60" }}>{bt.precision}%</td>
+              <td style={tdBoldR}>+{bt.avgReturnYes}%</td>
+              <td style={{ ...tdBoldR, color: "#27AE60" }}>{bm.dca?.signal?.sortino ?? "–"}</td>
+            </tr>
             <tr>
-              <td style={tdL}>Blind DCA</td>
-              <td style={tdR}>+{bm.dca?.dcaReturn}%</td>
-              <td style={{ ...tdR, color: "#EB5757" }}>{bm.dca?.dca?.maxDD}%</td>
+              <td style={tdL}>Buy & hold (always buy)</td>
+              <td style={tdR}>{bm.buyAndHold?.precision}%</td>
+              <td style={tdR}>+{bm.buyAndHold?.avgReturn}%</td>
               <td style={tdR}>{bm.dca?.dca?.sortino ?? "–"}</td>
-              <td style={tdR}>${bm.dca?.dca?.portfolio?.toLocaleString()}</td>
             </tr>
             <tr>
-              <td style={{ ...tdL, color: "#27AE60" }}>Signal DCA</td>
-              <td style={tdR}>+{bm.dca?.sigDcaReturn}%</td>
-              <td style={tdR}>{bm.dca?.signal?.maxDD}%</td>
-              <td style={tdR}>{bm.dca?.signal?.sortino ?? "–"}</td>
-              <td style={tdR}>${bm.dca?.signal?.portfolio?.toLocaleString()}</td>
-            </tr>
-            <tr style={{ background: "rgba(187,107,217,0.04)" }}>
-              <td style={{ ...tdL, color: "#BB6BD9", fontWeight: 500 }}>Smart DCA</td>
-              <td style={tdBoldR}>+{bm.dca?.smartDcaReturn}%</td>
-              <td style={{ ...tdBoldR, color: "#27AE60" }}>{bm.dca?.smart?.maxDD}%</td>
-              <td style={{ ...tdBoldR, color: "#BB6BD9" }}>{bm.dca?.smart?.sortino ?? "–"}</td>
-              <td style={tdBoldR}>${bm.dca?.smart?.portfolio?.toLocaleString()}</td>
+              <td style={tdL}>Z-score (200d MA)</td>
+              <td style={tdR}>{bm.zScore?.buyPrecision}%</td>
+              <td style={tdR}>+{bm.zScore?.buyAvgReturn}%</td>
+              <td style={tdR}>–</td>
             </tr>
           </tbody>
         </table>
-        <p style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 12, lineHeight: 1.6, fontStyle: "italic" }}>
-          Blind DCA lost {bm.dca?.dca?.maxDD}% peak-to-trough during the worst crash. Smart DCA lost {bm.dca?.smart?.maxDD}% — and was actively buying at those lows with cash from previous sells. Same $100/month budget, dramatically different experience.
-        </p>
       </Toggle>
 
       {/* ── Footer ── */}
