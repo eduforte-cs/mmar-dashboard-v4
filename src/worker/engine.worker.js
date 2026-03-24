@@ -8,7 +8,7 @@ import { hurstDFA, partitionFunction, fitLambda2 } from "../engine/fractal.js";
 import { estimateRegimeSwitchingOU } from "../engine/regime.js";
 import { simulatePathsPL, computePercentiles } from "../engine/montecarlo.js";
 import { runWalkForwardBacktest } from "../engine/backtest.js";
-import { runRobustBacktest } from "../engine/backtestRobust.js";
+import { runRobustBacktestLite } from "../engine/backtestRobust.js";
 import { fetchBTC } from "../data/fetch.js";
 
 function post(type, payload) {
@@ -203,15 +203,11 @@ self.onmessage = async (e) => {
     progress("Running walk-forward backtest...");
     const backtestResults = runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, evtCap, floorBreakProb, ouRegimes);
 
-    // ── 11b. Robust backtest (local PL refit, no weight optimization) ──
-    progress("Running robust backtest (local PL refit)...");
-    const robustBT = runRobustBacktest(prices, ouRegimes, (pct) => {
-      if (pct % 25 === 0) progress(`Robust backtest... ${pct}%`);
-    });
-    // Strip raw results array (too large for postMessage)
-    const robustBacktestResults = { ...robustBT, results: undefined };
+    // ── 12. Robust validation (lite — no MC, ~500ms) ──
+    progress("Validating with local PL refit...");
+    const robustResults = runRobustBacktestLite(prices);
 
-    // ── 12. Send results ──
+    // ── 13. Send results ──
     // Note: Float64Arrays are not cloneable by postMessage, so we only send
     // the data the UI actually needs (no raw paths).
     post("done", {
@@ -222,7 +218,7 @@ self.onmessage = async (e) => {
         tauData, sigmaChart, rollingHurst,
         percentiles, percentiles3y,
         pFloorBreak1y, evtCap, floorBreakProb, empiricalFloorProb,
-        adfResult, backtestResults, p30CI, robustBacktestResults,
+        adfResult, backtestResults, robustResults, p30CI,
         calibratedThresholds: backtestResults?.thresholds || { sig: -0.5, pLoss1y: 20, pFV: 40 },
         scoringParams: backtestResults?.scoringParams || null,
         calibratedWeights: backtestResults?.weights || null,
