@@ -227,24 +227,31 @@ export default function MonteCarlo({ d, derived }) {
             Your entry · {fmtK(S0)}
           </text>
 
-          {/* 3Y endpoint labels */}
-          <text x={chart.W - chart.pad.right + 10} y={chart.ty(chart.last.p95) - 4} fill="#27AE60" fontSize={9} fontFamily={bd} opacity={0.6}>Best case</text>
-          <text x={chart.W - chart.pad.right + 10} y={chart.ty(chart.last.p95) + 8} fill="#27AE60" fontSize={10} fontFamily={mn} fontWeight={600} opacity={0.6}>{fmtK(chart.last.p95)}</text>
-
-          <text x={chart.W - chart.pad.right + 10} y={chart.ty(chart.last.p75) - 4} fill="#27AE60" fontSize={9} fontFamily={bd} opacity={0.7}>Top 25%</text>
-          <text x={chart.W - chart.pad.right + 10} y={chart.ty(chart.last.p75) + 8} fill="#27AE60" fontSize={10} fontFamily={mn} fontWeight={600} opacity={0.7}>{fmtK(chart.last.p75)}</text>
-
-          {/* Median — highlighted */}
-          <rect x={chart.W - chart.pad.right + 8} y={chart.ty(chart.last.p50) - 14}
-            width={100} height={26} rx={2} fill={t.cream} opacity={0.08} />
-          <text x={chart.W - chart.pad.right + 14} y={chart.ty(chart.last.p50) - 2} fill={t.cream} fontSize={9} fontFamily={bd} fontWeight={500}>Median</text>
-          <text x={chart.W - chart.pad.right + 14} y={chart.ty(chart.last.p50) + 10} fill={t.cream} fontSize={11} fontFamily={mn} fontWeight={700}>{fmtK(chart.last.p50)}</text>
-
-          <text x={chart.W - chart.pad.right + 10} y={chart.ty(chart.last.p25) - 4} fill="#EB5757" fontSize={9} fontFamily={bd} opacity={0.7}>Bottom 25%</text>
-          <text x={chart.W - chart.pad.right + 10} y={chart.ty(chart.last.p25) + 8} fill="#EB5757" fontSize={10} fontFamily={mn} fontWeight={600} opacity={0.7}>{fmtK(chart.last.p25)}</text>
-
-          <text x={chart.W - chart.pad.right + 10} y={chart.ty(chart.last.p5) - 4} fill="#EB5757" fontSize={9} fontFamily={bd} opacity={0.6}>Worst case</text>
-          <text x={chart.W - chart.pad.right + 10} y={chart.ty(chart.last.p5) + 8} fill="#EB5757" fontSize={10} fontFamily={mn} fontWeight={600} opacity={0.6}>{fmtK(chart.last.p5)}</text>
+          {/* 3Y endpoint labels — with collision avoidance */}
+          {(() => {
+            const rx = chart.W - chart.pad.right + 10;
+            const labels = [
+              { key: "p95", y: chart.ty(chart.last.p95), label: "Best case", value: fmtK(chart.last.p95), color: "#27AE60", op: 0.6 },
+              { key: "p75", y: chart.ty(chart.last.p75), label: "Top 25%", value: fmtK(chart.last.p75), color: "#27AE60", op: 0.7 },
+              { key: "p50", y: chart.ty(chart.last.p50), label: "Median", value: fmtK(chart.last.p50), color: t.cream, op: 1, highlight: true },
+              { key: "p25", y: chart.ty(chart.last.p25), label: "Bottom 25%", value: fmtK(chart.last.p25), color: "#EB5757", op: 0.7 },
+              { key: "p5", y: chart.ty(chart.last.p5), label: "Worst case", value: fmtK(chart.last.p5), color: "#EB5757", op: 0.6 },
+            ];
+            // Spread labels to avoid overlap (min 22px apart)
+            const minGap = 22;
+            for (let i = 1; i < labels.length; i++) {
+              if (labels[i].y - labels[i - 1].y < minGap) {
+                labels[i].y = labels[i - 1].y + minGap;
+              }
+            }
+            return labels.map(l => (
+              <g key={l.key} opacity={l.op}>
+                {l.highlight && <rect x={rx - 2} y={l.y - 14} width={110} height={26} rx={2} fill={t.cream} opacity={0.08} />}
+                <text x={l.highlight ? rx + 4 : rx} y={l.y - 2} fill={l.color} fontSize={9} fontFamily={bd} fontWeight={l.highlight ? 500 : 400}>{l.label}</text>
+                <text x={l.highlight ? rx + 4 : rx} y={l.y + 10} fill={l.color} fontSize={l.highlight ? 11 : 10} fontFamily={mn} fontWeight={l.highlight ? 700 : 600}>{l.value}</text>
+              </g>
+            ));
+          })()}
 
           {/* Crosshair */}
           {hover && (
