@@ -350,31 +350,34 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
       sigCash += dcaAmount;
     }
 
-    // Smart DCA: modulate by zone
+    // Smart DCA: modulate by zone + compound (sell proceeds redeploy at discounts)
+    // Cash war chest: grows from sells + skipped months, deploys at buy signals
+    const CASH_DEPLOY = { strongBuy: 0.30, buy: 0.15, accumulate: 0, neutral: 0, caution: 0, reduce: 0, sell: 0 };
     const mult = SMART_MULT[iLevel] ?? 0;
+    const cashDeploy = CASH_DEPLOY[iLevel] ?? 0;
+
     if (mult > 0) {
-      const invest = dcaAmount * mult;
-      if (invest <= dcaAmount) {
-        // Partial invest, rest to cash
-        smartBtc += invest / p.price;
-        smartCash += (dcaAmount - invest);
-      } else {
-        // Invest more than base — use this period's budget fully + extra from cash if available
-        const extra = invest - dcaAmount;
-        const fromCash = Math.min(extra, smartCash);
-        const actualInvest = dcaAmount + fromCash;
-        smartBtc += actualInvest / p.price;
-        smartCash -= fromCash;
-      }
+      // Base investment from this period's budget
+      const baseInvest = dcaAmount * Math.min(mult, 1); // cap at 1× from budget
+      const budgetToInvest = Math.min(baseInvest, dcaAmount);
+      const budgetToCash = dcaAmount - budgetToInvest;
+
+      // Deploy from cash war chest (compounding)
+      const fromCash = Math.round(smartCash * cashDeploy);
+
+      const totalInvest = budgetToInvest + fromCash;
+      smartBtc += totalInvest / p.price;
+      smartCash += budgetToCash;
+      smartCash -= fromCash;
     } else if (mult < 0 && smartBtc > 0) {
-      // Sell fraction of BTC, add proceeds + this period's budget to cash
+      // Sell fraction of BTC, proceeds go to war chest
       const sellFrac = Math.abs(mult);
       const btcToSell = smartBtc * sellFrac;
       smartCash += btcToSell * p.price;
       smartBtc -= btcToSell;
-      smartCash += dcaAmount; // this period's budget goes to cash
+      smartCash += dcaAmount; // this period's budget goes to cash too
     } else {
-      // Skip (caution) — budget goes to cash
+      // Skip (caution) — budget goes to war chest
       smartCash += dcaAmount;
     }
 
@@ -423,6 +426,22 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
     return +((mean / std) * Math.sqrt(12)).toFixed(2); // annualized from monthly
   }
 
+  function portfolioSortino(ts, key) {
+    if (ts.length < 5) return null;
+    const rets = [];
+    for (let i = 1; i < ts.length; i++) {
+      const prev = ts[i - 1][key] || 1;
+      if (prev > 0) rets.push((ts[i][key] - prev) / prev);
+    }
+    if (rets.length < 3) return null;
+    const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
+    const downside = rets.filter(r => r < 0);
+    if (downside.length === 0) return null; // no negative months = infinite Sortino
+    const downDev = Math.sqrt(downside.reduce((s, r) => s + r * r, 0) / rets.length); // denominator = all periods
+    if (downDev < 1e-8) return null;
+    return +((mean / downDev) * Math.sqrt(12)).toFixed(2); // annualized
+  }
+
   function portfolioMaxDD(ts, key) {
     let peak = 0, maxDD = 0;
     for (const d of ts) {
@@ -436,19 +455,42 @@ export function runWalkForwardBacktest(prices, a, b, resMean, resStd, resFloor, 
     return +(maxDD * 100).toFixed(1);
   }
 
+  // Days underwater: longest streak where portfolio < previous peak
+  function portfolioUnderwater(ts, key) {
+    let peak = 0, currentStreak = 0, maxStreak = 0, totalUnderwater = 0;
+    for (const d of ts) {
+      const v = d[key] || 0;
+      if (v >= peak) {
+        peak = v;
+        currentStreak = 0;
+      } else {
+        currentStreak += 30; // monthly intervals ≈ 30 days
+        totalUnderwater += 30;
+        if (currentStreak > maxStreak) maxStreak = currentStreak;
+      }
+    }
+    return { worst: maxStreak, avg: ts.length > 0 ? Math.round(totalUnderwater / ts.length * 30) : 0 };
+  }
+
   const dcaSharpe = portfolioSharpe(dcaTimeSeries, "dcaPortfolio");
   const sigSharpe = portfolioSharpe(dcaTimeSeries, "sigPortfolio");
   const smartSharpe = portfolioSharpe(dcaTimeSeries, "smartPortfolio");
+  const dcaSortino = portfolioSortino(dcaTimeSeries, "dcaPortfolio");
+  const sigSortino = portfolioSortino(dcaTimeSeries, "sigPortfolio");
+  const smartSortino = portfolioSortino(dcaTimeSeries, "smartPortfolio");
   const dcaMaxDD = portfolioMaxDD(dcaTimeSeries, "dcaPortfolio");
   const sigMaxDD = portfolioMaxDD(dcaTimeSeries, "sigPortfolio");
   const smartMaxDD = portfolioMaxDD(dcaTimeSeries, "smartPortfolio");
+  const dcaUW = portfolioUnderwater(dcaTimeSeries, "dcaPortfolio");
+  const sigUW = portfolioUnderwater(dcaTimeSeries, "sigPortfolio");
+  const smartUW = portfolioUnderwater(dcaTimeSeries, "smartPortfolio");
 
   const dcaBenchmark = {
     dcaReturn, sigDcaReturn, smartDcaReturn,
     totalBudget: Math.round(totalBudget),
-    dca: { portfolio: Math.round(dcaFinalPortfolio), btcValue: Math.round(dcaBtc * lastPrice), cash: Math.round(dcaCash), sharpe: dcaSharpe, maxDD: dcaMaxDD },
-    signal: { portfolio: Math.round(sigFinalPortfolio), btcValue: Math.round(sigBtc * lastPrice), cash: Math.round(sigCash), sharpe: sigSharpe, maxDD: sigMaxDD },
-    smart: { portfolio: Math.round(smartFinalPortfolio), btcValue: Math.round(smartBtc * lastPrice), cash: Math.round(smartCash), sharpe: smartSharpe, maxDD: smartMaxDD },
+    dca: { portfolio: Math.round(dcaFinalPortfolio), btcValue: Math.round(dcaBtc * lastPrice), cash: Math.round(dcaCash), sharpe: dcaSharpe, sortino: dcaSortino, maxDD: dcaMaxDD, underwaterWorst: dcaUW.worst, underwaterAvg: dcaUW.avg },
+    signal: { portfolio: Math.round(sigFinalPortfolio), btcValue: Math.round(sigBtc * lastPrice), cash: Math.round(sigCash), sharpe: sigSharpe, sortino: sigSortino, maxDD: sigMaxDD, underwaterWorst: sigUW.worst, underwaterAvg: sigUW.avg },
+    smart: { portfolio: Math.round(smartFinalPortfolio), btcValue: Math.round(smartBtc * lastPrice), cash: Math.round(smartCash), sharpe: smartSharpe, sortino: smartSortino, maxDD: smartMaxDD, underwaterWorst: smartUW.worst, underwaterAvg: smartUW.avg },
     dcaPeriods: dcaTimeSeries.length,
     timeSeries: dcaTimeSeries,
   };
