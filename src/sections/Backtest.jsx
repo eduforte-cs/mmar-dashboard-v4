@@ -58,7 +58,7 @@ export default function Backtest({ d }) {
           { l: "Buy accuracy (12m)", v: `${bt.precision}%`, s: `${bt.nYes.toLocaleString()} days · ${bt.nEpisodesBuy} episodes` },
           { l: "Avg return", v: `+${bt.avgReturnYes}%`, s: `vs ${bt.unconditionalMean}% any day` },
           { l: "Edge over buy & hold", v: `+${(parseFloat(bt.precision) - parseFloat(bm.buyAndHold?.precision || 0)).toFixed(0)}pp`, s: `${bt.precision}% vs ${bm.buyAndHold?.precision}%` },
-          { l: "Signal Sharpe", v: rm.signal?.sharpe || "–", s: `vs ${rm.buyAndHold?.sharpe || "–"} buy & hold` },
+          { l: "Signal Sharpe", v: bm.dca?.signal?.sharpe || rm.signal?.sharpe || "–", s: `vs ${bm.dca?.dca?.sharpe || rm.buyAndHold?.sharpe || "–"} buy & hold` },
         ].map((m, i) => (
           <div key={m.l} style={{ padding: "20px 0", borderRight: i < 3 ? `1px solid ${t.border}` : "none", paddingRight: i < 3 ? 16 : 0, paddingLeft: i > 0 ? 16 : 0 }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{m.l}</div>
@@ -86,7 +86,7 @@ export default function Backtest({ d }) {
               <td style={tdBold}>Our signal (σ &lt; -0.5)</td>
               <td style={tdBoldR}>{bt.precision}%</td>
               <td style={tdBoldR}>+{bt.avgReturnYes}%</td>
-              <td style={tdBoldR}>{rm.signal?.sharpe || "–"}</td>
+              <td style={tdBoldR}>{bm.dca?.signal?.sharpe || "–"}</td>
               <td style={tdBoldR}>{rm.signal?.avgMaxDD}%</td>
               <td style={tdBoldR}>{rm.signal?.worstMaxDD}%</td>
             </tr>
@@ -94,7 +94,7 @@ export default function Backtest({ d }) {
               <td style={tdL}>Buy & hold (always buy)</td>
               <td style={tdR}>{bm.buyAndHold?.precision}%</td>
               <td style={tdR}>+{bm.buyAndHold?.avgReturn}%</td>
-              <td style={tdR}>{bm.buyAndHold?.sharpe || "–"}</td>
+              <td style={tdR}>{bm.dca?.dca?.sharpe || "–"}</td>
               <td style={tdR}>{bm.buyAndHold?.avgMaxDD}%</td>
               <td style={tdR}>{bm.buyAndHold?.worstMaxDD}%</td>
             </tr>
@@ -102,12 +102,15 @@ export default function Backtest({ d }) {
               <td style={tdL}>Z-score (200d MA)</td>
               <td style={tdR}>{bm.zScore?.buyPrecision}%</td>
               <td style={tdR}>+{bm.zScore?.buyAvgReturn}%</td>
-              <td style={tdR}>{bm.zScore?.buySharpe || "–"}</td>
+              <td style={tdR}>–</td>
               <td style={tdR}>{bm.zScore?.buyAvgDD || "–"}%</td>
               <td style={tdR}>–</td>
             </tr>
           </tbody>
         </table>
+        <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 8, lineHeight: 1.6 }}>
+          Sharpe ratio is portfolio-based: monthly returns of a portfolio that is invested only when the strategy says buy, annualized (×√12). Avg max DD is the average worst drawdown during each 12-month holding period.
+        </p>
 
         {/* DCA comparison */}
         {bm.dca && (
