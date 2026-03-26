@@ -5,6 +5,7 @@ import { fmtK, fmt } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
 import Toggle from "../components/Toggle";
 import CatLabel from "../components/CatLabel";
+import { trackChartInteraction } from "../tracking";
 import DriversPanel from "./pro/DriversPanel";
 import TimeToFairValue from "./pro/TimeToFairValue";
 import MarketRegime from "./pro/MarketRegime";
@@ -107,7 +108,7 @@ export default function Pro({ d, derived, setTab }) {
       {/* ═══ VERDICT ═══ */}
       <CatLabel label="Verdict" />
 
-      <Toggle label="The long answer" defaultOpen>
+      <Toggle section="pro" label="The long answer" defaultOpen>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {(verdict.parasLite || verdict.paras || []).map((p, i) => (
             <p key={i} style={{
@@ -119,23 +120,23 @@ export default function Pro({ d, derived, setTab }) {
         </div>
       </Toggle>
 
-      <Toggle label="What's driving this" badge={`σ = ${sig.toFixed(2)}`}>
+      <Toggle section="pro" label="What's driving this" badge={`σ = ${sig.toFixed(2)}`}>
         <DriversPanel verdict={verdict} sig={sig} backtestResults={bt} />
       </Toggle>
 
-      <Toggle label="Market Regime" badge={domRegime.label}>
+      <Toggle section="pro" label="Market Regime" badge={domRegime.label}>
         <MarketRegime d={d} derived={derived} />
       </Toggle>
 
-      <Toggle label="Hurst Regime — Trend Persistence">
+      <Toggle section="pro" label="Hurst Regime — Trend Persistence">
         <HurstRegime d={d} />
       </Toggle>
 
-      <Toggle label="Time to Fair Value">
+      <Toggle section="pro" label="Time to Fair Value">
         <TimeToFairValue sig={sig} episode={episode} />
       </Toggle>
 
-      <Toggle label="Historical Deviation">
+      <Toggle section="pro" label="Historical Deviation">
         <SigmaChart sigmaChart={sigmaChart} t={t} />
       </Toggle>
 
@@ -143,7 +144,7 @@ export default function Pro({ d, derived, setTab }) {
       <CatLabel label="Models" />
 
       {/* ── Power Law ── */}
-      <Toggle label="Power Law">
+      <Toggle section="pro" label="Power Law">
         <PowerLawChart d={d} />
 
         {/* Key levels */}
@@ -203,7 +204,7 @@ export default function Pro({ d, derived, setTab }) {
 
         {/* Full-screen portal */}
         {setTab && (
-          <div onClick={() => setTab("pl")} style={{
+          <div onClick={() => { trackChartInteraction("power_law", "fullscreen"); setTab("pl"); }} style={{
             display: "flex", alignItems: "center", gap: 6,
             fontFamily: bd, fontSize: 12, color: t.dim,
             padding: "12px 16px", marginTop: 16, cursor: "pointer",
@@ -219,7 +220,7 @@ export default function Pro({ d, derived, setTab }) {
       </Toggle>
 
       {/* ── Monte Carlo (unified) ── */}
-      <Toggle label="Monte Carlo">
+      <Toggle section="pro" label="Monte Carlo">
         {/* Summary strip */}
         <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}`, marginBottom: 16 }}>
           {/* 1Y */}
@@ -325,7 +326,7 @@ export default function Pro({ d, derived, setTab }) {
 
         {/* Full-screen portal */}
         {setTab && (
-          <div onClick={() => setTab("mc")} style={{
+          <div onClick={() => { trackChartInteraction("monte_carlo", "fullscreen"); setTab("mc"); }} style={{
             display: "flex", alignItems: "center", gap: 6,
             fontFamily: bd, fontSize: 12, color: t.dim,
             padding: "12px 16px", marginTop: 16, cursor: "pointer",
@@ -340,11 +341,11 @@ export default function Pro({ d, derived, setTab }) {
         </div>
       </Toggle>
 
-      <Toggle label="Risk Matrix — PL vs Monte Carlo">
+      <Toggle section="pro" label="Risk Matrix — PL vs Monte Carlo">
         <RiskMatrix d={d} />
       </Toggle>
 
-      <Toggle label="Model Parameters" badge="advanced">
+      <Toggle section="pro" label="Model Parameters" badge="advanced">
         <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
           {modelParams.map((dm, i) => (
             <div key={dm.l} style={{ padding: "12px 0", borderBottom: `1px solid ${t.borderFaint}`, borderRight: (i % 2 === 0) ? `1px solid ${t.borderFaint}` : "none", paddingRight: (i % 2 === 0) ? 20 : 0, paddingLeft: (i % 2 === 1) ? 20 : 0 }}>

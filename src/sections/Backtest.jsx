@@ -112,7 +112,7 @@ export default function Backtest({ d }) {
       </div>
 
       {/* ── Full spectrum ── */}
-      <Toggle label="Full signal spectrum — all 7 zones" defaultOpen>
+      <Toggle section="backtest" label="Full signal spectrum — all 7 zones" defaultOpen>
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 440 }}>
           <thead>
@@ -159,7 +159,7 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {/* ── Evidence toggles ── */}
-      <Toggle label="Stability across market cycles" badge={`${bt.stabilityDelta || 0}pp delta`}>
+      <Toggle section="backtest" label="Stability across market cycles" badge={`${bt.stabilityDelta || 0}pp delta`}>
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
           <thead>
@@ -194,7 +194,7 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {rb && (
-        <Toggle label="Validated without look-ahead" badge={`${rb.buyPrecision}%`}>
+        <Toggle section="backtest" label="Validated without look-ahead" badge={`${rb.buyPrecision}%`}>
           <div className="grid-3" style={{ borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 12 }}>
             {[
               { l: "Points tested", v: rb.nTotal.toLocaleString(), s: `Step: ${rb.step} days` },
@@ -234,7 +234,7 @@ export default function Backtest({ d }) {
       )}
 
       {/* ── Strategy comparison ── */}
-      <Toggle label={`$100/month for ${bm.dca?.dcaPeriods || "–"} months — three approaches, same budget`} defaultOpen>
+      <Toggle section="backtest" label={`$100/month for ${bm.dca?.dcaPeriods || "–"} months — three approaches, same budget`} defaultOpen>
         <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: "0 0 16px" }}>
           If you'd invested $100 every month since 2017, you'd have ${bm.dca ? `$${Math.round(bm.dca.dca.portfolio / 1000)}k` : "–"} today. If you'd only invested when our model said "buy", you'd have ${bm.dca ? `$${Math.round(bm.dca.signal.portfolio / 1000)}k` : "–"} (but most of your budget sat in cash). If you'd followed Smart DCA — buying more at discounts, selling at overheated levels, and redeploying those profits at the next crash — you'd have <span style={{ fontWeight: 500, color: t.cream }}>${bm.dca ? `$${Math.round(bm.dca.smart.portfolio / 1000)}k from the same $${Math.round(bm.dca.totalBudget / 1000)}k budget` : "–"}</span>.
         </p>
@@ -320,7 +320,7 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {/* ── How Smart DCA works ── */}
-      <Toggle label="How Smart DCA works">
+      <Toggle section="backtest" label="How Smart DCA works">
         <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: "0 0 14px" }}>
           Each month, the model tells you how much to invest based on where Bitcoin is relative to fair value. When Bitcoin is cheap, you buy more — including profits from previous sells. When it's expensive, you sell into strength and build a "war chest." Each cycle amplifies the next.
         </p>
@@ -347,7 +347,7 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {/* ── Risk profile ── */}
-      <Toggle label="Risk profile — what it feels like">
+      <Toggle section="backtest" label="Risk profile — what it feels like">
         {bm.dca && (
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 440 }}>
@@ -392,7 +392,7 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {/* ── Signal vs alternatives ── */}
-      <Toggle label="Signal vs alternatives">
+      <Toggle section="backtest" label="Signal vs alternatives">
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 380 }}>
           <thead>

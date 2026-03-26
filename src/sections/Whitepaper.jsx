@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
 import CatLabel from "../components/CatLabel";
+import { trackWhitepaperSection } from "../tracking";
 
 // ── WpToggle ──
 function WpToggle({ title, num, children, defaultOpen = true }) {
@@ -327,7 +328,7 @@ export default function Whitepaper({ d }) {
       <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${t.border}`, gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <span style={{ fontFamily: mn, fontSize: 10, color: t.ghost, padding: "14px 0", marginRight: "auto", whiteSpace: "nowrap" }}>7 sections</span>
         {SECTIONS.map(cat => (
-          <span key={cat} onClick={() => { setActiveCat(cat); document.getElementById("wp-" + cat)?.scrollIntoView({ behavior: "smooth", block: "start" }); }} style={{
+          <span key={cat} onClick={() => { trackWhitepaperSection(cat); setActiveCat(cat); document.getElementById("wp-" + cat)?.scrollIntoView({ behavior: "smooth", block: "start" }); }} style={{
             fontFamily: bd, fontSize: 13, fontWeight: 500, color: activeCat === cat ? t.cream : t.faint,
             padding: "14px 20px", cursor: "pointer", whiteSpace: "nowrap",
             borderBottom: activeCat === cat ? `2px solid ${t.cream}` : "2px solid transparent", marginBottom: -1,

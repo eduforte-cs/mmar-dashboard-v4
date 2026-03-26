@@ -3,6 +3,7 @@ import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import Chevron from "../components/Chevron";
+import { trackAuthStart, trackAuthComplete, trackCtaClick } from "../tracking";
 
 export default function Landing({ d, onAuth, setTab }) {
   const { t } = useTheme();
@@ -19,7 +20,7 @@ export default function Landing({ d, onAuth, setTab }) {
   const scrollTo = (ref) => ref.current?.scrollIntoView({ behavior: "smooth" });
 
   const BacktestCTA = () => (
-    <div onClick={() => setTab && setTab("backtest")} style={{
+    <div onClick={() => { trackCtaClick("see_backtest", "landing"); setTab && setTab("backtest"); }} style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "clamp(10px, 1.2vh, 16px) 0",
       borderTop: `1px solid ${t.border}`,
@@ -36,14 +37,16 @@ export default function Landing({ d, onAuth, setTab }) {
     </div>
   );
 
-  const handleGoogle = () => onAuth?.("google");
-  const handleApple = () => onAuth?.("apple");
+  const handleGoogle = () => { trackAuthStart("google"); onAuth?.("google"); };
+  const handleApple = () => { trackAuthStart("apple"); onAuth?.("apple"); };
   const handleMagicLink = async () => {
     if (!email || !email.includes("@")) return;
+    trackAuthStart("magic_link");
     setPhase("sending");
     setErrorMsg("");
     try {
       await onAuth?.("magic", email);
+      trackAuthComplete("magic_link");
       setPhase("sent");
     } catch (err) {
       setErrorMsg(err?.message || "Something went wrong.");
