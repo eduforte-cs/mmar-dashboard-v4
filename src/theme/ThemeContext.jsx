@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useMemo } from "react";
 import { DARK, LIGHT } from "./tokens";
 
+import { trackThemeToggle } from "../tracking";
+
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [mode, setMode] = useState("dark");
   const t = mode === "dark" ? DARK : LIGHT;
-  const toggle = () => setMode(m => (m === "dark" ? "light" : "dark"));
+  const toggle = () => setMode(m => { const next = m === "dark" ? "light" : "dark"; trackThemeToggle(next); return next; });
   const value = useMemo(() => ({ t, mode, toggle }), [mode]);
 
   return (
