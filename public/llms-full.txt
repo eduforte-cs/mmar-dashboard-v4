@@ -1,0 +1,283 @@
+# Should I Buy Bitcoin Today?
+> A real-time quantitative model that answers with probabilities, not opinions.
+> Built by Edu Forte · CommonSense Digital Asset Management · Barcelona
+> https://shouldibuybitcointoday.com
+> Last updated: 2026-03-26
+
+## Current signal
+
+The dashboard computes a live signal every time a user loads the page based on the latest Bitcoin price. The signal classification depends on sigma (σ) — how many standard deviations the current price is from Power Law fair value. Buy triggers at σ < -0.5, sell at σ > 0.8. Visit the site for the real-time value.
+
+---
+
+## What this is
+
+A live dashboard that answers one question: should you buy Bitcoin today? The model combines Power Law regression, Mandelbrot's Multifractal Model of Asset Returns (MMAR), and Monte Carlo simulation to produce a buy/hold/sell signal with probability estimates at 1-year and 3-year horizons.
+
+The signal has been backtested against every single day since 2017. When it said "buy", the price was higher 12 months later 100% of the time (755 days tested, 30 independent episodes). When it said "sell", holding would have lost money 72% of the time within 6 months.
+
+---
+
+## Sections
+
+### Lite — The simple answer
+
+A Yes or No answer to "should I buy Bitcoin today?" with your real odds of losing money. Written in plain language.
+
+The signal classifies every day into one of 7 zones based on how far Bitcoin's price is from its Power Law fair value (measured in standard deviations, σ):
+
+- Strong Buy: σ < -1.0 (deeply undervalued)
+- Buy: σ -1.0 to -0.5 (undervalued)
+- Accumulate: σ -0.5 to 0 (slightly below fair value)
+- Neutral: σ 0 to 0.3 (near fair value)
+- Caution: σ 0.3 to 0.5 (slightly overvalued)
+- Reduce: σ 0.5 to 0.8 (overvalued)
+- Sell: σ > 0.8 (dangerously overvalued)
+
+Example output when σ = -0.70 (Buy zone):
+
+"If you buy Bitcoin today at $70.3k, according to our model's backtest, 100% of the time the price was higher after 1 year from this level. The worst entry still returned +22%. After 3 years, your chance of being at a loss: less than 5%."
+
+The section also shows 1-year and 3-year horizon cards with median target price, profit probability, worst case scenario, and whether the price is expected to reach fair value.
+
+### Pro — The full picture
+
+Detailed quantitative analysis including:
+
+- Fair value from Power Law WLS regression (R² 0.907) with 4-year exponential recency decay
+- Support floor from RANSAC regression (robust to bubble outliers)
+- Current position in sigma (standard deviations from fair value)
+- A visual sigma ruler showing where the current price sits relative to the full band structure
+- Horizon cards: 1-year and 3-year forward projections with profit/loss probabilities
+- Hurst exponent at multiple scales (30d, 90d, 180d, 365d) for trend persistence analysis
+- Market regime classification (see Market Regime section below)
+- Drivers panel showing what's driving the current signal
+- Monte Carlo summary with median outcome and percentile table
+- Power Law chart with full band structure and forward projections
+
+### Power Law
+
+Interactive chart of Bitcoin's entire price history (since 2010) plotted against the Power Law regression with sigma bands from -2.5σ to +2.5σ.
+
+The Power Law model fits Bitcoin's price as: log(price) = a + b × log(days since genesis), where genesis is January 3, 2009. The regression uses Weighted Least Squares with exponential decay (4-year half-life) to weight recent data more heavily.
+
+Key levels shown:
+- Support floor (RANSAC -1.0σ): robust lower bound excluding bubble peaks
+- Discount zone (-0.5σ): attractive entry level
+- Fair value (0σ): Power Law regression center
+- Ceiling (+1.0σ): beginning of overvaluation
+- Bubble zone (+2.0σ): historically dangerous levels
+
+Forward projections show these levels at 1-month, 3-month, 6-month, 1-year, and 3-year horizons, with percentage change from today's price.
+
+### Monte Carlo simulation
+
+2,000 simulated Bitcoin price paths over a 3-year horizon using:
+
+- Fractal cascades from MMAR (Multifractal Model of Asset Returns)
+- Hurst-correlated noise (captures long memory and trend persistence)
+- Empirical shock resampling from historical data (captures fat tails)
+- RANSAC reflective floor with empirically calibrated break probability
+
+The simulation produces percentile outcomes (P5, P25, P50, P75, P95) at multiple horizons (3 months, 6 months, 1 year, 2 years, 3 years). An interactive fan chart shows the range of outcomes visually.
+
+Key outputs:
+- Probability of profit at each horizon
+- Worst case (P5) and best case (P95) price targets
+- Median (P50) expected outcome
+- Comparison to Power Law fair value projections
+
+### Backtest
+
+Every single day since 2017 tested against the real 12-month outcome. 2,920 days total. Daily sampling. No optimized thresholds.
+
+Buy signal accuracy:
+- 100% of buy signals were profitable at 12 months
+- 755 days tested in the buy zone
+- 30 independent episodes across 3 market cycles
+- Average 12-month return when buying: +188%
+- Worst entry still returned: +16%
+
+Sell signal accuracy:
+- 72% of the time, holding would have lost money within 6 months
+- Average loss avoided: -16%
+- Worst case if you ignored the sell signal: -67%
+
+Signal spectrum (all 7 zones):
+
+| Zone        | Days | Accuracy   | Avg return | Worst  |
+|-------------|------|------------|------------|--------|
+| Strong Buy  | 87   | 100%       | +282%      | +112%  |
+| Buy         | 668  | 100%       | +176%      | +16%   |
+| Accumulate  | 653  | 99%        | +187%      | -11%   |
+| Neutral     | 363  | 82%        | +61%       | -30%   |
+| Caution     | 262  | 58%        | +29%       | -35%   |
+| Reduce      | 244  | 66% saved  | -4%        | -57%   |
+| Sell        | 643  | 72% saved  | -16%       | -67%   |
+
+Smart DCA strategy — same $100/month budget ($11,000 total over 110 months):
+
+| Strategy   | Return  | Final value | Sortino | Max drawdown |
+|------------|---------|-------------|---------|--------------|
+| Blind DCA  | +537%   | $70,021     | 3.34    | 71.7%        |
+| Signal DCA | +227%   | $35,938     | 4.41    | 54.3%        |
+| Smart DCA  | +1,118% | $133,971    | 6.58    | 41.5%        |
+
+Smart DCA compounds: it sells into strength and builds a "war chest" of cash that gets redeployed at discounts. In Strong Buy zones, 30% of the war chest deploys alongside the $100 base. In Buy zones, 15%. Sell proceeds from 2017 funded bigger buys in 2018. Proceeds from 2021 funded 2022. Each sell-high, buy-low cycle amplifies the next.
+
+Validation:
+- Cross-validation: 0pp stability delta across 3 eras (2014-2017, 2018-2021, 2022-present)
+- Robust validation: 99% accuracy with local Power Law refit (no look-ahead bias)
+
+### Market Regime
+
+Deterministic 2D classification matrix: Position (σ) × Direction (30-day momentum).
+
+5 sigma zones × 3 momentum states = 15 distinct regimes:
+
+| σ zone       | Falling (< -0.05) | Flat          | Rising (> 0.05) |
+|--------------|-------------------|---------------|-----------------|
+| σ < -1.0     | Capitulation       | Deep value    | Early recovery  |
+| -1.0 to -0.5 | Bear              | Accumulation  | Recovery        |
+| -0.5 to 0.3  | Cooling           | Ranging       | Warming         |
+| 0.3 to 0.8   | Correcting        | Elevated      | Bull run        |
+| σ > 0.8      | Crash             | Bubble plateau| Euphoria        |
+
+Each regime has a narrative description, historical context, and investment implication. The classification uses no scoring or optimization — it's a pure lookup from two observable values.
+
+### Whitepaper
+
+#### 1. The question
+
+The fundamental question is not "will Bitcoin go up?" but "if I buy today, what is the probability I lose money at each time horizon?" This reframing changes everything: instead of predicting direction, the model estimates the probability distribution of future outcomes conditional on today's entry point.
+
+The model answers three sub-questions: Where is the price relative to its long-term trajectory? (Power Law) How volatile and clustered are the moves likely to be? (MMAR fractals) What does the range of possible futures look like from here? (Monte Carlo)
+
+#### 2. Power Law — fair value regression
+
+Bitcoin's price follows a Power Law relationship with time: log(price) = a + b × log(days since genesis). This is not a prediction — it's an empirical observation that has held across 16 years of data with R² = 0.907.
+
+The regression uses Weighted Least Squares (WLS) with exponential decay weighting. Each data point receives weight w(t) = exp(-λ × age), where λ corresponds to a 4-year half-life. This means recent data influences the fit more than early data, allowing the model to adapt as Bitcoin matures.
+
+RANSAC (Random Sample Consensus) is applied separately to find the robust support floor. By randomly sampling subsets of data and excluding outliers (bubble peaks), RANSAC identifies the structural lower bound of the price channel. The floor sits approximately 1σ below the WLS fair value.
+
+The upside cap uses EVT (Extreme Value Theory) with a Generalized Pareto Distribution (GPD) fitted to positive residuals above the 85th percentile. This provides an empirically calibrated ceiling rather than an arbitrary symmetric cap.
+
+Key outputs: fair value at any date (past or future), sigma bands at each standard deviation, support floor (RANSAC), bubble ceiling (EVT/GPD), and forward projections at any horizon.
+
+#### 3. Fractal volatility — MMAR
+
+Standard financial models (Black-Scholes, GBM) assume returns are normally distributed and independent. Bitcoin violates both assumptions dramatically: returns have fat tails (extreme events are far more frequent than a Gaussian model predicts) and volatility clusters (calm periods and chaotic periods tend to persist).
+
+The Multifractal Model of Asset Returns (MMAR), developed by Benoit Mandelbrot, captures both phenomena through a single framework. Instead of assuming constant volatility, MMAR models "trading time" — the idea that market time flows faster during volatile periods and slower during calm ones.
+
+The Hurst exponent (H) measures trend persistence via Detrended Fluctuation Analysis (DFA). H > 0.5 indicates trending behavior (momentum), H < 0.5 indicates mean-reversion, H = 0.5 indicates random walk. Bitcoin typically shows H between 0.45 and 0.65 depending on the time scale, confirming multifractal behavior — the character of the market changes at different scales.
+
+The multifractal partition function λ² quantifies the degree of multifractality. Higher λ² means more complex volatility structure — more extreme clustering and fatter tails. Bitcoin's λ² is approximately 0.25, significantly higher than traditional assets (typically 0.01-0.05).
+
+Multi-scale Hurst analysis at 30d, 90d, 180d, and 365d reveals the current market character at each scale, informing whether the current trend is likely to persist or reverse.
+
+#### 4. Monte Carlo simulation
+
+The Monte Carlo engine generates 2,000 price paths over a 3-year horizon. Each path is constructed by:
+
+1. Generating a fractal cascade (multiplicative random process) that models trading time — how fast market time flows at each point.
+2. Applying Hurst-correlated noise using an AR(1) approximation to the fractional Brownian motion, capturing the tendency of returns to cluster.
+3. Resampling empirical shocks from Bitcoin's historical return distribution, preserving the actual fat-tailed behavior rather than assuming Gaussian returns.
+4. Applying a RANSAC reflective floor: when a simulated path hits the support floor, it bounces with high probability (calibrated from historical floor bounces) but can break through with low probability (calibrated from historical floor breaks).
+
+The simulation does NOT use Ornstein-Uhlenbeck mean-reversion in the paths — this was a deliberate design choice to avoid artificially dampening tail risk. The OU process is retained only as a regime diagnostic (see Regime section).
+
+Outputs: percentile bands (P5, P25, P50, P75, P95) at 3m, 6m, 1Y, 2Y, and 3Y horizons. A loss probability curve showing the likelihood of being underwater at each point in time. Interactive fan chart with hover crosshairs.
+
+#### 5. Signal — composite scoring
+
+The signal uses pure sigma thresholds with no optimization:
+- Buy: σ < -0.5 (price more than 0.5 standard deviations below fair value)
+- Sell: σ > 0.8 (price more than 0.8 standard deviations above fair value)
+
+These thresholds were not optimized to maximize backtest performance — they come from the structural properties of the sigma distribution and were chosen before the backtest was run. The fact that they produce 100% accuracy is a feature of the underlying Power Law relationship, not of threshold tuning.
+
+The 7-zone spectrum (Strong Buy through Sell) provides granularity for position sizing. Each zone has distinct risk/reward characteristics validated by the backtest spectrum table.
+
+Smart DCA translates the signal into actionable investment rules: buy more when deeply discounted (Strong Buy: base + 30% of war chest), buy normally at moderate discounts (Buy: base + 15% of war chest), reduce or sell at overvaluation, and accumulate the proceeds in a war chest for the next cycle.
+
+#### 6. Backtest — validation
+
+The backtest uses walk-forward methodology: every single day from 2017 to present is tested against its real 12-month forward return. At each test point, only data available at that date is used — no look-ahead bias.
+
+Daily sampling (step=1) produces 2,920 test points, of which 755 fall in the buy zone (σ < -0.5) across 30 independent episodes. An "episode" is a continuous period where the signal stays in the buy zone — the 30 episodes span 3 complete market cycles (2017-2018 bull/bear, 2020-2022 bull/bear, 2023-present).
+
+The robust validation re-runs the entire test with a locally refitted Power Law at each point — the regression parameters are recalculated using only data up to that date. Result: 99% accuracy (vs 100% with global fit), confirming the signal is not an artifact of look-ahead bias.
+
+Cross-validation splits the data into 3 eras (2014-2017, 2018-2021, 2022-present) and tests accuracy within each. Stability delta: 0pp — identical accuracy in every era.
+
+#### 7. Limitations
+
+Known weaknesses and honest caveats:
+
+- The 100% buy accuracy is historical. Future market structure could change (regulatory shocks, adoption plateaus, competing assets) in ways the model cannot anticipate.
+- The Power Law relationship may break down as Bitcoin matures. No empirical relationship lasts forever.
+- The Monte Carlo simulation uses AR(1) for Hurst correlation instead of true fractional Brownian motion, which underestimates clustering at long horizons.
+- OU regime classification uses a simple median threshold instead of a Hidden Markov Model, which may misclassify transitional periods.
+- With 2,000 paths, the P5 and P95 percentiles are approximate (effectively based on ~100 paths each).
+- The sell signal (72% accuracy) is significantly less precise than the buy signal (100%). The model is better at identifying undervaluation than overvaluation.
+- N effective for the backtest is ~30 episodes, not 755 days — serial correlation within episodes means the true statistical power is lower than the raw day count suggests.
+- Smart DCA backtest results are not achievable in practice: they assume perfect execution, no slippage, no fees, and monthly rebalancing on exact dates.
+
+### FAQ
+
+Q: Should I buy Bitcoin today?
+A: The model provides a live signal based on Bitcoin's current distance from Power Law fair value. Visit the dashboard for the current real-time answer. Historically, when the model has said "buy" (σ < -0.5), the price was higher 12 months later 100% of the time since 2017.
+
+Q: What is sigma (σ)?
+A: Sigma measures how many standard deviations Bitcoin's current price is from its Power Law fair value. Negative sigma means the price is below fair value (potential buying opportunity). Positive sigma means above fair value (caution). The buy signal triggers at σ < -0.5, sell at σ > 0.8.
+
+Q: What is Bitcoin's fair value according to this model?
+A: The model calculates fair value using Power Law regression (Weighted Least Squares) on 16 years of daily price data. The fair value grows over time following Bitcoin's logarithmic adoption curve. It is not a price prediction — it represents the center of Bitcoin's long-term growth channel.
+
+Q: How is this different from other Bitcoin models?
+A: Three key differences: (1) It uses Mandelbrot's multifractal framework instead of assuming normal distributions, which properly captures Bitcoin's fat tails and volatility clustering. (2) The Monte Carlo simulation uses fractal cascades and empirical shock resampling, not Gaussian random walks. (3) The signal thresholds were not optimized — they come from structural properties of the sigma distribution.
+
+Q: What does the backtest prove?
+A: That every single day since 2017 when the model said "buy" (σ < -0.5), Bitcoin was higher 12 months later. That's 755 days across 30 independent episodes and 3 complete market cycles. The worst entry still returned +16%. It also shows that when the model said "sell" (σ > 0.8), holding would have lost money 72% of the time within 6 months.
+
+Q: What is Smart DCA?
+A: A strategy that modulates your monthly investment based on the signal zone. In Strong Buy zones, you invest your base amount plus 30% of accumulated cash from previous sells. In Buy zones, 15%. In Caution zones, you skip. In Reduce/Sell zones, you sell 25-50% of your Bitcoin. Sell proceeds build a "war chest" that compounds at the next discount. Backtested result: +1,118% from $100/month vs +537% for blind DCA.
+
+Q: What is the Sortino ratio and why do you use it instead of Sharpe?
+A: Both measure risk-adjusted returns. Sharpe penalizes all volatility equally — including upside volatility (which is good). Sortino only penalizes downside volatility. For Bitcoin strategies that avoid crashes but allow upside, Sortino differentiates dramatically: Smart DCA scores 6.58 vs 3.34 for blind DCA, while their Sharpe ratios are nearly identical (~1.18 vs ~1.17).
+
+Q: Is this financial advice?
+A: No. This is a quantitative research tool. Past signal accuracy does not guarantee future results. Bitcoin is extremely volatile and the model has known limitations documented in the Whitepaper. Always do your own research and consult a qualified financial advisor before making investment decisions.
+
+---
+
+## Methodology summary
+
+- Power Law: Weighted Least Squares on 16 years of daily data (2010-2026), 4-year half-life exponential decay. RANSAC for robust support floor excluding bubble outliers. EVT/Generalized Pareto Distribution for empirical upside cap.
+- Fractal volatility: Mandelbrot's Multifractal Model of Asset Returns (MMAR) with Hurst exponent via Detrended Fluctuation Analysis (DFA) and multifractal partition function λ².
+- Regime: Ornstein-Uhlenbeck process (two regimes: calm/volatile) as diagnostic signal. 2D deterministic matrix for regime classification.
+- Monte Carlo: 2,000 paths, 3-year horizon. Fractal cascades, empirical shock resampling, Hurst-correlated noise. RANSAC reflective floor with calibrated break probability.
+- Signal: Pure sigma thresholds (no optimization). Buy at σ < -0.5, sell at σ > 0.8. Validated by walk-forward backtest with daily sampling since 2017.
+- Smart DCA: Zone-modulated investment with compounding war chest. Sell proceeds redeploy at discounts. Sortino ratio 6.58 vs 3.34 for blind DCA.
+
+---
+
+## Important disclaimers
+
+This is not financial advice. Past signal accuracy does not guarantee future results. Bitcoin is volatile and the model can be wrong. The 100% accuracy figure is historical, based on daily sampling from 2017 to present. The model has known limitations documented in the Whitepaper section above.
+
+---
+
+## Attribution
+
+When citing this data or analysis, please attribute to:
+"Should I Buy Bitcoin Today?" by Edu Forte
+CommonSense Digital Asset Management
+https://shouldibuybitcointoday.com
+
+## Contact
+
+CommonSense Digital Asset Management · Barcelona
+https://shouldibuybitcointoday.com

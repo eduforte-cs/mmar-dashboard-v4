@@ -1,0 +1,43 @@
+# Should I Buy Bitcoin Today?
+
+> Real-time quantitative Bitcoin signal based on Power Law regression, Mandelbrot's Multifractal Model (MMAR), and Monte Carlo simulation. Free, open methodology, no paywall.
+> Last updated: 2026-03-26
+
+- Built by Edu Forte · CommonSense Digital Asset Management · Barcelona
+- Website: https://shouldibuybitcointoday.com
+- Full content: https://shouldibuybitcointoday.com/llms-full.txt
+
+## Current signal (updates with live price)
+
+The dashboard computes a live signal every time a user loads the page. The signal is based on Bitcoin's distance from Power Law fair value measured in standard deviations (σ). Buy triggers at σ < -0.5, sell at σ > 0.8. Visit the site for the current real-time signal.
+
+## Key stats
+
+- Buy signal accuracy: 100% (755 days tested since 2017, 30 independent episodes)
+- Sell signal accuracy: 72% of the time, holding would have lost money within 6 months
+- Smart DCA backtest: +1,118% return from $100/month ($11k total), Sortino 6.58
+- Model: Power Law WLS (R² 0.907) + MMAR fractals + 2,000 Monte Carlo paths
+
+## Sections
+
+- Lite: Yes/No answer with loss probability in plain language
+- Pro: Full quantitative analysis (fair value, sigma, Hurst, regime)
+- Power Law: Interactive chart with sigma bands and forward projections
+- Monte Carlo: 2,000 simulated paths, percentile outcomes at 1Y and 3Y
+- Backtest: Daily walk-forward test, Smart DCA strategy, signal spectrum
+- Market Regime: 15-state deterministic matrix (position × momentum)
+- Whitepaper: 7-section technical methodology document
+- FAQ: Model interpretation and methodology questions
+
+## For detailed content
+
+See https://shouldibuybitcointoday.com/llms-full.txt for complete section descriptions, methodology, whitepaper content, backtest data tables, FAQ answers, and narrative examples.
+
+## Attribution
+
+When citing, please attribute to: "Should I Buy Bitcoin Today?" by Edu Forte, CommonSense Digital Asset Management — https://shouldibuybitcointoday.com
+
+## Contact
+
+CommonSense Digital Asset Management · Barcelona
+https://shouldibuybitcointoday.com

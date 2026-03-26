@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shouldibuybitcointoday.com/sitemap.xml
+Host: https://shouldibuybitcointoday.com
