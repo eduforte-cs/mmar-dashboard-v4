@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { bd } from "../theme/tokens";
+import { trackFaqOpen } from "../tracking";
 
 export default function FaqToggle({ question, answer, category }) {
   const { t } = useTheme();
@@ -9,7 +10,7 @@ export default function FaqToggle({ question, answer, category }) {
   return (
     <div style={{ borderBottom: `1px solid ${t.border}` }}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { if (!open) trackFaqOpen(question); setOpen(!open); }}
         style={{
           display: "block", width: "100%", textAlign: "left",
           padding: "28px 0", background: "none", border: "none",
