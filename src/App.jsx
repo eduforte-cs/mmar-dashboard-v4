@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 import { bd, mn } from "./theme/tokens";
 import useEngine from "./hooks/useEngine";
@@ -10,10 +10,12 @@ import Faq from "./sections/Faq";
 import PowerLaw from "./sections/PowerLaw";
 import MonteCarlo from "./sections/MonteCarlo";
 import Backtest from "./sections/Backtest";
-import BacktestCompare from "./sections/BacktestCompare";
 import Whitepaper from "./sections/Whitepaper";
 import About from "./sections/About";
 import Footer from "./sections/Footer";
+import Landing from "./sections/Landing";
+import { supabase } from "./lib/supabase";
+import { trackTabView, trackPageView, trackSignalView } from "./tracking";
 
 function Loading({ msg }) {
   const { t } = useTheme();
@@ -69,8 +71,6 @@ function ErrorScreen({ msg, onRetry }) {
   );
 }
 
-import Landing from "./sections/Landing";
-
 function Placeholder({ label }) {
   const { t } = useTheme();
   return (
@@ -86,25 +86,82 @@ function Placeholder({ label }) {
 
 function Dashboard() {
   const { t } = useTheme();
-  const [tab, setTab] = useState("lite");
+  const [tab, setTabRaw] = useState("lite");
+  const setTab = useCallback((t) => { trackTabView(t); setTabRaw(t); }, []);
   const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
 
-  // ── Preview toggle: set to true to see Landing, false for dashboard ──
-  const showLanding = false;
+  // ── Auth state ──
+  const [session, setSession] = useState(undefined); // undefined = loading, null = no session, object = logged in
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) { setSession(null); setAuthChecked(true); return; }
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthChecked(true);
+    });
+
+    // Listen for auth changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const showLanding = authChecked && !session;
+
+  // Track signal when data loads
+  useEffect(() => {
+    if (d?.sigma != null) trackSignalView(d.answerLabel || "–", d.sigma);
+    trackPageView(showLanding ? "landing" : "dashboard");
+  }, [d?.sigma, showLanding]);
+
+  // ── Auth handlers ──
+  const handleAuth = async (method, email) => {
+    if (!supabase) { console.log("Supabase not configured"); return; }
+
+    if (method === "google") {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw error;
+    }
+
+    if (method === "magic") {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) throw error;
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setSession(null);
+  };
+
+  // Show loading while checking auth
+  if (!authChecked) return <Loading msg="Checking session..." />;
 
   if (phase === "loading") return <Loading msg={msg} />;
   if (phase === "error") return <ErrorScreen msg={msg} onRetry={retry} />;
 
   if (showLanding) {
     const handleTabClick = () => {
-      // Scroll to top and flash the auth section
       window.scrollTo({ top: 0, behavior: "smooth" });
+      Landing.showNudge?.();
     };
     return (
       <div style={{ background: t.bg, minHeight: "100vh" }}>
         <Header tab={null} setTab={handleTabClick} r2={d?.r2} />
         <div className="page-pad" style={{ padding: "0 24px" }}>
-          <Landing d={d} onAuth={(method, email) => console.log("Auth:", method, email)} />
+          <Landing d={d} onAuth={handleAuth} setTab={setTab} />
         </div>
       </div>
     );
@@ -120,7 +177,7 @@ function Dashboard() {
       background: t.bg, minHeight: "100vh",
       transition: "background 0.3s ease",
     }}>
-      <Header tab={tab} setTab={setTab} r2={d?.r2} />
+      <Header tab={tab} setTab={setTab} r2={d?.r2} user={session?.user} onLogout={handleLogout} />
 
       {fullBleedTabs.includes(tab) ? (
         <div style={{ animation: "fi 0.3s ease" }}>
@@ -134,7 +191,6 @@ function Dashboard() {
             {tab === "lite" && <Lite d={d} derived={derived} setTab={setTab} />}
             {tab === "pro" && <Pro d={d} derived={derived} setTab={setTab} />}
             {tab === "backtest" && <Backtest d={d} />}
-            {tab === "compare" && <BacktestCompare d={d} />}
             {tab === "faq" && <Faq />}
             {tab === "whitepaper" && <Whitepaper d={d} />}
             {tab === "about" && <About />}
