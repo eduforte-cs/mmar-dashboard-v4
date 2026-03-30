@@ -16,7 +16,7 @@ const RIGHT_TABS = [
   { label: "About", key: "about" },
 ];
 
-export default function Header({ tab, setTab, r2 }) {
+export default function Header({ tab, setTab, r2, user, onLogout }) {
   const { t, mode, toggle } = useTheme();
   const [mobileMenu, setMobileMenu] = useState(false);
 
@@ -95,6 +95,26 @@ export default function Header({ tab, setTab, r2 }) {
           <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>R²</span>
           <span style={{ fontFamily: mn, fontSize: 11, color: t.cream }}>{r2 ? r2.toFixed(3) : "0.907"}</span>
         </div>
+
+        {/* User */}
+        {user && (
+          <div
+            onClick={onLogout}
+            style={{
+              padding: "0 22px", display: "flex", alignItems: "center",
+              borderLeft: `1px solid ${t.border}`, cursor: "pointer", gap: 6,
+            }}
+            title="Sign out"
+          >
+            <div style={{
+              width: 20, height: 20, borderRadius: "50%",
+              background: t.ghost, display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 10, fontFamily: bd, color: t.cream, fontWeight: 600,
+            }}>
+              {(user.email || "?")[0].toUpperCase()}
+            </div>
+          </div>
+        )}
 
         {/* Theme toggle */}
         <div
