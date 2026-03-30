@@ -38,7 +38,6 @@ export default function Landing({ d, onAuth, setTab }) {
   );
 
   const handleGoogle = () => { trackAuthStart("google"); onAuth?.("google"); };
-  const handleApple = () => { trackAuthStart("apple"); onAuth?.("apple"); };
   const handleMagicLink = async () => {
     if (!email || !email.includes("@")) return;
     trackAuthStart("magic_link");
@@ -136,9 +135,9 @@ export default function Landing({ d, onAuth, setTab }) {
             </div>
           ) : (
             <>
-              <div style={{ display: "flex", gap: "clamp(6px, 1vw, 10px)", marginBottom: "clamp(6px, 1vw, 10px)" }}>
+              <div style={{ marginBottom: "clamp(6px, 1vw, 10px)" }}>
                 <div onClick={handleGoogle} style={{
-                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                  display: "flex", alignItems: "center", justifyContent: "center",
                   gap: 8, padding: "clamp(10px, 1.2vh, 14px) 16px",
                   border: `1px solid ${t.border}`, cursor: "pointer",
                 }}>
@@ -149,16 +148,6 @@ export default function Landing({ d, onAuth, setTab }) {
                     <path d="M8.98 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4l2.67 2.07a4.8 4.8 0 0 1 4.48-3.9z" fill="#EA4335"/>
                   </svg>
                   <span style={{ fontFamily: bd, fontSize: 13, color: t.cream }}>Google</span>
-                </div>
-                <div onClick={handleApple} style={{
-                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                  gap: 8, padding: "clamp(10px, 1.2vh, 14px) 16px",
-                  border: `1px solid ${t.border}`, cursor: "pointer",
-                }}>
-                  <svg width="15" height="15" viewBox="0 0 18 18" fill={t.cream}>
-                    <path d="M14.94 9.88c-.03-2.3 1.88-3.4 1.97-3.46-1.07-1.57-2.74-1.78-3.34-1.81-1.42-.14-2.77.84-3.49.84s-1.83-.82-3.01-.8a4.44 4.44 0 0 0-3.74 2.28c-1.6 2.76-.41 6.86 1.15 9.1.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74s1.78.74 2.99.71c1.23-.02 2.01-1.12 2.77-2.23a9.9 9.9 0 0 0 1.26-2.58 4.06 4.06 0 0 1-2.39-3.6zM12.68 5.08A4.13 4.13 0 0 0 13.62 2a4.19 4.19 0 0 0-2.71 1.4 3.93 3.93 0 0 0-.98 2.85 3.47 3.47 0 0 0 2.75-1.17z"/>
-                  </svg>
-                  <span style={{ fontFamily: bd, fontSize: 13, color: t.cream }}>Apple</span>
                 </div>
               </div>
 
