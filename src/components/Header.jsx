@@ -16,6 +16,20 @@ const RIGHT_TABS = [
   { label: "About", key: "about" },
 ];
 
+const MOBILE_HEADER_TABS = [
+  { label: "Lite", key: "lite" },
+  { label: "Pro", key: "pro" },
+];
+
+const MOBILE_MENU_TABS = [
+  { label: "Power Law", key: "pl" },
+  { label: "Monte Carlo", key: "mc" },
+  { label: "Backtest", key: "backtest" },
+  { label: "FAQ", key: "faq" },
+  { label: "Whitepaper", key: "whitepaper" },
+  { label: "About", key: "about" },
+];
+
 export default function Header({ tab, setTab, r2, user, onLogout }) {
   const { t, mode, toggle } = useTheme();
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -150,6 +164,7 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
           padding: "14px 16px",
           borderRight: `1px solid ${t.border}`,
           display: "flex", alignItems: "center",
+          flexShrink: 0,
         }}>
           <span style={{
             fontFamily: bd, fontSize: 14, fontWeight: 700,
@@ -159,8 +174,8 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
           </span>
         </div>
 
-        {/* Left tabs: Lite Pro PL MC */}
-        {LEFT_TABS.map(n => {
+        {/* Left tabs: Lite Pro */}
+        {MOBILE_HEADER_TABS.map(n => {
           const isActive = tab === n.key;
           return (
             <button
@@ -186,9 +201,10 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
         <button
           onClick={() => setMobileMenu(m => !m)}
           style={{
-            padding: "0 18px", border: "none", background: "none",
+            padding: "0 14px", border: "none", background: "none",
             cursor: "pointer", display: "flex", alignItems: "center",
             borderLeft: `1px solid ${t.border}`,
+            flexShrink: 0,
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -218,7 +234,7 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
           background: t.bg, borderBottom: `1px solid ${t.border}`,
           display: "flex", flexDirection: "column",
         }}>
-          {RIGHT_TABS.map(n => (
+          {MOBILE_MENU_TABS.map(n => (
             <button
               key={n.key}
               onClick={() => { setTab(n.key); setMobileMenu(false); }}
