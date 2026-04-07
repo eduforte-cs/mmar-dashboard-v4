@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 
 const LEFT_TABS = [
@@ -32,6 +33,7 @@ const MOBILE_MENU_TABS = [
 
 export default function Header({ tab, setTab, r2, user, onLogout }) {
   const { t, mode, toggle } = useTheme();
+  const { lang, setLang } = useI18n();
   const [mobileMenu, setMobileMenu] = useState(false);
 
   return (
@@ -129,6 +131,22 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
             </div>
           </div>
         )}
+
+        {/* Language toggle */}
+        <div
+          onClick={() => setLang(lang === "en" ? "es" : "en")}
+          style={{
+            padding: "0 18px", display: "flex", alignItems: "center",
+            borderLeft: `1px solid ${t.border}`, cursor: "pointer",
+          }}
+        >
+          <span style={{
+            fontFamily: mn, fontSize: 11, fontWeight: 600,
+            color: t.cream, textTransform: "uppercase",
+          }}>
+            {lang}
+          </span>
+        </div>
 
         {/* Theme toggle */}
         <div
@@ -271,6 +289,14 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
                   <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>Sign out</span>
                 </div>
               )}
+              <div
+                onClick={() => setLang(lang === "en" ? "es" : "en")}
+                style={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+              >
+                <span style={{ fontFamily: mn, fontSize: 11, fontWeight: 600, color: t.cream, textTransform: "uppercase" }}>
+                  {lang}
+                </span>
+              </div>
               <div
                 style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
                 onClick={toggle}
