@@ -1,9 +1,11 @@
 import React from "react";
 import { useTheme } from "../../theme/ThemeContext";
+import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 
 export default function TimeToFairValue({ sig, episode }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   if (!episode) return null;
 
   const { episodeCallout, episodeDays, episodePeak, episodeHistory,
@@ -37,7 +39,7 @@ export default function TimeToFairValue({ sig, episode }) {
       {/* Episode header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
         <div>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Current episode</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{tr("pro.currentEpisode")}</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 700, color: t.cream }}>Day {episodeDays}</div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -53,7 +55,7 @@ export default function TimeToFairValue({ sig, episode }) {
       {/* Progress bar */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontFamily: bd, fontSize: 10, color: t.faint }}>Episode start</span>
+          <span style={{ fontFamily: bd, fontSize: 10, color: t.faint }}>{tr("pro.episodeStart")}</span>
           <span style={{ fontFamily: mn, fontSize: 10, color: pctThrough > 75 ? "#27AE60" : t.faint }}>
             {pctThrough}% through historical median
           </span>

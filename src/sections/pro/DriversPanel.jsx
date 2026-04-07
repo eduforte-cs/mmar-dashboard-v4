@@ -1,9 +1,11 @@
 import React from "react";
 import { useTheme } from "../../theme/ThemeContext";
+import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 
 export default function DriversPanel({ verdict, sig, backtestResults }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   if (!verdict) return null;
 
   const thr = verdict.thresholds || { strongBuy: -1, buy: -0.5, reduce: 0.5, sell: 0.8 };
@@ -77,7 +79,7 @@ export default function DriversPanel({ verdict, sig, backtestResults }) {
         {/* Internal sub-zone for hold */}
         {verdict.level === "hold" && verdict.internalLevel && (
           <div style={{ padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
-            <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 4 }}>Hold sub-zone</div>
+            <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 4 }}>{tr("pro.holdSubZone")}</div>
             <div style={{ fontFamily: mn, fontSize: 13, fontWeight: 500, color:
               verdict.internalLevel === "accumulate" ? "#27AE60" :
               verdict.internalLevel === "caution" ? "#F2994A" : t.cream
@@ -92,7 +94,7 @@ export default function DriversPanel({ verdict, sig, backtestResults }) {
         {/* Current sigma */}
         <div style={{ padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}` }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: bd, fontSize: 12, color: t.cream }}>Current σ</span>
+            <span style={{ fontFamily: bd, fontSize: 12, color: t.cream }}>{tr("pro.currentSigma")}</span>
             <span style={{ fontFamily: mn, fontSize: 14, fontWeight: 600, color: t.cream }}>{sig.toFixed(3)}</span>
           </div>
         </div>

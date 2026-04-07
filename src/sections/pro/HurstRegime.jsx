@@ -1,5 +1,6 @@
 import React from "react";
 import { useTheme } from "../../theme/ThemeContext";
+import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 import { fmt } from "../../engine/constants.js";
 
@@ -34,6 +35,7 @@ function getVolSignal(ratio, H) {
 
 export default function HurstRegime({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   if (!d?.rollingHurst?.length) return null;
 
   const { rollingHurst, sigmaFromPL: sig, H } = d;
@@ -59,7 +61,7 @@ export default function HurstRegime({ d }) {
       </div>
 
       {/* Multi-scale Hurst */}
-      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Multi-scale Hurst</div>
+      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{tr("pro.multiScaleHurst")}</div>
       <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 16 }}>
         {[
           { l: "H (30d)", v: fmt(cur.h30, 3), s: cur.h30 > 0.55 ? "Trending" : cur.h30 < 0.48 ? "Reverting" : "Neutral" },
@@ -77,14 +79,14 @@ export default function HurstRegime({ d }) {
 
       {/* H trend */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 16 }}>
-        <span style={{ fontFamily: bd, fontSize: 12, color: t.cream }}>H trend (30d)</span>
+        <span style={{ fontFamily: bd, fontSize: 12, color: t.cream }}>{tr("pro.hTrend30d")}</span>
         <span style={{ fontFamily: mn, fontSize: 13, fontWeight: 600, color: hTrend > 0.02 ? "#27AE60" : hTrend < -0.02 ? "#EB5757" : t.faint }}>
           {hTrend > 0 ? "+" : ""}{hTrend.toFixed(3)} ({hTrend > 0.02 ? "strengthening" : hTrend < -0.02 ? "weakening" : "stable"})
         </span>
       </div>
 
       {/* Vol compression */}
-      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Volatility compression + trend</div>
+      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{tr("pro.volCompression")}</div>
       <div style={{ padding: "12px 0", borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 12 }}>
         <div style={{ fontFamily: bd, fontSize: 16, fontWeight: 700, color: t.cream, marginBottom: 4 }}>{volSignal.label}</div>
         <div style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.5 }}>{volSignal.desc}</div>

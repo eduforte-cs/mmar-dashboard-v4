@@ -1,5 +1,6 @@
 import React from "react";
 import { useTheme } from "../../theme/ThemeContext";
+import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 import { fmt } from "../../engine/constants.js";
 
@@ -10,6 +11,7 @@ const ZONE_COLORS = { "Strong Buy": "#1B8A4A", "Buy": "#27AE60", "Hold": "#E8A83
 
 export default function MarketRegime({ d, derived }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   if (!d || !derived) return null;
 
   const { H, annualVol, mom, halfLife, kappa, ouRegimes } = d;
@@ -102,12 +104,12 @@ export default function MarketRegime({ d, derived }) {
       {/* ── How it's determined ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderTop: `1px solid ${t.border}`, borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 16 }}>
         <div style={{ padding: "12px 14px 12px 0", borderRight: `1px solid ${t.borderFaint}` }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Position (σ)</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{tr("pro.positionSigma")}</div>
           <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 600, color: t.cream }}>{sig.toFixed(2)}σ</div>
           <div style={{ fontFamily: bd, fontSize: 10, color: t.faint, marginTop: 2 }}>{SIG_ZONE_LABELS[domRegime.sigZone]} zone · Validated by backtest</div>
         </div>
         <div style={{ padding: "12px 0 12px 14px" }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Direction (momentum)</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{tr("pro.directionMomentum")}</div>
           <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 600, color: t.cream }}>{mom?.toFixed(3) || "0"}</div>
           <div style={{ fontFamily: bd, fontSize: 10, color: t.faint, marginTop: 2 }}>{MOM_LABELS[domRegime.momZone]} · Autocorrelation of residual returns</div>
         </div>
@@ -116,7 +118,7 @@ export default function MarketRegime({ d, derived }) {
       {/* ── Historical context ── */}
       {narrative.history && (
         <div style={{ padding: "14px 0", borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 16 }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Historical context</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{tr("pro.historicalContext")}</div>
           <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: 0 }}>{narrative.history}</p>
         </div>
       )}
@@ -124,7 +126,7 @@ export default function MarketRegime({ d, derived }) {
       {/* ── Implication ── */}
       {narrative.implication && (
         <div style={{ padding: "14px 0", borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 16 }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>What this means for you</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{tr("pro.whatThisMeans")}</div>
           <p style={{ fontFamily: bd, fontSize: 14, color: t.cream, lineHeight: 1.65, margin: 0 }}>{narrative.implication}</p>
         </div>
       )}

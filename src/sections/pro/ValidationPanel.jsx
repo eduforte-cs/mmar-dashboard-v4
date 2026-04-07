@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "../../theme/ThemeContext";
+import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 import Chevron from "../../components/Chevron";
 
@@ -9,9 +10,10 @@ function ScrollWrap({ children, minW = 400 }) {
 
 export default function ValidationPanel({ bt, calibratedWeights }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const [showDetails, setShowDetails] = useState(false);
 
-  if (!bt) return <p style={{ fontFamily: bd, fontSize: 14, color: t.dim }}>Backtest data not available.</p>;
+  if (!bt) return <p style={{ fontFamily: bd, fontSize: 14, color: t.dim }}>{tr("pro.backtestNA")}</p>;
 
   const p = parseFloat(bt.precision);
   const br = parseFloat(bt.baseRate);
@@ -70,7 +72,7 @@ export default function ValidationPanel({ bt, calibratedWeights }) {
         padding: "12px 0", background: "none", border: "none", borderTop: `1px solid ${t.borderFaint}`,
         cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 500, color: t.cream,
       }}>
-        <span style={{ flex: 1, textAlign: "left" }}>Show detailed numbers</span>
+        <span style={{ flex: 1, textAlign: "left" }}>{tr("pro.showDetailedNumbers")}</span>
         <div style={{ transform: showDetails ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.25s ease" }}>
           <Chevron size={14} color={t.faint} />
         </div>
@@ -80,7 +82,7 @@ export default function ValidationPanel({ bt, calibratedWeights }) {
         <div style={{ paddingBottom: 16 }}>
 
           {/* ── Buy signal metrics ── */}
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Buy signal — 12 month horizon</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>{tr("pro.buySignal12m")}</div>
           <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 16 }}>
             {[
               { l: "Buy accuracy", v: `${bt.precision}%`, s: `${bt.nYes} buy signals` },
@@ -102,7 +104,7 @@ export default function ValidationPanel({ bt, calibratedWeights }) {
             const reduce = bt.plBubbleMetrics.reduce;
             return (
               <>
-                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Sell signal — 6 month horizon</div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>{tr("pro.sellSignal6m")}</div>
                 <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 16 }}>
                   {[
                     { l: "Sell accuracy", v: sell?.pct20 != null ? `${sell.pct20}%` : "—", s: `σ > ${bt.calibratedBubbleSig} · n=${sell?.n ?? 0}` },
