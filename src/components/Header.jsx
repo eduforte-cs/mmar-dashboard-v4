@@ -286,7 +286,7 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
                   }}>
                     {(user.email || "?")[0].toUpperCase()}
                   </div>
-                  <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>Sign out</span>
+                  <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>{tr("nav.signOut")}</span>
                 </div>
               )}
               <div
