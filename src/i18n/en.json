@@ -203,5 +203,20 @@
   "backtest.smartDCAReturn": "Smart DCA return",
   "backtest.smartDCASortino": "Smart DCA Sortino",
   "backtest.dca": "DCA",
-  "backtest.smart": "Smart"
+  "backtest.smart": "Smart",
+  "pro.holdSubZone": "Hold sub-zone",
+  "pro.currentSigma": "Current σ",
+  "pro.backtestNA": "Backtest data not available.",
+  "pro.showDetailedNumbers": "Show detailed numbers",
+  "pro.buySignal12m": "Buy signal — 12 month horizon",
+  "pro.sellSignal6m": "Sell signal — 6 month horizon",
+  "pro.multiScaleHurst": "Multi-scale Hurst",
+  "pro.hTrend30d": "H trend (30d)",
+  "pro.volCompression": "Volatility compression + trend",
+  "pro.positionSigma": "Position (σ)",
+  "pro.directionMomentum": "Direction (momentum)",
+  "pro.historicalContext": "Historical context",
+  "pro.whatThisMeans": "What this means for you",
+  "pro.currentEpisode": "Current episode",
+  "pro.episodeStart": "Episode start"
 }

@@ -8,6 +8,7 @@
  */
 import * as en from "./templates/en.js";
 import * as es from "./templates/es.js";
+import { localizeParasLite } from "./parasLite.js";
 
 const templates = { en, es };
 
@@ -67,6 +68,13 @@ export function localizeVerdict(verdict, d, lang) {
       if (c.horizon === "3 years") hc.horizon = lang === "es" ? "3 años" : c.horizon;
       return hc;
     });
+  }
+
+  // 6. parasLite — narrative paragraphs
+  const localizedParas = localizeParasLite(verdict, d, lang);
+  if (localizedParas) {
+    v.parasLite = localizedParas;
+    v.paras = localizedParas;
   }
 
   return v;
