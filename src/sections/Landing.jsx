@@ -224,8 +224,8 @@ export default function Landing({ d, onAuth, setTab }) {
             fontFamily: bd, fontSize: 11, color: "#3A3B36",
             paddingTop: "clamp(8px, 1vh, 14px)",
           }}>
-            <span>CommonSense & Edu Forte · Barcelona</span>
-            <span>Not financial advice</span>
+            <span>{tr("footer.brand")}</span>
+            <span>{tr("footer.notFinancialAdvice").split(".")[0]}</span>
           </div>
         </div>
       </div>
@@ -236,14 +236,14 @@ export default function Landing({ d, onAuth, setTab }) {
         justifyContent: "center", paddingTop: 48, paddingBottom: 48,
       }}>
         <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 32 }}>
-          What you'll get
+          {tr("landing.whatYouGet")}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
           {[
-            { title: "A clear signal based on probabilities, not opinions", desc: "The model weighs price position, loss risk, and upside potential across 2,000 simulated scenarios — and gives you one actionable answer: buy, hold, reduce, or get out. No gut feeling, no guesswork." },
-            { title: "A warning before the correction, not after", desc: "Most tools only tell you when to buy. This one also flags when the price is dangerously stretched above its fair value — so you can reduce before the market does it for you." },
-            { title: "Your real odds of losing money at each horizon", desc: "If you buy today, what's the probability you're down in 6 months? In a year? In three years? The model runs 2,000 scenarios and gives you an actual number, not a feeling." },
-            { title: "Backtested against every day since 2017", desc: "When it said \"buy,\" the price was higher 12 months later 100% of the time. When it said \"reduce\" or \"sell,\" holding would have lost money 72% of the time. No hindsight — only data available at that moment was used. Everything is shown openly inside." },
+            { title: tr("landing.wyg1.title"), desc: tr("landing.wyg1.desc") },
+            { title: tr("landing.wyg2.title"), desc: tr("landing.wyg2.desc") },
+            { title: tr("landing.wyg3.title"), desc: tr("landing.wyg3.desc") },
+            { title: tr("landing.wyg4.title"), desc: tr("landing.wyg4.desc") },
           ].map((item) => (
             <div key={item.title}>
               <div style={{ fontFamily: bd, fontSize: "clamp(16px, 1.5vw, 19px)", fontWeight: 500, color: t.cream, marginBottom: 6 }}>{item.title}</div>
@@ -263,8 +263,8 @@ export default function Landing({ d, onAuth, setTab }) {
           cursor: "pointer",
         }}>
           <div>
-            <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>Under the hood</div>
-            <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 2 }}>The math, briefly</div>
+            <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>{tr("landing.underTheHood")}</div>
+            <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 2 }}>{tr("landing.underTheHoodSub")}</div>
           </div>
           <Chevron size={14} color={t.faint} />
         </div>
@@ -276,15 +276,15 @@ export default function Landing({ d, onAuth, setTab }) {
         justifyContent: "center", paddingTop: 48, paddingBottom: 48,
       }}>
         <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 32 }}>
-          Under the hood
+          {tr("landing.underTheHood")}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {[
-            { title: "Power Law — WLS + RANSAC", desc: "Weighted Least Squares on 16 years of daily data with 4-year recency decay. RANSAC for a robust support floor that excludes bubble peaks. EVT/Generalized Pareto Distribution for the empirical upside cap." },
-            { title: "Fractal volatility — MMAR", desc: "Mandelbrot's Multifractal Model of Asset Returns with Hurst exponent via DFA and multifractal partition function. Captures fat tails, volatility clustering, and long memory that Gaussian models miss entirely." },
-            { title: "Regime detection — OU diagnostic", desc: "Ornstein-Uhlenbeck process with two regimes (calm and volatile). Used as a regime diagnostic — not as the MC engine. The simulation runs on pure MMAR/Hurst dynamics to avoid artificially dampening tail risk." },
-            { title: "Monte Carlo — 2,000 paths, 3-year horizon", desc: "Fractal cascades, empirical shock resampling, Hurst-correlated noise. Single unified run — 1Y and 3Y percentiles extracted from the same paths. RANSAC reflective floor with empirically calibrated break probability." },
-            { title: "Signal calibration — walk-forward backtest", desc: "Buy score weights and sell thresholds calibrated by grid search against historical returns. Two independent sell paths. Probabilistic calibration table shows how well MC loss estimates matched reality across every market cycle." },
+            { title: tr("landing.uth1.title"), desc: tr("landing.uth1.desc") },
+            { title: tr("landing.uth2.title"), desc: tr("landing.uth2.desc") },
+            { title: tr("landing.uth3.title"), desc: tr("landing.uth3.desc") },
+            { title: tr("landing.uth4.title"), desc: tr("landing.uth4.desc") },
+            { title: tr("landing.uth5.title"), desc: tr("landing.uth5.desc") },
           ].map((item) => (
             <div key={item.title} style={{ display: "flex", gap: 14 }}>
               <div style={{ width: 2, background: t.border, flexShrink: 0, alignSelf: "stretch" }} />
@@ -298,7 +298,7 @@ export default function Landing({ d, onAuth, setTab }) {
         <div className="grid-4" style={{
           textAlign: "center", marginTop: 36, paddingTop: 24, borderTop: `1px solid ${t.border}`,
         }}>
-          {[{ v: "16yr", l: "of daily data" }, { v: "2,000", l: "MC paths" }, { v: "100%", l: "buy accuracy" }, { v: "7", l: "signal zones" }].map(({ v, l }) => (
+          {[{ v: "16yr", l: tr("landing.stat.data") }, { v: "2,000", l: tr("landing.stat.paths") }, { v: "100%", l: tr("landing.stat.accuracy") }, { v: "7", l: tr("landing.stat.zones") }].map(({ v, l }) => (
             <div key={l}>
               <div style={{ fontFamily: mn, fontSize: 22, fontWeight: 700, color: v === "100%" ? "#27AE60" : t.cream }}>{v}</div>
               <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>{l}</div>
@@ -316,7 +316,7 @@ export default function Landing({ d, onAuth, setTab }) {
           borderTop: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`,
           cursor: "pointer",
         }}>
-          <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>Back to top</div>
+          <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>{tr("landing.backToTop")}</div>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M3 9.5L7 5.5L11 9.5" stroke={t.faint} strokeWidth="1.5" strokeLinecap="round" />
           </svg>
@@ -325,7 +325,7 @@ export default function Landing({ d, onAuth, setTab }) {
 
       {/* ── Disclaimer ── */}
       <div style={{ fontFamily: bd, fontSize: 12, color: "#3A3B36", lineHeight: 1.6, padding: "16px 0" }}>
-        <span style={{ color: t.faint }}>Not financial advice.</span> Past signal accuracy doesn't guarantee future results. Bitcoin is volatile and the model can be wrong. The 100% accuracy figure is historical and based on daily sampling from 2017 to present.
+        <span style={{ color: t.faint }}>{tr("footer.notFinancialAdvice").split(".")[0]}.</span> {tr("landing.disclaimer")}
       </div>
     </>
   );

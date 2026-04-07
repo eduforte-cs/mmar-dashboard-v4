@@ -1,18 +1,20 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import Toggle from "../components/Toggle";
 import CatLabel from "../components/CatLabel";
 
 export default function Backtest({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   if (!d) return null;
 
   const bt = d.backtestResults;
   const rb = d.robustResults;
   if (!bt) return (
     <div style={{ minHeight: "40vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ fontFamily: bd, fontSize: 14, color: t.faint }}>Backtest data not available yet — computing...</span>
+      <span style={{ fontFamily: bd, fontSize: 14, color: t.faint }}>{tr("backtest.loading")}</span>
     </div>
   );
 
@@ -60,28 +62,28 @@ export default function Backtest({ d }) {
         <h1 style={{
           fontFamily: bd, fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 700,
           color: t.cream, letterSpacing: "-0.04em", lineHeight: 0.95, margin: 0,
-        }}>Backtest</h1>
+        }}>{tr("backtest.title")}</h1>
         <p style={{ fontFamily: bd, fontSize: "clamp(13px, 1.2vw, 15px)", color: t.faint, marginTop: 12, lineHeight: 1.6 }}>
           We tested every single day since 2017 against the real outcome. {bt.nTotal.toLocaleString()} days. Daily sampling. No optimized thresholds.
         </p>
       </div>
 
       {/* ═══════════ PART 1 — DOES THE SIGNAL WORK? ═══════════ */}
-      <CatLabel label="How accurate is the signal?" />
+      <CatLabel label={tr("backtest.part1")} />
 
       {/* ── Buy + Sell signal cards ── */}
       <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
         {/* Buy signal */}
         <div style={{ padding: "20px 20px 20px 0", borderRight: `1px solid ${t.border}` }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: "#27AE60", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Buy signal accuracy</div>
-          <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>When the model said "buy", was it right?</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: "#27AE60", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{tr("backtest.buyAccuracy")}</div>
+          <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>{tr("backtest.buyQuestion")}</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#27AE60", marginBottom: 4 }}>100%</div>
           <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>{bt.nYes.toLocaleString()} out of {bt.nYes.toLocaleString()} days profitable at 12 months</div>
           <div style={{ borderTop: `1px solid ${t.borderFaint}`, paddingTop: 10 }}>
             <MetricRow label="Avg 12m return" value={`+${bt.avgReturnYes}%`} color="#27AE60" />
             <MetricRow label="Worst entry (12m)" value={bl.buy?.minReturn != null ? `+${bl.buy.minReturn}%` : "–"} color="#27AE60" />
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0" }}>
-              <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Independent episodes</span>
+              <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>{tr("backtest.episodes")}</span>
               <span style={{ fontFamily: mn, fontSize: 13, fontWeight: 500, color: t.cream }}>{bt.nEpisodesBuy}</span>
             </div>
           </div>
@@ -89,15 +91,15 @@ export default function Backtest({ d }) {
 
         {/* Sell signal */}
         <div style={{ padding: "20px 0 20px 20px" }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: "#EB5757", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Sell signal accuracy</div>
-          <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>When the model said "sell", did it protect you?</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: "#EB5757", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{tr("backtest.sellAccuracy")}</div>
+          <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>{tr("backtest.sellQuestion")}</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#EB5757", marginBottom: 4 }}>{sellLossRate}%</div>
           <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>of the time, holding would have lost money within 6 months</div>
           <div style={{ borderTop: `1px solid ${t.borderFaint}`, paddingTop: 10 }}>
             <MetricRow label="Avg loss avoided (6m)" value={`${sellAvgLoss}%`} color="#EB5757" />
             <MetricRow label="Worst case if you held" value={`${sellWorst}%`} color="#EB5757" />
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0" }}>
-              <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Days tested</span>
+              <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>{tr("backtest.daysTested")}</span>
               <span style={{ fontFamily: mn, fontSize: 13, fontWeight: 500, color: t.cream }}>{bt.nSell.toLocaleString()}</span>
             </div>
           </div>
@@ -112,16 +114,16 @@ export default function Backtest({ d }) {
       </div>
 
       {/* ── Full spectrum ── */}
-      <Toggle section="backtest" label="Full signal spectrum — all 7 zones" defaultOpen>
+      <Toggle section="backtest" label={tr("backtest.fullSpectrum")} defaultOpen>
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 440 }}>
           <thead>
             <tr>
-              <th style={th}>Zone</th>
-              <th style={thR}>Days</th>
-              <th style={thR}>Accuracy</th>
-              <th style={thR}>Avg return</th>
-              <th style={thR}>Worst</th>
+              <th style={th}>{tr("backtest.zone")}</th>
+              <th style={thR}>{tr("backtest.days")}</th>
+              <th style={thR}>{tr("backtest.accuracy")}</th>
+              <th style={thR}>{tr("backtest.avgReturn")}</th>
+              <th style={thR}>{tr("backtest.worst")}</th>
             </tr>
           </thead>
           <tbody>
@@ -159,17 +161,17 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {/* ── Evidence toggles ── */}
-      <Toggle section="backtest" label="Stability across market cycles" badge={`${bt.stabilityDelta || 0}pp delta`}>
+      <Toggle section="backtest" label={tr("backtest.stability")} badge={`${bt.stabilityDelta || 0}pp delta`}>
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
           <thead>
             <tr>
-              <th style={th}>Era</th>
-              <th style={thR}>Days tested</th>
-              <th style={thR}>Buy days</th>
-              <th style={thR}>Episodes</th>
-              <th style={thR}>Accuracy</th>
-              <th style={thR}>Avg return</th>
+              <th style={th}>{tr("backtest.era")}</th>
+              <th style={thR}>{tr("backtest.daysTested")}</th>
+              <th style={thR}>{tr("backtest.buyDays")}</th>
+              <th style={thR}>{tr("backtest.episodes")}</th>
+              <th style={thR}>{tr("backtest.accuracy")}</th>
+              <th style={thR}>{tr("backtest.avgReturn")}</th>
             </tr>
           </thead>
           <tbody>
@@ -194,11 +196,11 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {rb && (
-        <Toggle section="backtest" label="Validated without look-ahead" badge={`${rb.buyPrecision}%`}>
+        <Toggle section="backtest" label={tr("backtest.validated")} badge={`${rb.buyPrecision}%`}>
           <div className="grid-3" style={{ borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 12 }}>
             {[
               { l: "Points tested", v: rb.nTotal.toLocaleString(), s: `Step: ${rb.step} days` },
-              { l: "Buy accuracy", v: `${rb.nBuyCorrect}/${rb.nBuy} = ${rb.buyPrecision}%`, s: `${rb.nEpisodes} episodes` },
+              { l: tr("backtest.buyAccuracy"), v: `${rb.nBuyCorrect}/${rb.nBuy} = ${rb.buyPrecision}%`, s: `${rb.nEpisodes} episodes` },
               { l: "Worst buy return", v: `${rb.worstBuyReturn > 0 ? "+" : ""}${rb.worstBuyReturn}%`, s: rb.worstBuyReturn > 0 ? "Positive" : "Edge case" },
             ].map((m, i) => (
               <div key={m.l} style={{ padding: "14px 0", borderRight: i < 2 ? `1px solid ${t.borderFaint}` : "none", paddingRight: i < 2 ? 14 : 0, paddingLeft: i > 0 ? 14 : 0 }}>
@@ -215,18 +217,18 @@ export default function Backtest({ d }) {
       )}
 
       {/* ═══════════ PART 2 — WHAT HAPPENS IF YOU FOLLOW IT? ═══════════ */}
-      <CatLabel label="What happens if you follow it?" />
+      <CatLabel label={tr("backtest.part2")} />
 
       {/* ── Smart DCA hero metrics ── */}
       {bm.dca && (
         <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
           <div style={{ padding: "20px 16px 20px 0", borderRight: `1px solid ${t.border}` }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA return</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{tr("backtest.smartDCAReturn")}</div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>+{bm.dca.smartDcaReturn}%</div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs +{bm.dca.dcaReturn}% blind DCA</div>
           </div>
           <div style={{ padding: "20px 0 20px 16px" }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Smart DCA Sortino</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{tr("backtest.smartDCASortino")}</div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs {bm.dca.dca.sortino ?? "–"} blind DCA</div>
           </div>
@@ -261,9 +263,9 @@ export default function Backtest({ d }) {
                 <path d={pathStr("dcaReturn")} fill="none" stroke={t.dim} strokeWidth="1.5" opacity="0.5" />
                 <path d={pathStr("sigReturn")} fill="none" stroke="#27AE60" strokeWidth="1.5" />
                 <path d={pathStr("smartReturn")} fill="none" stroke="#BB6BD9" strokeWidth="1.5" />
-                <text x={W - pad.r + 2} y={y(ts[ts.length - 1].dcaReturn) + 3} fill={t.dim} fontSize="9" fontFamily={mn}>DCA</text>
-                <text x={W - pad.r + 2} y={y(ts[ts.length - 1].sigReturn) + 3} fill="#27AE60" fontSize="9" fontFamily={mn}>Signal</text>
-                <text x={W - pad.r + 2} y={y(ts[ts.length - 1].smartReturn) + 3} fill="#BB6BD9" fontSize="9" fontFamily={mn}>Smart</text>
+                <text x={W - pad.r + 2} y={y(ts[ts.length - 1].dcaReturn) + 3} fill={t.dim} fontSize="9" fontFamily={mn}>{tr("backtest.dca")}</text>
+                <text x={W - pad.r + 2} y={y(ts[ts.length - 1].sigReturn) + 3} fill="#27AE60" fontSize="9" fontFamily={mn}>{tr("backtest.signal")}</text>
+                <text x={W - pad.r + 2} y={y(ts[ts.length - 1].smartReturn) + 3} fill="#BB6BD9" fontSize="9" fontFamily={mn}>{tr("backtest.smart")}</text>
               </svg>
             </div>
           );
@@ -277,16 +279,16 @@ export default function Backtest({ d }) {
               <thead>
                 <tr>
                   <th style={th}></th>
-                  <th style={thR}>Return</th>
-                  <th style={thR}>Final value</th>
-                  <th style={thR}>Sortino</th>
-                  <th style={thR}>Max drawdown</th>
-                  <th style={thR}>Cash held</th>
+                  <th style={thR}>{tr("backtest.return")}</th>
+                  <th style={thR}>{tr("backtest.finalValue")}</th>
+                  <th style={thR}>{tr("backtest.sortino")}</th>
+                  <th style={thR}>{tr("backtest.maxDD")}</th>
+                  <th style={thR}>{tr("backtest.cashHeld")}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style={tdL}>Blind DCA</td>
+                  <td style={tdL}>{tr("backtest.blindDCA")}</td>
                   <td style={tdR}>+{bm.dca.dcaReturn}%</td>
                   <td style={tdR}>${bm.dca.dca.portfolio.toLocaleString()}</td>
                   <td style={tdR}>{bm.dca.dca.sortino ?? "–"}</td>
@@ -294,7 +296,7 @@ export default function Backtest({ d }) {
                   <td style={tdR}>$0</td>
                 </tr>
                 <tr>
-                  <td style={{ ...tdL, color: "#27AE60" }}>Signal DCA</td>
+                  <td style={{ ...tdL, color: "#27AE60" }}>{tr("backtest.signalDCA")}</td>
                   <td style={tdR}>+{bm.dca.sigDcaReturn}%</td>
                   <td style={tdR}>${bm.dca.signal.portfolio.toLocaleString()}</td>
                   <td style={tdR}>{bm.dca.signal.sortino ?? "–"}</td>
@@ -302,7 +304,7 @@ export default function Backtest({ d }) {
                   <td style={tdR}>${bm.dca.signal.cash.toLocaleString()}</td>
                 </tr>
                 <tr style={{ background: "rgba(187,107,217,0.04)" }}>
-                  <td style={{ ...tdL, color: "#BB6BD9", fontWeight: 500 }}>Smart DCA</td>
+                  <td style={{ ...tdL, color: "#BB6BD9", fontWeight: 500 }}>{tr("backtest.smartDCA")}</td>
                   <td style={tdBoldR}>+{bm.dca.smartDcaReturn}%</td>
                   <td style={tdBoldR}>${bm.dca.smart.portfolio.toLocaleString()}</td>
                   <td style={{ ...tdBoldR, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</td>
@@ -320,7 +322,7 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {/* ── How Smart DCA works ── */}
-      <Toggle section="backtest" label="How Smart DCA works">
+      <Toggle section="backtest" label={tr("backtest.howSmartDCA")}>
         <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: "0 0 14px" }}>
           Each month, the model tells you how much to invest based on where Bitcoin is relative to fair value. When Bitcoin is cheap, you buy more — including profits from previous sells. When it's expensive, you sell into strength and build a "war chest." Each cycle amplifies the next.
         </p>
@@ -347,36 +349,36 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {/* ── Risk profile ── */}
-      <Toggle section="backtest" label="Risk profile — what it feels like">
+      <Toggle section="backtest" label={tr("backtest.riskProfile")}>
         {bm.dca && (
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 440 }}>
             <thead>
               <tr>
                 <th style={th}></th>
-                <th style={thR}>Return</th>
-                <th style={thR}>Max drawdown</th>
-                <th style={thR}>Sortino</th>
-                <th style={thR}>Final value</th>
+                <th style={thR}>{tr("backtest.return")}</th>
+                <th style={thR}>{tr("backtest.maxDD")}</th>
+                <th style={thR}>{tr("backtest.sortino")}</th>
+                <th style={thR}>{tr("backtest.finalValue")}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td style={tdL}>Blind DCA</td>
+                <td style={tdL}>{tr("backtest.blindDCA")}</td>
                 <td style={tdR}>+{bm.dca.dcaReturn}%</td>
                 <td style={{ ...tdR, color: "#EB5757" }}>{bm.dca.dca.maxDD}%</td>
                 <td style={tdR}>{bm.dca.dca.sortino ?? "–"}</td>
                 <td style={tdR}>${bm.dca.dca.portfolio.toLocaleString()}</td>
               </tr>
               <tr>
-                <td style={{ ...tdL, color: "#27AE60" }}>Signal DCA</td>
+                <td style={{ ...tdL, color: "#27AE60" }}>{tr("backtest.signalDCA")}</td>
                 <td style={tdR}>+{bm.dca.sigDcaReturn}%</td>
                 <td style={tdR}>{bm.dca.signal.maxDD}%</td>
                 <td style={tdR}>{bm.dca.signal.sortino ?? "–"}</td>
                 <td style={tdR}>${bm.dca.signal.portfolio.toLocaleString()}</td>
               </tr>
               <tr style={{ background: "rgba(187,107,217,0.04)" }}>
-                <td style={{ ...tdL, color: "#BB6BD9", fontWeight: 500 }}>Smart DCA</td>
+                <td style={{ ...tdL, color: "#BB6BD9", fontWeight: 500 }}>{tr("backtest.smartDCA")}</td>
                 <td style={tdBoldR}>+{bm.dca.smartDcaReturn}%</td>
                 <td style={{ ...tdBoldR, color: "#27AE60" }}>{bm.dca.smart.maxDD}%</td>
                 <td style={{ ...tdBoldR, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</td>
@@ -392,32 +394,32 @@ export default function Backtest({ d }) {
       </Toggle>
 
       {/* ── Signal vs alternatives ── */}
-      <Toggle section="backtest" label="Signal vs alternatives">
+      <Toggle section="backtest" label={tr("backtest.signalVsAlts")}>
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 380 }}>
           <thead>
             <tr>
               <th style={th}></th>
-              <th style={thR}>Accuracy (12m)</th>
-              <th style={thR}>Avg return</th>
-              <th style={thR}>Sortino</th>
+              <th style={thR}>{tr("backtest.accuracy12m")}</th>
+              <th style={thR}>{tr("backtest.avgReturn")}</th>
+              <th style={thR}>{tr("backtest.sortino")}</th>
             </tr>
           </thead>
           <tbody>
             <tr style={{ background: "rgba(39,174,96,0.04)" }}>
-              <td style={{ ...tdL, color: "#27AE60", fontWeight: 500 }}>Our signal (σ &lt; -0.5)</td>
+              <td style={{ ...tdL, color: "#27AE60", fontWeight: 500 }}>{tr("backtest.ourSignal")}</td>
               <td style={{ ...tdBoldR, color: "#27AE60" }}>{bt.precision}%</td>
               <td style={tdBoldR}>+{bt.avgReturnYes}%</td>
               <td style={{ ...tdBoldR, color: "#27AE60" }}>{bm.dca?.signal?.sortino ?? "–"}</td>
             </tr>
             <tr>
-              <td style={tdL}>Buy & hold (always buy)</td>
+              <td style={tdL}>{tr("backtest.buyAndHold")}</td>
               <td style={tdR}>{bm.buyAndHold?.precision}%</td>
               <td style={tdR}>+{bm.buyAndHold?.avgReturn}%</td>
               <td style={tdR}>{bm.dca?.dca?.sortino ?? "–"}</td>
             </tr>
             <tr>
-              <td style={tdL}>Z-score (200d MA)</td>
+              <td style={tdL}>{tr("backtest.zScore")}</td>
               <td style={tdR}>{bm.zScore?.buyPrecision}%</td>
               <td style={tdR}>+{bm.zScore?.buyAvgReturn}%</td>
               <td style={tdR}>–</td>

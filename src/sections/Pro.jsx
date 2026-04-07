@@ -1,8 +1,10 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK, fmt } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
+import { localizeVerdict } from "../i18n/localizeVerdict";
 import Toggle from "../components/Toggle";
 import CatLabel from "../components/CatLabel";
 import { trackChartInteraction } from "../tracking";
@@ -16,13 +18,15 @@ import PowerLawChart from "./pro/PowerLawChart";
 
 export default function Pro({ d, derived, setTab }) {
   const { t } = useTheme();
+  const { t: tr, lang } = useI18n();
   if (!d || !derived) return null;
 
   const { H, lambda2, sigmaFromPL: sig, ouRegimes, r2, resMean, resStd, resFloor,
     ransac, evtCap, kappa, halfLife, annualVol, S0, a, b, t0,
     backtestResults, percentiles, percentiles3y, sigmaChart,
   } = d;
-  const { verdict, domRegime, mcLossHorizons, supportPrice, episode } = derived;
+  const verdict = localizeVerdict(derived.verdict, d, lang);
+  const { domRegime, mcLossHorizons, supportPrice, episode } = derived;
 
   const bt = backtestResults;
 
@@ -106,9 +110,9 @@ export default function Pro({ d, derived, setTab }) {
       </div>
 
       {/* ═══ VERDICT ═══ */}
-      <CatLabel label="Verdict" />
+      <CatLabel label={tr("pro.verdict")} />
 
-      <Toggle section="pro" label="The long answer" defaultOpen>
+      <Toggle section="pro" label={tr("pro.longAnswer")} defaultOpen>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {(verdict.parasLite || verdict.paras || []).map((p, i) => (
             <p key={i} style={{
@@ -120,36 +124,36 @@ export default function Pro({ d, derived, setTab }) {
         </div>
       </Toggle>
 
-      <Toggle section="pro" label="What's driving this" badge={`σ = ${sig.toFixed(2)}`}>
+      <Toggle section="pro" label={tr("pro.driving")} badge={`σ = ${sig.toFixed(2)}`}>
         <DriversPanel verdict={verdict} sig={sig} backtestResults={bt} />
       </Toggle>
 
-      <Toggle section="pro" label="Market Regime" badge={domRegime.label}>
+      <Toggle section="pro" label={tr("pro.marketRegime")} badge={domRegime.label}>
         <MarketRegime d={d} derived={derived} />
       </Toggle>
 
-      <Toggle section="pro" label="Hurst Regime — Trend Persistence">
+      <Toggle section="pro" label={tr("pro.hurstRegime")}>
         <HurstRegime d={d} />
       </Toggle>
 
-      <Toggle section="pro" label="Time to Fair Value">
+      <Toggle section="pro" label={tr("pro.timeToFV")}>
         <TimeToFairValue sig={sig} episode={episode} />
       </Toggle>
 
-      <Toggle section="pro" label="Historical Deviation">
+      <Toggle section="pro" label={tr("pro.historicalDeviation")}>
         <SigmaChart sigmaChart={sigmaChart} t={t} />
       </Toggle>
 
       {/* ═══ MODELS ═══ */}
-      <CatLabel label="Models" />
+      <CatLabel label={tr("pro.models")} />
 
       {/* ── Power Law ── */}
-      <Toggle section="pro" label="Power Law">
+      <Toggle section="pro" label={tr("pro.powerLaw")}>
         <PowerLawChart d={d} />
 
         {/* Key levels */}
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Key price levels</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{tr("pro.keyPriceLevels")}</div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
@@ -176,7 +180,7 @@ export default function Pro({ d, derived, setTab }) {
 
         {/* Forward projections */}
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Forward projections</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{tr("pro.forwardProjections")}</div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
@@ -210,7 +214,7 @@ export default function Pro({ d, derived, setTab }) {
             padding: "12px 16px", marginTop: 16, cursor: "pointer",
             border: `1px solid ${t.border}`, borderRadius: 6,
           }}>
-            <span style={{ fontSize: 14 }}>↗</span> Open full-screen Power Law view
+            <span style={{ fontSize: 14 }}>↗</span> {tr("pro.openPL")}
           </div>
         )}
 
@@ -220,7 +224,7 @@ export default function Pro({ d, derived, setTab }) {
       </Toggle>
 
       {/* ── Monte Carlo (unified) ── */}
-      <Toggle section="pro" label="Monte Carlo">
+      <Toggle section="pro" label={tr("pro.monteCarlo")}>
         {/* Summary strip */}
         <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}`, marginBottom: 16 }}>
           {/* 1Y */}
@@ -228,12 +232,12 @@ export default function Pro({ d, derived, setTab }) {
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>1 year outcome</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div>
-                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>Median</div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>{tr("pro.median")}</div>
                 <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: t.cream }}>{last1y ? fmtK(last1y.p50) : "–"}</div>
                 <div style={{ fontFamily: mn, fontSize: 11, color: "#27AE60" }}>{last1y ? `+${((last1y.p50 - S0) / S0 * 100).toFixed(0)}%` : ""}</div>
               </div>
               <div>
-                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>Profitable</div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>{tr("pro.profitable")}</div>
                 <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: "#27AE60" }}>{pProfit1y != null ? `${pProfit1y}%` : "–"}</div>
                 <div style={{ fontFamily: bd, fontSize: 10, color: t.faint }}>of simulations</div>
               </div>
@@ -244,12 +248,12 @@ export default function Pro({ d, derived, setTab }) {
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>3 year outcome</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div>
-                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>Median</div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>{tr("pro.median")}</div>
                 <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: t.cream }}>{last3y ? fmtK(last3y.p50) : "–"}</div>
                 <div style={{ fontFamily: mn, fontSize: 11, color: "#27AE60" }}>{last3y ? `+${((last3y.p50 - S0) / S0 * 100).toFixed(0)}%` : ""}</div>
               </div>
               <div>
-                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>Profitable</div>
+                <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>{tr("pro.profitable")}</div>
                 <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: "#27AE60" }}>{pProfit3y != null ? `${pProfit3y}%` : "–"}</div>
                 <div style={{ fontFamily: bd, fontSize: 10, color: t.faint }}>of simulations</div>
               </div>
@@ -273,12 +277,12 @@ export default function Pro({ d, derived, setTab }) {
 
         {/* Percentile table */}
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Percentile table</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{tr("pro.percentileTable")}</div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
               <thead>
                 <tr>
-                  {["Horizon", "Bear (P5)", "P25", "Median", "P75", "Bull (P95)", "PL target"].map((h, i) => (
+                  {[tr("pro.horizon"), tr("pro.bear"), "P25", tr("pro.median"), "P75", tr("pro.bull"), tr("pro.plTarget")].map((h, i) => (
                     <th key={h} style={{ ...tableHead, textAlign: i === 0 ? "left" : "right" }}>{h}</th>
                   ))}
                 </tr>
@@ -302,11 +306,11 @@ export default function Pro({ d, derived, setTab }) {
 
         {/* Loss curve */}
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Probability of loss</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{tr("pro.probabilityOfLoss")}</div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                {["Horizon", "P(loss)", "Worst 5%", "Median"].map((h, i) => (
+                {[tr("pro.horizon"), tr("pro.pLoss"), tr("pro.worst5"), tr("pro.median")].map((h, i) => (
                   <th key={h} style={{ ...tableHead, textAlign: i === 0 ? "left" : "right" }}>{h}</th>
                 ))}
               </tr>
@@ -332,7 +336,7 @@ export default function Pro({ d, derived, setTab }) {
             padding: "12px 16px", marginTop: 16, cursor: "pointer",
             border: `1px solid ${t.border}`, borderRadius: 6,
           }}>
-            <span style={{ fontSize: 14 }}>↗</span> Open full-screen Monte Carlo view
+            <span style={{ fontSize: 14 }}>↗</span> {tr("pro.openMC")}
           </div>
         )}
 
@@ -341,11 +345,11 @@ export default function Pro({ d, derived, setTab }) {
         </div>
       </Toggle>
 
-      <Toggle section="pro" label="Risk Matrix — PL vs Monte Carlo">
+      <Toggle section="pro" label={tr("pro.riskMatrix")}>
         <RiskMatrix d={d} />
       </Toggle>
 
-      <Toggle section="pro" label="Model Parameters" badge="advanced">
+      <Toggle section="pro" label={tr("pro.modelParams")} badge="advanced">
         <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
           {modelParams.map((dm, i) => (
             <div key={dm.l} style={{ padding: "12px 0", borderBottom: `1px solid ${t.borderFaint}`, borderRight: (i % 2 === 0) ? `1px solid ${t.borderFaint}` : "none", paddingRight: (i % 2 === 0) ? 20 : 0, paddingLeft: (i % 2 === 1) ? 20 : 0 }}>

@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
@@ -7,6 +8,7 @@ import Toggle from "../components/Toggle";
 
 export default function MonteCarlo({ d, derived }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const containerRef = useRef(null);
   const svgRef = useRef(null);
   const [dims, setDims] = useState({ w: 1200, h: 500 });
@@ -161,7 +163,7 @@ export default function MonteCarlo({ d, derived }) {
               background: "#27AE60",
               animation: "fi 2s ease-in-out infinite alternate",
             }} />
-            <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>Live</span>
+            <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>{tr("live")}</span>
           </div>
         </div>
         <p style={{
@@ -231,11 +233,11 @@ export default function MonteCarlo({ d, derived }) {
           {(() => {
             const rx = chart.W - chart.pad.right + 10;
             const labels = [
-              { key: "p95", y: chart.ty(chart.last.p95), label: "Best case", value: fmtK(chart.last.p95), color: "#27AE60", op: 0.6 },
+              { key: "p95", y: chart.ty(chart.last.p95), label: tr("hero.best"), value: fmtK(chart.last.p95), color: "#27AE60", op: 0.6 },
               { key: "p75", y: chart.ty(chart.last.p75), label: "Top 25%", value: fmtK(chart.last.p75), color: "#27AE60", op: 0.7 },
               { key: "p50", y: chart.ty(chart.last.p50), label: "Median", value: fmtK(chart.last.p50), color: t.cream, op: 1, highlight: true },
               { key: "p25", y: chart.ty(chart.last.p25), label: "Bottom 25%", value: fmtK(chart.last.p25), color: "#EB5757", op: 0.7 },
-              { key: "p5", y: chart.ty(chart.last.p5), label: "Worst case", value: fmtK(chart.last.p5), color: "#EB5757", op: 0.6 },
+              { key: "p5", y: chart.ty(chart.last.p5), label: tr("mc.worstCase"), value: fmtK(chart.last.p5), color: "#EB5757", op: 0.6 },
             ];
             // Spread labels to avoid overlap (min 22px apart)
             const minGap = 22;
@@ -283,10 +285,10 @@ export default function MonteCarlo({ d, derived }) {
       {/* ── Strip ── */}
       <div className="page-pad" style={{ padding: "0 24px" }}>
         <div className="grid-3" style={{ borderTop: `1px solid ${t.border}` }}>
-          {/* Hold 1 year */}
+          {/* {tr("mc.hold1y")} */}
           <div style={{ padding: "24px 20px", borderRight: `1px solid ${t.border}` }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>
-              Hold 1 year
+              {tr("mc.hold1y")}
             </div>
             <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 6 }}>
               {chart.worst1y >= S0
@@ -305,10 +307,10 @@ export default function MonteCarlo({ d, derived }) {
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 4 }}>worst case</div>
           </div>
 
-          {/* Hold 3 years */}
+          {/* {tr("mc.hold3y")} */}
           <div style={{ padding: "24px 20px", borderRight: `1px solid ${t.border}` }}>
             <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>
-              Hold 3 years
+              {tr("mc.hold3y")}
             </div>
             <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5, marginBottom: 6 }}>
               {chart.worst3y >= S0
