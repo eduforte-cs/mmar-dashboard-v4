@@ -1,18 +1,20 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import Gauge from "../components/Gauge";
 
 export default function Hero({ d, derived }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   if (!d || !derived) return null;
 
   const { S0, sigmaFromPL: sigma, plToday, r2, backtestResults: bt } = d;
   const { verdict, supportPrice } = derived;
 
-  const sigmaLabel = sigma < -1.0 ? "Deep discount" : sigma < -0.5 ? "Discount"
-    : sigma < 0.5 ? "Near fair value" : sigma < 1.0 ? "Premium" : "Overheated";
+  const sigmaLabel = sigma < -1.0 ? tr("hero.deepDiscount") : sigma < -0.5 ? tr("hero.discount")
+    : sigma < 0.5 ? tr("hero.nearFairValue") : sigma < 1.0 ? tr("hero.premium") : tr("hero.overheated");
 
   return (
     <>
@@ -57,10 +59,10 @@ export default function Hero({ d, derived }) {
         borderBottom: `1px solid ${t.border}`,
       }}>
         {[
-          { l: "Price", v: fmtK(S0), s: `${d.source?.split("(")[0] || "Live"}` },
-          { l: "σ from fair value", v: `${sigma >= 0 ? "+" : ""}${sigma.toFixed(2)}σ`, s: sigmaLabel },
-          { l: "Fair value", v: fmtK(plToday), s: `Power Law WLS · R² ${r2.toFixed(3)}` },
-          { l: "Support floor", v: fmtK(supportPrice), s: `RANSAC ${d.resFloorSigma?.toFixed(1) || ""}σ` },
+          { l: tr("hero.price"), v: fmtK(S0), s: `${d.source?.split("(")[0] || tr("live")}` },
+          { l: "σ", v: `${sigma >= 0 ? "+" : ""}${sigma.toFixed(2)}σ`, s: sigmaLabel },
+          { l: tr("hero.fairValue"), v: fmtK(plToday), s: `Power Law WLS · R² ${r2.toFixed(3)}` },
+          { l: tr("hero.supportFloor"), v: fmtK(supportPrice), s: `RANSAC ${d.resFloorSigma?.toFixed(1) || ""}σ` },
         ].map((item, i) => (
           <div key={item.l} style={{
             padding: "20px 0",
@@ -115,10 +117,10 @@ export default function Hero({ d, derived }) {
             </div>
             <div className="hz-stats">
               {[
-                { l: "Profit", v: `${c.pProfit.toFixed(0)}%` },
-                { l: "Loss", v: `${c.pLoss.toFixed(0)}%` },
-                { l: "Reaches FV", v: `${c.pFairValue.toFixed(0)}%` },
-                { l: "Worst case", v: fmtK(c.worstCase) },
+                { l: tr("hero.profit"), v: `${c.pProfit.toFixed(0)}%` },
+                { l: tr("hero.loss"), v: `${c.pLoss.toFixed(0)}%` },
+                { l: tr("hero.reachesFV"), v: `${c.pFairValue.toFixed(0)}%` },
+                { l: tr("hero.worstCase"), v: fmtK(c.worstCase) },
               ].map((s, j) => (
                 <div key={s.l} style={{ paddingRight: j < 3 ? 14 : 0, borderRight: j < 3 ? `1px solid ${t.borderFaint}` : "none", paddingLeft: j > 0 ? 14 : 0 }}>
                   <div style={{ fontFamily: bd, fontSize: 8, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.l}</div>
