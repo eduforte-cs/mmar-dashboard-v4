@@ -13,17 +13,11 @@ export const answerSubs = {
 export const answerSubsLite = {
   strongBuy: (d) => `If you buy Bitcoin today at ${fmtK(d.S0)}, according to our model's backtest, every single time Bitcoin was this cheap, the price was higher after 1 year. Even the worst entry returned +30%. After 3 years, your chance of being at a loss: less than 5%. This is the best buying opportunity the model can identify.`,
   buy: (d) => `If you buy Bitcoin today at ${fmtK(d.S0)}, according to our model's backtest, 100% of the time the price was higher after 1 year from this level. The worst entry still returned +22%. After 3 years, your chance of being at a loss: less than 5%.`,
-};
-
-export const paras = {
-  sell: (d) => `Bitcoin at ${fmtK(d.S0)} is ${d.devPct}% above where the model says it should be (${fmtK(d.plToday)}). That's expensive — every time BTC got this stretched in the past, a correction followed.`,
-  reduce: (d) => `Bitcoin at ${fmtK(d.S0)} is ${d.devPct}% above its fair value of ${fmtK(d.plToday)}. You're paying a premium. Historically, from this zone the 12-month return was negative on average.`,
-  caution: (d) => `Bitcoin at ${fmtK(d.S0)} is ${d.devPct}% above its fair value of ${fmtK(d.plToday)}. Getting warm — the risk/reward starts to shift against you from here.`,
-  neutral: (d) => `Bitcoin at ${fmtK(d.S0)} is ${d.devPct}% ${d.aboveBelow} its fair value of ${fmtK(d.plToday)}. That's a fair price — right in the middle of the normal range.`,
-  buy: (d) => `Bitcoin at ${fmtK(d.S0)} is ${d.devPct}% below its fair value of ${fmtK(d.plToday)}. It's on sale. These are the entries people look back on and wish they'd sized up.`,
-  outlook: (d) => `If you buy today and hold 1 year, there's a ${d.pFV}% chance the price reaches its fair value of ${fmtK(d.pl1y)}. The worst case floor — the lowest level Bitcoin has historically respected — is ${fmtK(d.supportPrice)} (−${d.maxDownside}% from today). Over 3 years, the fair value target is ${fmtK(d.pl3y)} (${d.pl3yReturn >= 0 ? "+" : ""}${d.pl3yReturn}%).${d.mcWorst3yProfit ? " Even in the worst 5% of simulations, you're in profit at 3 years." : ""}`,
-  duration: (d) => `Based on how long previous episodes lasted, the model estimates about ${d.monthsRemaining} more months before Bitcoin returns to fair value. ${d.sigImproving ? "The trend is already improving — it could be faster." : d.sigWorsening ? "The trend is still worsening — it could take longer." : "The trend is flat — patience required."}`,
-  lossProbability: (d) => `Your chance of being at a loss after 1 year: ~${d.l1y}%. After 3 years: ~${d.l3y}%.${d.l3y < 5 ? " Time is on your side." : d.l3y < 15 ? " The longer you hold, the better the odds." : ""}`,
+  accumulate: (d) => `If you buy Bitcoin today at ${fmtK(d.S0)}, according to our model's backtest, 100% of the time the price was higher after 1 year. Not technically a discount, but it has never failed from here. After 3 years, your chance of being at a loss: less than 10%.`,
+  neutral: (d) => `If you buy Bitcoin today at ${fmtK(d.S0)}, according to our model's backtest, the price was higher after 1 year 83% of the time. After 3 years, 88%. The odds are in your favor, but it's not a clear signal.`,
+  caution: (d) => `If you buy Bitcoin today at ${fmtK(d.S0)}, according to our model's backtest, the price was higher after 1 year only 56% of the time. After 3 years, 72%. That's close to a coin flip. Not the time to enter.`,
+  reduce: (d) => `If you hold Bitcoin today at ${fmtK(d.S0)}, according to our model's backtest, the price was lower after 1 year 67% of the time. After 3 years, 45% still at a loss. Consider reducing your position.`,
+  sell: (d) => `If you hold Bitcoin today at ${fmtK(d.S0)}, according to our model's backtest, the price was lower after 1 year in every single case. The average outcome: −34%. Get out.`,
 };
 
 export const signals = {
