@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import Chevron from "../components/Chevron";
@@ -7,6 +8,7 @@ import { trackAuthStart, trackAuthComplete, trackCtaClick } from "../tracking";
 
 export default function Landing({ d, onAuth, setTab }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const topRef = useRef(null);
   const whatRef = useRef(null);
   const hoodRef = useRef(null);
@@ -28,11 +30,11 @@ export default function Landing({ d, onAuth, setTab }) {
     }}>
       <div>
         <div style={{ fontFamily: bd, fontSize: 13, color: t.faint, lineHeight: 1.5 }}>
-          Backtested. 100% buy signal accuracy and Smart DCA +1,118%
+          {tr("landing.backtested")}
         </div>
       </div>
       <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream, whiteSpace: "nowrap", marginLeft: 16 }}>
-        See backtest →
+        {tr("landing.seeBacktest")}
       </div>
     </div>
   );
@@ -78,7 +80,7 @@ export default function Landing({ d, onAuth, setTab }) {
             lineHeight: 0.95,
             margin: 0,
           }}>
-            Should I buy Bitcoin today at {S0 ? fmtK(S0) : "..."}?
+            {tr("landing.title").replace("{price}", S0 ? fmtK(S0) : "...")}
           </h1>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
             <div style={{
@@ -86,7 +88,7 @@ export default function Landing({ d, onAuth, setTab }) {
               background: "#27AE60",
               animation: "fi 2s ease-in-out infinite alternate",
             }} />
-            <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>Live</span>
+            <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>{tr("live")}</span>
           </div>
 
           <p style={{
@@ -97,7 +99,7 @@ export default function Landing({ d, onAuth, setTab }) {
             lineHeight: 1.55,
             margin: "clamp(16px, 3vw, 40px) 0 0",
           }}>
-            A <strong style={{ fontWeight: 700, color: t.cream }}>Yes or No</strong> answer and your real odds of losing money at 1 year and 3 years. Based on institutional-grade quantitative analysis, explained in plain language you can actually understand.
+            {(() => { const p = tr("landing.subtitle").split("{yesOrNo}"); return <>{p[0]}<strong style={{ fontWeight: 700, color: t.cream }}>{tr("landing.yesOrNo")}</strong>{p[1]}</>; })()}
           </p>
         </div>
 
@@ -124,9 +126,9 @@ export default function Landing({ d, onAuth, setTab }) {
 
           {phase === "sent" ? (
             <div style={{ padding: "16px 0", textAlign: "center" }}>
-              <div style={{ fontFamily: bd, fontSize: 16, fontWeight: 600, color: t.cream, marginBottom: 6 }}>Check your email</div>
+              <div style={{ fontFamily: bd, fontSize: 16, fontWeight: 600, color: t.cream, marginBottom: 6 }}>{tr("landing.checkEmail")}</div>
               <p style={{ fontFamily: bd, fontSize: 13, color: t.faint, margin: 0 }}>
-                Magic link sent to <strong style={{ color: t.cream }}>{email}</strong>.
+                {tr("landing.magicLinkSent")} <strong style={{ color: t.cream }}>{email}</strong>.
               </p>
               <button onClick={() => { setPhase("idle"); setEmail(""); }}
                 style={{ background: "none", border: "none", color: t.faint, textDecoration: "underline", cursor: "pointer", fontSize: 12, fontFamily: bd, marginTop: 8 }}>
@@ -147,7 +149,7 @@ export default function Landing({ d, onAuth, setTab }) {
                     <path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/>
                     <path d="M8.98 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4l2.67 2.07a4.8 4.8 0 0 1 4.48-3.9z" fill="#EA4335"/>
                   </svg>
-                  <span style={{ fontFamily: bd, fontSize: 13, color: t.cream }}>Google</span>
+                  <span style={{ fontFamily: bd, fontSize: 13, color: t.cream }}>{tr("landing.google")}</span>
                 </div>
               </div>
 
@@ -156,7 +158,7 @@ export default function Landing({ d, onAuth, setTab }) {
                   type="email" value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleMagicLink()}
-                  placeholder="you@email.com"
+                  placeholder={tr("landing.emailPlaceholder")}
                   disabled={phase === "sending"}
                   style={{
                     flex: 1, padding: "clamp(10px, 1.2vh, 14px) 16px", fontSize: 13,
@@ -171,7 +173,7 @@ export default function Landing({ d, onAuth, setTab }) {
                   cursor: phase === "sending" ? "wait" : "pointer",
                   opacity: phase === "sending" ? 0.5 : 1, whiteSpace: "nowrap",
                 }}>
-                  {phase === "sending" ? "Sending..." : "Get access link"}
+                  {phase === "sending" ? tr("landing.sending") : tr("landing.getAccessLink")}
                 </div>
               </div>
 
@@ -179,7 +181,7 @@ export default function Landing({ d, onAuth, setTab }) {
                 <div style={{ fontFamily: bd, fontSize: 12, color: "#EB5757", marginTop: 6 }}>{errorMsg}</div>
               )}
               <div style={{ fontFamily: bd, fontSize: 11, color: "#3A3B36", marginTop: "clamp(4px, 0.6vh, 8px)" }}>
-                No password, no spam, no newsletters. Just access.
+                {tr("landing.noSpam")}
               </div>
             </>
           )}
@@ -197,8 +199,8 @@ export default function Landing({ d, onAuth, setTab }) {
             cursor: "pointer",
           }}>
             <div>
-              <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>What you'll get</div>
-              <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 2 }}>4 things that make this different</div>
+              <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>{tr("landing.whatYouGet")}</div>
+              <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 2 }}>{tr("landing.whatYouGetSub")}</div>
             </div>
             <Chevron size={14} color={t.faint} />
           </div>
@@ -210,8 +212,8 @@ export default function Landing({ d, onAuth, setTab }) {
             cursor: "pointer",
           }}>
             <div>
-              <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>Under the hood</div>
-              <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 2 }}>The math, briefly</div>
+              <div style={{ fontFamily: bd, fontSize: 15, fontWeight: 500, color: t.cream }}>{tr("landing.underTheHood")}</div>
+              <div style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 2 }}>{tr("landing.underTheHoodSub")}</div>
             </div>
             <Chevron size={14} color={t.faint} />
           </div>

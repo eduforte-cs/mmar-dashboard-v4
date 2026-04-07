@@ -1,9 +1,11 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd } from "../theme/tokens";
 
 export default function Footer() {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
 
   return (
     <div style={{ marginTop: 48, paddingTop: 24, borderTop: `1px solid ${t.border}` }}>
@@ -30,7 +32,7 @@ export default function Footer() {
         display: "flex", justifyContent: "space-between",
       }}>
         <span style={{ fontFamily: bd, fontSize: 9, color: t.ghost }}>
-          Not financial advice. Never invest more than you can afford to lose.
+          {tr("footer.notFinancialAdvice")}
         </span>
         <span style={{ fontFamily: bd, fontSize: 9, color: t.ghost }}>
           © {new Date().getFullYear()} CommonSense Technologies S.L.
