@@ -158,6 +158,7 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
         borderBottom: `1px solid ${t.border}`,
         background: t.bg,
         display: "flex", alignItems: "stretch",
+        width: "100%", boxSizing: "border-box", overflow: "hidden",
       }}>
         {/* Brand */}
         <div style={{
@@ -183,11 +184,11 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
               onClick={() => { setTab(n.key); setMobileMenu(false); }}
               style={{
                 padding: "0 14px", border: "none",
-                borderRight: `1px solid ${t.border}`,
                 cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 500,
                 color: isActive ? t.cream : t.faint,
                 background: isActive ? t.bgAlt : "transparent",
                 borderBottom: isActive ? `2px solid ${t.cream}` : "2px solid transparent",
+                flexShrink: 0,
               }}
             >
               {n.label}
@@ -195,16 +196,14 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
           );
         })}
 
-        <div style={{ flex: 1 }} />
-
-        {/* Hamburger */}
+        {/* Hamburger — pushed to far right */}
         <button
           onClick={() => setMobileMenu(m => !m)}
           style={{
-            padding: "0 14px", border: "none", background: "none",
+            padding: "0 16px", border: "none", background: "none",
             cursor: "pointer", display: "flex", alignItems: "center",
             borderLeft: `1px solid ${t.border}`,
-            flexShrink: 0,
+            flexShrink: 0, marginLeft: "auto",
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
