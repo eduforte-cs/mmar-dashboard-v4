@@ -202,10 +202,14 @@ function Dashboard() {
   );
 }
 
+import { I18nProvider } from "./i18n/I18nContext";
+
 export default function App() {
   return (
     <ThemeProvider>
-      <Dashboard />
+      <I18nProvider>
+        <Dashboard />
+      </I18nProvider>
     </ThemeProvider>
   );
 }
