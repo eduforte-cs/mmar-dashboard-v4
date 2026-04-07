@@ -1,17 +1,19 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { useI18n } from "../i18n/I18nContext";
+import { localizeVerdict } from "../i18n/localizeVerdict";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import Gauge from "../components/Gauge";
 
 export default function Hero({ d, derived }) {
   const { t } = useTheme();
-  const { t: tr } = useI18n();
+  const { t: tr, lang } = useI18n();
   if (!d || !derived) return null;
 
   const { S0, sigmaFromPL: sigma, plToday, r2, backtestResults: bt } = d;
-  const { verdict, supportPrice } = derived;
+  const verdict = localizeVerdict(derived.verdict, d, lang);
+  const { supportPrice } = derived;
 
   const sigmaLabel = sigma < -1.0 ? tr("hero.deepDiscount") : sigma < -0.5 ? tr("hero.discount")
     : sigma < 0.5 ? tr("hero.nearFairValue") : sigma < 1.0 ? tr("hero.premium") : tr("hero.overheated");

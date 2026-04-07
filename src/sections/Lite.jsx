@@ -1,18 +1,19 @@
 import React, { useRef } from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { useI18n } from "../i18n/I18nContext";
+import { localizeVerdict } from "../i18n/localizeVerdict";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import Chevron from "../components/Chevron";
 
 export default function Lite({ d, derived, setTab }) {
   const { t } = useTheme();
-  const { t: tr } = useI18n();
+  const { t: tr, lang } = useI18n();
   const whyRef = useRef(null);
   if (!d || !derived) return null;
 
   const { S0 } = d;
-  const { verdict } = derived;
+  const verdict = localizeVerdict(derived.verdict, d, lang);
   const paras = verdict.parasLite || verdict.paras || [];
 
   const scrollToWhy = () => {
