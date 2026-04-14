@@ -35,65 +35,31 @@ export default function Splash({ msg, progress = 0 }) {
       padding: "24px",
       animation: "fi 0.4s ease-out",
     }}>
-      {/* Bitcoin mark with green halo */}
-      <div style={{
-        position: "relative",
-        width: 120,
-        height: 120,
-        marginBottom: 36,
-        animation: "splashPulse 2.4s ease-in-out infinite",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        {/* Soft glow layer behind */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          fontSize: 120,
-          fontFamily: bd,
-          fontWeight: 800,
-          color: "#27AE60",
-          filter: "blur(26px)",
-          opacity: 0.5,
-          textAlign: "center",
-          lineHeight: 1,
-          pointerEvents: "none",
-        }}>₿</div>
-        {/* Main symbol */}
-        <div style={{
-          position: "relative",
-          fontSize: 120,
-          fontFamily: bd,
-          fontWeight: 800,
-          color: t.cream,
-          textAlign: "center",
-          lineHeight: 1,
-          letterSpacing: "-0.02em",
-        }}>₿</div>
-      </div>
-
-      {/* Tagline */}
+      {/* Hero question — no ₿ glyph so it reads consistently across
+          every browser (Switzer doesn't ship U+20BF, which makes the
+          Bitcoin character fall back to a system font and look out
+          of place next to the real Switzer letters). */}
       <h1 style={{
         fontFamily: bd,
-        fontSize: "clamp(28px, 4.5vw, 44px)",
+        fontSize: "clamp(40px, 7vw, 84px)",
         fontWeight: 800,
         color: t.cream,
-        letterSpacing: "-0.04em",
+        letterSpacing: "-0.045em",
         textAlign: "center",
-        margin: "0 0 10px",
-        lineHeight: 1.05,
-        maxWidth: "90vw",
+        margin: "0 0 22px",
+        lineHeight: 1.02,
+        maxWidth: "92vw",
       }}>
-        Should I buy Bitcoin today?
+        Should I Buy Bitcoin?
       </h1>
       <p style={{
         fontFamily: bd,
-        fontSize: 13,
+        fontSize: 14,
         color: t.faint,
-        margin: "0 0 48px",
+        margin: "0 0 56px",
         letterSpacing: "0.01em",
         textAlign: "center",
+        maxWidth: "90vw",
       }}>
         real-time quant signal · backtested daily since 2017
       </p>
