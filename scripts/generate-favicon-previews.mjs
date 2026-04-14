@@ -1,14 +1,18 @@
 // ─────────────────────────────────────────────────────────────────
 // generate-favicon-previews.mjs
 //
-// Renders 4 favicon design variants to PNG at 256×256 so the user
-// can compare them visually before picking one. Switzer doesn't
-// include the ₿ (U+20BF) glyph, so we fake it with a capital "B"
-// plus two extended vertical stems drawn as SVG rects — matching
-// how the real ₿ character looks in most fonts.
+// Renders 5 favicon design variants to PNG at 16/32/64/128/256 px
+// so the user can compare them at real browser-tab sizes.
+//
+// Font strategy:
+//   • Noto Sans 800 (latin-ext) — used for BOTH the ₿ (U+20BF) and
+//     the ? glyphs. Switzer Extrabold doesn't ship the ₿ codepoint,
+//     and the previous fake-₿ (letter B + two floating stems) read
+//     as a broken B instead of a Bitcoin symbol. Using Noto Sans
+//     with the real ₿ glyph is the clean fix.
 //
 // Run: node scripts/generate-favicon-previews.mjs
-// Output: public/favicon-previews/{a,b,c,d}.png
+// Output: public/favicon-previews/{A..E}-{16,32,64,128,256}.png
 // ─────────────────────────────────────────────────────────────────
 import fs from "node:fs";
 import path from "node:path";
@@ -27,87 +31,69 @@ const C = {
   green: "#27AE60",
 };
 
-// ── Four variants as SVG strings, viewBox 128 × 128 ─────────────
-// Bitcoin B is approximated as letter "B" + two vertical stems
-// drawn as small rounded rectangles above and below the left side
-// of the B. Position tuned for Switzer Extrabold.
+// ── SVG variants (viewBox 128 × 128) ────────────────────────────
+// All text uses font-family="Noto" — the NotoSans-ExtraBold buffer
+// loaded into resvg is registered under that name.
 
-// Variant A — "B?" side by side
+// A — ₿? side by side
 const variantA = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="28" fill="${C.bg}"/>
-  <g font-family="Switzer" font-weight="800" fill="${C.cream}">
-    <text x="38" y="92" font-size="84" text-anchor="middle">B</text>
-    <rect x="18" y="24" width="7" height="16" rx="2"/>
-    <rect x="18" y="92" width="7" height="16" rx="2"/>
-    <text x="88" y="92" font-size="84" text-anchor="middle">?</text>
-  </g>
+  <text x="38" y="96" font-family="Noto" font-weight="800" font-size="96" text-anchor="middle" fill="${C.cream}">₿</text>
+  <text x="92" y="96" font-family="Noto" font-weight="800" font-size="96" text-anchor="middle" fill="${C.cream}">?</text>
 </svg>
 `;
 
-// Variant B — Stacked: ₿ top, ? bottom
+// B — Stacked: ₿ top, ? bottom
 const variantB = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="28" fill="${C.bg}"/>
-  <g font-family="Switzer" font-weight="800" fill="${C.cream}">
-    <text x="64" y="56" font-size="58" text-anchor="middle">B</text>
-    <rect x="44" y="16" width="6" height="12" rx="2"/>
-    <rect x="44" y="50" width="6" height="12" rx="2"/>
-    <text x="64" y="112" font-size="58" text-anchor="middle">?</text>
-  </g>
+  <text x="64" y="62" font-family="Noto" font-weight="800" font-size="68" text-anchor="middle" fill="${C.cream}">₿</text>
+  <text x="64" y="118" font-family="Noto" font-weight="800" font-size="68" text-anchor="middle" fill="${C.cream}">?</text>
 </svg>
 `;
 
-// Variant C — Big ₿ centered, small ? green badge top-right
+// C — Big ₿ centered, small ? green badge top-right
 const variantC = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="28" fill="${C.bg}"/>
-  <g font-family="Switzer" font-weight="800" fill="${C.cream}">
-    <text x="60" y="98" font-size="108" text-anchor="middle">B</text>
-    <rect x="33" y="16" width="9" height="20" rx="2"/>
-    <rect x="33" y="96" width="9" height="20" rx="2"/>
-  </g>
-  <circle cx="100" cy="28" r="20" fill="${C.green}"/>
-  <text x="100" y="37" font-family="Switzer" font-weight="800" font-size="26" text-anchor="middle" fill="${C.bg}">?</text>
+  <text x="64" y="102" font-family="Noto" font-weight="800" font-size="116" text-anchor="middle" fill="${C.cream}">₿</text>
+  <circle cx="102" cy="28" r="22" fill="${C.green}"/>
+  <text x="102" y="39" font-family="Noto" font-weight="800" font-size="30" text-anchor="middle" fill="${C.bg}">?</text>
 </svg>
 `;
 
-// Variant D — Big ? centered, small ₿ green badge top-right
+// D — Big ? centered, small ₿ green badge top-right
 const variantD = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="28" fill="${C.bg}"/>
-  <text x="64" y="100" font-family="Switzer" font-weight="800" font-size="110" text-anchor="middle" fill="${C.cream}">?</text>
-  <circle cx="100" cy="28" r="20" fill="${C.green}"/>
-  <g font-family="Switzer" font-weight="800" fill="${C.bg}">
-    <text x="100" y="38" font-size="28" text-anchor="middle">B</text>
-    <rect x="93" y="13" width="3" height="5" rx="1"/>
-    <rect x="93" y="38" width="3" height="5" rx="1"/>
-  </g>
+  <text x="64" y="102" font-family="Noto" font-weight="800" font-size="116" text-anchor="middle" fill="${C.cream}">?</text>
+  <circle cx="102" cy="28" r="22" fill="${C.green}"/>
+  <text x="102" y="39" font-family="Noto" font-weight="800" font-size="30" text-anchor="middle" fill="${C.bg}">₿</text>
 </svg>
 `;
 
-// Variant E — Green background, cream glyphs, B? side by side
+// E — ₿? side by side, green bg
 const variantE = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="28" fill="${C.green}"/>
-  <g font-family="Switzer" font-weight="800" fill="${C.bg}">
-    <text x="38" y="92" font-size="84" text-anchor="middle">B</text>
-    <rect x="18" y="24" width="7" height="16" rx="2"/>
-    <rect x="18" y="92" width="7" height="16" rx="2"/>
-    <text x="88" y="92" font-size="84" text-anchor="middle">?</text>
-  </g>
+  <text x="38" y="96" font-family="Noto" font-weight="800" font-size="96" text-anchor="middle" fill="${C.bg}">₿</text>
+  <text x="92" y="96" font-family="Noto" font-weight="800" font-size="96" text-anchor="middle" fill="${C.bg}">?</text>
 </svg>
 `;
 
-// Load Switzer so resvg can render the "B" and "?" text
-const switzerExtrabold = fs.readFileSync(path.join(root, "scripts/Switzer-Extrabold.otf"));
+// Load Noto Sans 800 latin-ext (the subset that contains U+20BF)
+const notoExtraBold = fs.readFileSync(
+  path.join(root, "node_modules/@fontsource/noto-sans/files/noto-sans-latin-ext-800-normal.woff")
+);
 
 function render(name, svg, size) {
   const resvg = new Resvg(svg, {
     fitTo: { mode: "width", value: size },
     font: {
-      fontBuffers: [switzerExtrabold],
-      defaultFontFamily: "Switzer",
+      fontBuffers: [notoExtraBold],
+      defaultFontFamily: "Noto Sans",
+      loadSystemFonts: false,
     },
     background: "transparent",
   });
