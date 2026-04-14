@@ -1,33 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { useI18n } from "../i18n/I18nContext";
+import { renderMd as renderMdRaw } from "../i18n/renderMd";
 import { bd, mn } from "../theme/tokens";
 import CatLabel from "../components/CatLabel";
 import { trackWhitepaperSection } from "../tracking";
-
-// Renders an i18n string with inline markup:
-//   **bold**   → <Em> (semibold accent)
-//   [d]dim[/d] → <Dim> (faint colour)
-// Plain text passes through. Returns an array of React nodes.
-function renderMd(str) {
-  if (str == null) return null;
-  const re = /\*\*(.+?)\*\*|\[d\]([\s\S]+?)\[\/d\]/g;
-  const out = [];
-  let cursor = 0;
-  let key = 0;
-  let m;
-  while ((m = re.exec(str)) !== null) {
-    if (m.index > cursor) out.push(str.slice(cursor, m.index));
-    if (m[1] !== undefined) {
-      out.push(<Em key={`md-${key++}`}>{m[1]}</Em>);
-    } else {
-      out.push(<Dim key={`md-${key++}`}>{m[2]}</Dim>);
-    }
-    cursor = m.index + m[0].length;
-  }
-  if (cursor < str.length) out.push(str.slice(cursor));
-  return out;
-}
 
 // ── WpToggle ──
 function WpToggle({ title, num, children, defaultOpen = true }) {
@@ -63,9 +40,6 @@ function P({ children }) {
 function Dim({ children }) {
   const { t } = useTheme();
   return <span style={{ color: t.faint }}>{children}</span>;
-}
-function Em({ children }) {
-  return <strong style={{ fontWeight: 600 }}>{children}</strong>;
 }
 
 // ── SVG 1: Power Law log-log ──
@@ -269,13 +243,13 @@ function SigmaRuler({ d }) {
   const sig = d.sigmaFromPL || 0;
   const W = 680, H = 90, padL = 10, cw = W - 20;
   const zones = [
-    { label: tr("wp.zone.strongBuy"), min: -2.5, max: -1.0, color: "#1B8A4A", acc: "100%" },
-    { label: tr("wp.zone.buy"), min: -1.0, max: -0.5, color: "#27AE60", acc: "100%" },
-    { label: tr("wp.zone.accumulate"), min: -0.5, max: 0, color: "#6FCF97", acc: "100%" },
-    { label: tr("wp.zone.neutral"), min: 0, max: 0.3, color: t.faint, acc: "83%" },
-    { label: tr("wp.zone.caution"), min: 0.3, max: 0.5, color: "#E8A838", acc: "56%" },
-    { label: tr("wp.zone.reduce"), min: 0.5, max: 0.8, color: "#F2994A", acc: "33%" },
-    { label: tr("wp.zone.sell"), min: 0.8, max: 2.5, color: "#EB5757", acc: "0%" },
+    { label: tr("zone.strongBuy"), min: -2.5, max: -1.0, color: "#1B8A4A", acc: "100%" },
+    { label: tr("zone.buy"), min: -1.0, max: -0.5, color: "#27AE60", acc: "100%" },
+    { label: tr("zone.accumulate"), min: -0.5, max: 0, color: "#6FCF97", acc: "100%" },
+    { label: tr("zone.neutral"), min: 0, max: 0.3, color: t.faint, acc: "83%" },
+    { label: tr("zone.caution"), min: 0.3, max: 0.5, color: "#E8A838", acc: "56%" },
+    { label: tr("zone.reduce"), min: 0.5, max: 0.8, color: "#F2994A", acc: "33%" },
+    { label: tr("zone.sell"), min: 0.8, max: 2.5, color: "#EB5757", acc: "0%" },
   ];
   const tx = v => padL + Math.max(0, Math.min(1, (v + 2.5) / 5)) * cw;
   const mx = tx(Math.max(-2.5, Math.min(2.5, sig)));
@@ -358,6 +332,7 @@ export default function Whitepaper({ d }) {
   const { t } = useTheme();
   const { t: tr } = useI18n();
   const [activeCat, setActiveCat] = useState("Foundation");
+  const renderMd = (str) => renderMdRaw(str, { dimColor: t.faint });
 
   const bValue = d?.b?.toFixed(2) || "5.36";
 

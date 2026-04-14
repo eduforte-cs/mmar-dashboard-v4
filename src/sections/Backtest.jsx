@@ -1,6 +1,7 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
 import { useI18n } from "../i18n/I18nContext";
+import { renderMd as renderMdRaw } from "../i18n/renderMd";
 import { bd, mn } from "../theme/tokens";
 import Toggle from "../components/Toggle";
 import CatLabel from "../components/CatLabel";
@@ -8,6 +9,7 @@ import CatLabel from "../components/CatLabel";
 export default function Backtest({ d }) {
   const { t } = useTheme();
   const { t: tr } = useI18n();
+  const renderMd = (str) => renderMdRaw(str, { dimColor: t.faint, accentColor: t.cream });
   if (!d) return null;
 
   const bt = d.backtestResults;
@@ -36,15 +38,15 @@ export default function Backtest({ d }) {
   const sellAvgLoss = bt.plBubbleMetrics?.sell?.avgRet6m || "-16";
   const sellWorst = bt.plBubbleMetrics?.sell?.maxDrawdown || "-67";
 
-  // Signal spectrum
+  // Signal spectrum (label resolved at render time via tr())
   const spectrum = [
-    { label: "Strong Buy", range: "σ < -1.0", data: bl.strongBuy, color: "#1B8A4A", signal: "Buy" },
-    { label: "Buy", range: "-1.0 to -0.5", data: bl.buy, color: "#27AE60", signal: "Buy" },
-    { label: "Accumulate", range: "-0.5 to 0", data: bl.accumulate, color: "#6FCF97", signal: "Hold" },
-    { label: "Neutral", range: "0 to 0.3", data: bl.neutral, color: "#E8A838", signal: "Hold" },
-    { label: "Caution", range: "0.3 to 0.5", data: bl.caution, color: "#F2994A", signal: "Hold" },
-    { label: "Reduce", range: "0.5 to 0.8", data: bl.reduce, color: "#E07338", signal: "Sell", horizon: "6m" },
-    { label: "Sell", range: "σ > 0.8", data: bl.sell, color: "#EB5757", signal: "Sell", horizon: "6m" },
+    { labelKey: "zone.strongBuy", range: "σ < -1.0", data: bl.strongBuy, color: "#1B8A4A" },
+    { labelKey: "zone.buy", range: "-1.0 to -0.5", data: bl.buy, color: "#27AE60" },
+    { labelKey: "zone.accumulate", range: "-0.5 to 0", data: bl.accumulate, color: "#6FCF97" },
+    { labelKey: "zone.neutral", range: "0 to 0.3", data: bl.neutral, color: "#E8A838" },
+    { labelKey: "zone.caution", range: "0.3 to 0.5", data: bl.caution, color: "#F2994A" },
+    { labelKey: "zone.reduce", range: "0.5 to 0.8", data: bl.reduce, color: "#E07338", horizon: "6m" },
+    { labelKey: "zone.sell", range: "σ > 0.8", data: bl.sell, color: "#EB5757", horizon: "6m" },
   ];
 
   // Metric row helper
@@ -64,7 +66,7 @@ export default function Backtest({ d }) {
           color: t.cream, letterSpacing: "-0.04em", lineHeight: 0.95, margin: 0,
         }}>{tr("backtest.title")}</h1>
         <p style={{ fontFamily: bd, fontSize: "clamp(13px, 1.2vw, 15px)", color: t.faint, marginTop: 12, lineHeight: 1.6 }}>
-          We tested every single day since 2017 against the real outcome. {bt.nTotal.toLocaleString()} days. Daily sampling. No optimized thresholds.
+          {tr("backtest.subtitle").replace("{nDays}", bt.nTotal.toLocaleString())}
         </p>
       </div>
 
@@ -78,10 +80,10 @@ export default function Backtest({ d }) {
           <div style={{ fontFamily: bd, fontSize: 9, color: "#27AE60", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{tr("backtest.buyAccuracy")}</div>
           <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>{tr("backtest.buyQuestion")}</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#27AE60", marginBottom: 4 }}>100%</div>
-          <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>{bt.nYes.toLocaleString()} out of {bt.nYes.toLocaleString()} days profitable at 12 months</div>
+          <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>{tr("backtest.daysProfitable12m").replaceAll("{n}", bt.nYes.toLocaleString())}</div>
           <div style={{ borderTop: `1px solid ${t.borderFaint}`, paddingTop: 10 }}>
-            <MetricRow label="Avg 12m return" value={`+${bt.avgReturnYes}%`} color="#27AE60" />
-            <MetricRow label="Worst entry (12m)" value={bl.buy?.minReturn != null ? `+${bl.buy.minReturn}%` : "–"} color="#27AE60" />
+            <MetricRow label={tr("backtest.avg12mReturn")} value={`+${bt.avgReturnYes}%`} color="#27AE60" />
+            <MetricRow label={tr("backtest.worstEntry12m")} value={bl.buy?.minReturn != null ? `+${bl.buy.minReturn}%` : "–"} color="#27AE60" />
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0" }}>
               <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>{tr("backtest.episodes")}</span>
               <span style={{ fontFamily: mn, fontSize: 13, fontWeight: 500, color: t.cream }}>{bt.nEpisodesBuy}</span>
@@ -94,10 +96,10 @@ export default function Backtest({ d }) {
           <div style={{ fontFamily: bd, fontSize: 9, color: "#EB5757", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{tr("backtest.sellAccuracy")}</div>
           <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>{tr("backtest.sellQuestion")}</div>
           <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#EB5757", marginBottom: 4 }}>{sellLossRate}%</div>
-          <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>of the time, holding would have lost money within 6 months</div>
+          <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 14 }}>{tr("backtest.holdLostWithin6m")}</div>
           <div style={{ borderTop: `1px solid ${t.borderFaint}`, paddingTop: 10 }}>
-            <MetricRow label="Avg loss avoided (6m)" value={`${sellAvgLoss}%`} color="#EB5757" />
-            <MetricRow label="Worst case if you held" value={`${sellWorst}%`} color="#EB5757" />
+            <MetricRow label={tr("backtest.avgLossAvoided6m")} value={`${sellAvgLoss}%`} color="#EB5757" />
+            <MetricRow label={tr("backtest.worstIfHeldLabel")} value={`${sellWorst}%`} color="#EB5757" />
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0" }}>
               <span style={{ fontFamily: bd, fontSize: 12, color: t.faint }}>{tr("backtest.daysTested")}</span>
               <span style={{ fontFamily: mn, fontSize: 13, fontWeight: 500, color: t.cream }}>{bt.nSell.toLocaleString()}</span>
@@ -109,7 +111,11 @@ export default function Backtest({ d }) {
       {/* ── Context paragraph ── */}
       <div style={{ padding: "16px 0" }}>
         <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: 0 }}>
-          Without the model, if you picked a random day to buy Bitcoin and held 12 months, you'd have lost money <span style={{ fontWeight: 500, color: t.cream }}>30% of the time</span>. Our buy signal eliminates that entirely. Our sell signal would have saved you from an average <span style={{ fontWeight: 500, color: t.cream }}>-16% loss</span> — and in the worst case, <span style={{ fontWeight: 500, color: t.cream }}>-67%</span>.
+          {renderMd(
+            tr("backtest.contextPara")
+              .replace("{avgLoss}", sellAvgLoss)
+              .replace("{worst}", sellWorst)
+          )}
         </p>
       </div>
 
@@ -133,15 +139,15 @@ export default function Backtest({ d }) {
               const accLabel = isSell ? `${s.data?.precision || "–"}%` : `${s.data?.precision || "–"}%`;
               const borderAbove = idx === 2 || idx === 5;
               return (
-                <tr key={s.label} style={borderAbove ? { borderTop: `2px solid ${t.border}` } : {}}>
+                <tr key={s.labelKey} style={borderAbove ? { borderTop: `2px solid ${t.border}` } : {}}>
                   <td style={{ ...td, fontFamily: bd, fontWeight: 500, whiteSpace: "nowrap" }}>
                     <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: s.color, marginRight: 6, verticalAlign: "middle" }} />
-                    {s.label}
+                    {tr(s.labelKey)}
                     {isSell && <span style={{ fontFamily: mn, fontSize: 9, color: t.dim, marginLeft: 4 }}>6m</span>}
                   </td>
                   <td style={tdR}>{n.toLocaleString()}</td>
                   <td style={{ ...tdR, color: isSell ? t.faint : parseFloat(s.data?.precision) >= 99 ? "#27AE60" : parseFloat(s.data?.precision) >= 80 ? "#E8A838" : t.faint, whiteSpace: "nowrap" }}>
-                    {accLabel}{isSell && <span style={{ fontSize: 9, color: t.dim }}> saved</span>}
+                    {accLabel}{isSell && <span style={{ fontSize: 9, color: t.dim }}> {tr("backtest.saved")}</span>}
                   </td>
                   <td style={{ ...tdR, color: (s.data?.avgReturn || 0) > 0 ? "#27AE60" : "#EB5757", whiteSpace: "nowrap" }}>
                     {s.data?.avgReturn != null ? `${s.data.avgReturn > 0 ? "+" : ""}${s.data.avgReturn}%` : "–"}
@@ -156,7 +162,7 @@ export default function Backtest({ d }) {
         </table>
         </div>
         <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 12, lineHeight: 1.6 }}>
-          Buy zones: accuracy = % profitable at 12 months. Sell zones: "saved" = % where holding would have lost money within 6 months. Avg return and worst entry for sell zones show what would have happened if you ignored the signal.
+          {tr("backtest.spectrumNote")}
         </p>
       </Toggle>
 
@@ -190,7 +196,11 @@ export default function Backtest({ d }) {
         </div>
         {bt.stabilityDelta != null && (
           <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 12, lineHeight: 1.6 }}>
-            {bt.stabilityDelta === 0 ? "Perfect stability — same accuracy in every era across 3 market cycles." : bt.stabilityDelta < 5 ? "Strong stability across eras." : "Some variation between eras."}
+            {bt.stabilityDelta === 0
+              ? tr("backtest.stabilityPerfect")
+              : bt.stabilityDelta < 5
+                ? tr("backtest.stabilityStrong")
+                : tr("backtest.stabilityVariation")}
           </p>
         )}
       </Toggle>
@@ -199,9 +209,9 @@ export default function Backtest({ d }) {
         <Toggle section="backtest" label={tr("backtest.validated")} badge={`${rb.buyPrecision}%`}>
           <div className="grid-3" style={{ borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 12 }}>
             {[
-              { l: "Points tested", v: rb.nTotal.toLocaleString(), s: `Step: ${rb.step} days` },
-              { l: tr("backtest.buyAccuracy"), v: `${rb.nBuyCorrect}/${rb.nBuy} = ${rb.buyPrecision}%`, s: `${rb.nEpisodes} episodes` },
-              { l: "Worst buy return", v: `${rb.worstBuyReturn > 0 ? "+" : ""}${rb.worstBuyReturn}%`, s: rb.worstBuyReturn > 0 ? "Positive" : "Edge case" },
+              { l: tr("backtest.pointsTested"), v: rb.nTotal.toLocaleString(), s: tr("backtest.stepDays").replace("{step}", rb.step) },
+              { l: tr("backtest.buyAccuracy"), v: `${rb.nBuyCorrect}/${rb.nBuy} = ${rb.buyPrecision}%`, s: `${rb.nEpisodes} ${tr("backtest.episodes")}` },
+              { l: tr("backtest.worstBuyReturn"), v: `${rb.worstBuyReturn > 0 ? "+" : ""}${rb.worstBuyReturn}%`, s: rb.worstBuyReturn > 0 ? tr("backtest.positive") : tr("backtest.edgeCase") },
             ].map((m, i) => (
               <div key={m.l} style={{ padding: "14px 0", borderRight: i < 2 ? `1px solid ${t.borderFaint}` : "none", paddingRight: i < 2 ? 14 : 0, paddingLeft: i > 0 ? 14 : 0 }}>
                 <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{m.l}</div>
@@ -211,7 +221,7 @@ export default function Backtest({ d }) {
             ))}
           </div>
           <p style={{ fontFamily: bd, fontSize: 11, color: t.dim, lineHeight: 1.6, fontStyle: "italic" }}>
-            The Power Law is refitted at each test point using only data available up to that date. No future data. The {rb.buyPrecision === "100" ? "perfect" : "near-perfect"} match confirms the signal is not an artifact of look-ahead bias.
+            {tr(rb.buyPrecision === "100" ? "backtest.refitNotePerfect" : "backtest.refitNoteNearPerfect")}
           </p>
         </Toggle>
       )}
@@ -236,9 +246,15 @@ export default function Backtest({ d }) {
       )}
 
       {/* ── Strategy comparison ── */}
-      <Toggle section="backtest" label={`$100/month for ${bm.dca?.dcaPeriods || "–"} months — three approaches, same budget`} defaultOpen>
+      <Toggle section="backtest" label={tr("backtest.threeApproaches").replace("{periods}", bm.dca?.dcaPeriods || "–")} defaultOpen>
         <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: "0 0 16px" }}>
-          If you'd invested $100 every month since 2017, you'd have ${bm.dca ? `$${Math.round(bm.dca.dca.portfolio / 1000)}k` : "–"} today. If you'd only invested when our model said "buy", you'd have ${bm.dca ? `$${Math.round(bm.dca.signal.portfolio / 1000)}k` : "–"} (but most of your budget sat in cash). If you'd followed Smart DCA — buying more at discounts, selling at overheated levels, and redeploying those profits at the next crash — you'd have <span style={{ fontWeight: 500, color: t.cream }}>${bm.dca ? `$${Math.round(bm.dca.smart.portfolio / 1000)}k from the same $${Math.round(bm.dca.totalBudget / 1000)}k budget` : "–"}</span>.
+          {renderMd(
+            tr("backtest.threeApproachesPara")
+              .replace("{dcaValue}", bm.dca ? `$${Math.round(bm.dca.dca.portfolio / 1000)}k` : "–")
+              .replace("{signalValue}", bm.dca ? `$${Math.round(bm.dca.signal.portfolio / 1000)}k` : "–")
+              .replace("{smartValue}", bm.dca ? `$${Math.round(bm.dca.smart.portfolio / 1000)}k` : "–")
+              .replace("{totalBudget}", bm.dca ? `$${Math.round(bm.dca.totalBudget / 1000)}k` : "–")
+          )}
         </p>
 
         {/* DCA Chart */}
@@ -315,7 +331,7 @@ export default function Backtest({ d }) {
             </table>
             </div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 10, lineHeight: 1.6 }}>
-              Same $100/month budget (${bm.dca.totalBudget.toLocaleString()} total). Cash from skipped months and sell proceeds stays in portfolio. Smart DCA compounds: sell proceeds build a "war chest" that gets redeployed at discounts.
+              {tr("backtest.dcaTableNote").replace("{total}", `$${bm.dca.totalBudget.toLocaleString()}`)}
             </div>
           </>
         )}
@@ -324,27 +340,27 @@ export default function Backtest({ d }) {
       {/* ── How Smart DCA works ── */}
       <Toggle section="backtest" label={tr("backtest.howSmartDCA")}>
         <p style={{ fontFamily: bd, fontSize: 14, color: t.faint, lineHeight: 1.65, margin: "0 0 14px" }}>
-          Each month, the model tells you how much to invest based on where Bitcoin is relative to fair value. When Bitcoin is cheap, you buy more — including profits from previous sells. When it's expensive, you sell into strength and build a "war chest." Each cycle amplifies the next.
+          {tr("backtest.howSmartDCAPara")}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 0, border: `1px solid ${t.borderFaint}`, borderRadius: 6, overflow: "hidden" }}>
           {[
-            { zone: "Strong Buy", action: "$100 + 30% war chest", color: "#1B8A4A", actionColor: "#27AE60" },
-            { zone: "Buy", action: "$100 + 15% war chest", color: "#27AE60", actionColor: "#27AE60" },
-            { zone: "Accumulate", action: "$100", color: "#6FCF97", actionColor: t.cream },
-            { zone: "Neutral", action: "$50", color: "#E8A838", actionColor: t.faint },
-            { zone: "Caution", action: "$0 → war chest", color: "#F2994A", actionColor: t.faint },
-            { zone: "Reduce", action: "Sell 25%", color: "#E07338", actionColor: "#EB5757" },
-            { zone: "Sell", action: "Sell 50%", color: "#EB5757", actionColor: "#EB5757" },
+            { zoneKey: "zone.strongBuy",  actionKey: "backtest.action.strongBuy",  color: "#1B8A4A", actionColor: "#27AE60" },
+            { zoneKey: "zone.buy",        actionKey: "backtest.action.buy",        color: "#27AE60", actionColor: "#27AE60" },
+            { zoneKey: "zone.accumulate", actionKey: "backtest.action.accumulate", color: "#6FCF97", actionColor: t.cream },
+            { zoneKey: "zone.neutral",    actionKey: "backtest.action.neutral",    color: "#E8A838", actionColor: t.faint },
+            { zoneKey: "zone.caution",    actionKey: "backtest.action.caution",    color: "#F2994A", actionColor: t.faint },
+            { zoneKey: "zone.reduce",     actionKey: "backtest.action.reduce",     color: "#E07338", actionColor: "#EB5757" },
+            { zoneKey: "zone.sell",       actionKey: "backtest.action.sell",       color: "#EB5757", actionColor: "#EB5757" },
           ].map((r, i) => (
-            <div key={r.zone} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRight: i < 6 ? `1px solid ${t.borderFaint}` : "none" }}>
+            <div key={r.zoneKey} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRight: i < 6 ? `1px solid ${t.borderFaint}` : "none" }}>
               <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: r.color, flexShrink: 0 }} />
-              <span style={{ fontFamily: bd, fontSize: 10, color: t.dim }}>{r.zone}</span>
-              <span style={{ fontFamily: mn, fontSize: 11, fontWeight: 500, color: r.actionColor }}>{r.action}</span>
+              <span style={{ fontFamily: bd, fontSize: 10, color: t.dim }}>{tr(r.zoneKey)}</span>
+              <span style={{ fontFamily: mn, fontSize: 11, fontWeight: 500, color: r.actionColor }}>{tr(r.actionKey)}</span>
             </div>
           ))}
         </div>
         <p style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 12, lineHeight: 1.6, fontStyle: "italic" }}>
-          War chest = cash from sells + skipped months. In Strong Buy, 30% of the war chest deploys alongside the $100 base. Sell proceeds from 2017 funded bigger buys in 2018. Proceeds from 2021 funded 2022. Each cycle compounds.
+          {tr("backtest.smartDCANote")}
         </p>
       </Toggle>
 
@@ -389,7 +405,11 @@ export default function Backtest({ d }) {
           </div>
         )}
         <p style={{ fontFamily: bd, fontSize: 12, color: t.faint, marginTop: 12, lineHeight: 1.6, fontStyle: "italic" }}>
-          Blind DCA lost {bm.dca?.dca?.maxDD}% peak-to-trough during the worst crash. Smart DCA lost {bm.dca?.smart?.maxDD}% — and was actively buying at those lows with cash from previous sells. Same $100/month budget, dramatically different experience.
+          {renderMd(
+            tr("backtest.riskParaSimple")
+              .replace("{dcaDD}", bm.dca?.dca?.maxDD ?? "–")
+              .replace("{smartDD}", bm.dca?.smart?.maxDD ?? "–")
+          )}
         </p>
       </Toggle>
 
@@ -431,7 +451,7 @@ export default function Backtest({ d }) {
 
       {/* ── Footer ── */}
       <div style={{ padding: "20px 0", fontFamily: bd, fontSize: 11, color: t.dim, lineHeight: 1.6 }}>
-        Methodology: daily sampling (step=1). Buy signal: σ &lt; -0.5. Sell signal: σ &gt; 0.8. DCA strategies use identical $100/month budget with uninvested cash in portfolio. Sortino annualized from monthly portfolio returns (penalizes only downside). Smart DCA compounds sell proceeds into future buy signals via war chest.
+        {tr("backtest.methodology")}
       </div>
     </div>
   );
