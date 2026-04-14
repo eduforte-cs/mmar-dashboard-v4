@@ -118,7 +118,7 @@ function render(name, svg, size) {
 }
 
 const variants = { A: variantA, B: variantB, C: variantC, D: variantD, E: variantE };
-const sizes = [256];
+const sizes = [16, 32, 64, 128, 256];
 
 for (const [name, svg] of Object.entries(variants)) {
   for (const size of sizes) {

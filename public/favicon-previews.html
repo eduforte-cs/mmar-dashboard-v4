@@ -1,0 +1,210 @@
+<!doctype html>
+<!--
+  Favicon preview — 5 variants at actual favicon sizes.
+
+  The leftmost "16" column is the real size a favicon is rendered at
+  in a browser tab. That's the one that matters most. Bigger columns
+  help judge the design's construction, but 16px is the real-world test.
+
+  Pick whichever variant reads best at 16 + 32. Tell Claude A / B / C
+  / D / E to finalise.
+
+  Deleted once the real favicon ships.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Favicon previews — pick one</title>
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@400,600,700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0e0e10;
+      color: #F0EDDF;
+      font-family: 'Switzer', -apple-system, sans-serif;
+      padding: 48px 24px 80px;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    h1 {
+      font-weight: 700;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: #706E64;
+      margin-bottom: 48px;
+    }
+    .tip {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: #B0AD9F;
+      background: #1A1B18;
+      border: 1px solid #2E2F2A;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+    .tip strong { color: #27AE60; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    thead th {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #706E64;
+      padding: 12px 8px;
+      border-bottom: 1px solid #2E2F2A;
+      font-weight: 500;
+      text-align: center;
+    }
+    thead th.variant { text-align: left; }
+    tbody tr { border-bottom: 1px solid #2E2F2A; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td {
+      padding: 24px 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    tbody td.variant {
+      text-align: left;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      color: #F0EDDF;
+      width: 170px;
+      padding-left: 0;
+    }
+    tbody td.variant .note {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: #706E64;
+      font-weight: 400;
+      letter-spacing: 0;
+      margin-top: 4px;
+    }
+    img { display: inline-block; image-rendering: -webkit-optimize-contrast; }
+    .size-label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: #706E64;
+      margin-top: 6px;
+    }
+
+    /* Tab bar mock at the top */
+    .tabbar {
+      background: #1A1B18;
+      border: 1px solid #2E2F2A;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 40px;
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px 8px 10px;
+      background: #0e0e10;
+      border: 1px solid #2E2F2A;
+      border-radius: 6px;
+      font-family: 'Switzer', sans-serif;
+      font-size: 12px;
+      color: #B0AD9F;
+    }
+    .tab img { width: 16px; height: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Favicon previews</h1>
+    <div class="subtitle">Five design concepts rendered at actual favicon sizes. The 16px column is what you see in a browser tab.</div>
+
+    <div class="tip">
+      <strong>How to judge:</strong> focus on the <strong>16px</strong> and <strong>32px</strong> columns. Those are the sizes
+      browsers actually display. If a design is illegible at 16px, it fails — no matter how nice it looks at 256px.
+    </div>
+
+    <div style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.14em;color:#706E64;margin-bottom:12px;">
+      Mock tab bar (actual 16px rendering)
+    </div>
+    <div class="tabbar">
+      <div class="tab"><img src="/favicon-previews/A-16.png" alt="A"><span>A — shouldibuybitcointoday.com</span></div>
+      <div class="tab"><img src="/favicon-previews/B-16.png" alt="B"><span>B — shouldibuybitcointoday.com</span></div>
+      <div class="tab"><img src="/favicon-previews/C-16.png" alt="C"><span>C — shouldibuybitcointoday.com</span></div>
+      <div class="tab"><img src="/favicon-previews/D-16.png" alt="D"><span>D — shouldibuybitcointoday.com</span></div>
+      <div class="tab"><img src="/favicon-previews/E-16.png" alt="E"><span>E — shouldibuybitcointoday.com</span></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="variant">Variant</th>
+          <th>16 px</th>
+          <th>32 px</th>
+          <th>64 px</th>
+          <th>128 px</th>
+          <th>256 px</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="variant">A<span class="note">B? side by side · dark bg</span></td>
+          <td><img src="/favicon-previews/A-16.png" width="16" height="16"><span class="size-label">16</span></td>
+          <td><img src="/favicon-previews/A-32.png" width="32" height="32"><span class="size-label">32</span></td>
+          <td><img src="/favicon-previews/A-64.png" width="64" height="64"><span class="size-label">64</span></td>
+          <td><img src="/favicon-previews/A-128.png" width="128" height="128"><span class="size-label">128</span></td>
+          <td><img src="/favicon-previews/A-256.png" width="192" height="192"><span class="size-label">256 (displayed 192)</span></td>
+        </tr>
+        <tr>
+          <td class="variant">B<span class="note">stacked — ₿ over ? · dark bg</span></td>
+          <td><img src="/favicon-previews/B-16.png" width="16" height="16"><span class="size-label">16</span></td>
+          <td><img src="/favicon-previews/B-32.png" width="32" height="32"><span class="size-label">32</span></td>
+          <td><img src="/favicon-previews/B-64.png" width="64" height="64"><span class="size-label">64</span></td>
+          <td><img src="/favicon-previews/B-128.png" width="128" height="128"><span class="size-label">128</span></td>
+          <td><img src="/favicon-previews/B-256.png" width="192" height="192"><span class="size-label">256 (displayed 192)</span></td>
+        </tr>
+        <tr>
+          <td class="variant">C<span class="note">big ₿ · green ? badge top-right</span></td>
+          <td><img src="/favicon-previews/C-16.png" width="16" height="16"><span class="size-label">16</span></td>
+          <td><img src="/favicon-previews/C-32.png" width="32" height="32"><span class="size-label">32</span></td>
+          <td><img src="/favicon-previews/C-64.png" width="64" height="64"><span class="size-label">64</span></td>
+          <td><img src="/favicon-previews/C-128.png" width="128" height="128"><span class="size-label">128</span></td>
+          <td><img src="/favicon-previews/C-256.png" width="192" height="192"><span class="size-label">256 (displayed 192)</span></td>
+        </tr>
+        <tr>
+          <td class="variant">D<span class="note">big ? · green ₿ badge top-right</span></td>
+          <td><img src="/favicon-previews/D-16.png" width="16" height="16"><span class="size-label">16</span></td>
+          <td><img src="/favicon-previews/D-32.png" width="32" height="32"><span class="size-label">32</span></td>
+          <td><img src="/favicon-previews/D-64.png" width="64" height="64"><span class="size-label">64</span></td>
+          <td><img src="/favicon-previews/D-128.png" width="128" height="128"><span class="size-label">128</span></td>
+          <td><img src="/favicon-previews/D-256.png" width="192" height="192"><span class="size-label">256 (displayed 192)</span></td>
+        </tr>
+        <tr>
+          <td class="variant">E<span class="note">B? · green bg (on-brand pop)</span></td>
+          <td><img src="/favicon-previews/E-16.png" width="16" height="16"><span class="size-label">16</span></td>
+          <td><img src="/favicon-previews/E-32.png" width="32" height="32"><span class="size-label">32</span></td>
+          <td><img src="/favicon-previews/E-64.png" width="64" height="64"><span class="size-label">64</span></td>
+          <td><img src="/favicon-previews/E-128.png" width="128" height="128"><span class="size-label">128</span></td>
+          <td><img src="/favicon-previews/E-256.png" width="192" height="192"><span class="size-label">256 (displayed 192)</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
