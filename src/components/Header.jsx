@@ -227,18 +227,20 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div style={{
               width: 18, height: 1.5, background: t.cream,
-              transition: "all 0.2s",
-              transform: mobileMenu ? "rotate(45deg) translate(2px, 2px)" : "none",
+              transition: "transform 0.2s, opacity 0.2s",
+              transformOrigin: "center",
+              transform: mobileMenu ? "translateY(5.5px) rotate(45deg)" : "none",
             }} />
             <div style={{
               width: 18, height: 1.5, background: t.cream,
-              transition: "all 0.2s",
+              transition: "opacity 0.2s",
               opacity: mobileMenu ? 0 : 1,
             }} />
             <div style={{
               width: 18, height: 1.5, background: t.cream,
-              transition: "all 0.2s",
-              transform: mobileMenu ? "rotate(-45deg) translate(2px, -2px)" : "none",
+              transition: "transform 0.2s, opacity 0.2s",
+              transformOrigin: "center",
+              transform: mobileMenu ? "translateY(-5.5px) rotate(-45deg)" : "none",
             }} />
           </div>
         </button>

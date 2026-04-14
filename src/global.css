@@ -12,6 +12,18 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; }
 body { margin: 0; }
 
+/* Strip default iOS/Safari button chrome (rounded background, tap highlight,
+   inner focus ring) so buttons render exactly as their inline styles dictate. */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  font: inherit;
+  color: inherit;
+}
+button:focus { outline: none; }
+button:focus-visible { outline: 2px solid rgba(232, 230, 220, 0.4); outline-offset: 2px; }
+
 /* ── Animations ── */
 @keyframes fi { from { opacity: 0; } to { opacity: 1; } }
 
