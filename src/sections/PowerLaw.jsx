@@ -539,16 +539,16 @@ export default function PowerLaw({ d, derived }) {
       }}>
         {/* Today */}
         <div style={{ padding: "24px 20px 24px 0", borderRight: `1px solid ${t.border}` }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Today</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{tr("pl.horizonToday")}</div>
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Fair value</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{tr("pl.cardFairValue")}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.cream }}>{fmtK(chart.plToday)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctFV_today >= 0 ? "+" : ""}{chart.pctFV_today.toFixed(0)}%</span>
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Worst case</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{tr("pl.cardWorstCase")}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.faint }}>{fmtK(chart.wcToday)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctWC_today.toFixed(0)}%</span>
@@ -558,16 +558,16 @@ export default function PowerLaw({ d, derived }) {
 
         {/* 1 Year */}
         <div style={{ padding: "24px 20px", borderRight: `1px solid ${t.border}` }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>1 Year</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{tr("pl.horizon1y")}</div>
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Fair value</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{tr("pl.cardFairValue")}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.cream }}>{fmtK(chart.fv1y)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctFV_1y >= 0 ? "+" : ""}{chart.pctFV_1y.toFixed(0)}%</span>
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Worst case</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{tr("pl.cardWorstCase")}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.faint }}>{fmtK(chart.wc1y)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctWC_1y.toFixed(0)}%</span>
@@ -577,16 +577,16 @@ export default function PowerLaw({ d, derived }) {
 
         {/* 3 Years */}
         <div style={{ padding: "24px 0 24px 20px" }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>3 Years</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{tr("pl.horizon3y")}</div>
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Fair value</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{tr("pl.cardFairValue")}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.cream }}>{fmtK(chart.fv3y)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctFV_3y >= 0 ? "+" : ""}{chart.pctFV_3y.toFixed(0)}%</span>
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Worst case</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{tr("pl.cardWorstCase")}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.cream }}>{fmtK(chart.wc3y)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctWC_3y >= 0 ? "+" : ""}{chart.pctWC_3y.toFixed(0)}%</span>
@@ -596,30 +596,30 @@ export default function PowerLaw({ d, derived }) {
       </div>
 
       {/* Toggles */}
-      <Toggle label="How to read this" section="Guide" textOnly>
+      <Toggle label={tr("pl.howToRead")} section={tr("pl.howToReadGuide")} textOnly>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <p style={{ fontFamily: bd, fontSize: 17, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: 0 }}>
-            The middle line is fair value — where Bitcoin should be based on 16 years of data. Above it, you're paying a premium. Below it, you're getting a discount.
+            {tr("pl.howToRead.p1")}
           </p>
           <p style={{ fontFamily: bd, fontSize: 17, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: 0 }}>
-            The bands show how far price has historically strayed, measured in σ. Every time Bitcoin reached +2σ, a correction followed. Every time it dropped below −1σ, a rally followed. The bottom line is the worst case: the lowest level Bitcoin has ever traded relative to trend. It has held through every crash since 2013.
+            {tr("pl.howToRead.p2")}
           </p>
           <p style={{ fontFamily: bd, fontSize: 17, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: 0 }}>
-            The fan lines show where you'd be at each horizon: fair value (the trend target) and worst case (the historical floor). When even the worst case turns positive — that's the argument for holding through time.
+            {tr("pl.howToRead.p3")}
           </p>
         </div>
       </Toggle>
 
-      <Toggle label="Our Power Law model" section="Methodology" textOnly>
+      <Toggle label={tr("pl.ourModel")} section={tr("pl.ourModelMethodology")} textOnly>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <p style={{ fontFamily: bd, fontSize: 17, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: 0 }}>
-            Our model fits a power law growth curve to Bitcoin's entire 16-year price history using Weighted Least Squares (WLS) — a regression that gives more importance to recent data. Today's market, with deep liquidity and institutional participation, tells us more about where fair value sits than a $1 trade from 2011. The early data still shapes the long-term slope, but doesn't distort the present.
+            {tr("pl.ourModel.p1")}
           </p>
           <p style={{ fontFamily: bd, fontSize: 17, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: 0 }}>
-            The support floor uses RANSAC — a robust regression that automatically ignores bubble peaks, fitting only to "normal mode" price action. Its minimum is the historical worst case. The bubble ceiling uses extreme value theory (EVT/GPD) fitted to actual historical extremes, giving us a data-driven cap instead of an arbitrary number.
+            {tr("pl.ourModel.p2")}
           </p>
           <p style={{ fontFamily: bd, fontSize: 17, fontWeight: 400, color: t.cream, lineHeight: 1.7, margin: 0 }}>
-            The original Bitcoin Power Law, proposed by Santostasi and popularized by Burger, uses ordinary least squares — where every data point weighs equally. Our WLS weighting, RANSAC floor, and EVT cap build on that same foundation with better calibration for today's market.
+            {tr("pl.ourModel.p3")}
           </p>
         </div>
       </Toggle>

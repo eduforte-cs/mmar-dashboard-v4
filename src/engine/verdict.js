@@ -113,15 +113,18 @@ export function computeEpisodeAnalysis(sig, sigmaChart) {
   const sigImproving = sigTrend > 0.03;
   const sigWorsening = sigTrend < -0.03;
 
+  // labelKey is the stable identifier consumed by the i18n layer in
+  // the React components. `label` is kept for backwards compatibility
+  // with older callsites and the cached payload schema.
   const episodeHistory = sig < -1.0
-    ? { durations: [93, 229, 462, 859], branchDay: 229, shortAvg: 161, longAvg: 660, median: 346, label: "deeply undervalued", deepThreshold: -1.2 }
+    ? { durations: [93, 229, 462, 859], branchDay: 229, shortAvg: 161, longAvg: 660, median: 346, label: "deeply undervalued", labelKey: "deeplyUndervalued", deepThreshold: -1.2 }
     : sig < -0.5
-    ? { durations: [74, 168, 233, 608, 870], branchDay: 233, shortAvg: 158, longAvg: 739, median: 233, label: "discount", deepThreshold: -1.0 }
+    ? { durations: [74, 168, 233, 608, 870], branchDay: 233, shortAvg: 158, longAvg: 739, median: 233, label: "discount", labelKey: "discount", deepThreshold: -1.0 }
     : sig > 1.0
-    ? { durations: [64, 332, 397, 492], branchDay: 64, shortAvg: 64, longAvg: 407, median: 365, label: "bubble", deepThreshold: 1.5 }
+    ? { durations: [64, 332, 397, 492], branchDay: 64, shortAvg: 64, longAvg: 407, median: 365, label: "bubble", labelKey: "bubble", deepThreshold: 1.5 }
     : sig > 0.5
-    ? { durations: [33, 64, 80, 94, 350, 423, 508], branchDay: 94, shortAvg: 67, longAvg: 427, median: 94, label: "overheated", deepThreshold: 1.0 }
-    : { durations: [], branchDay: 0, shortAvg: 0, longAvg: 0, median: 0, label: "at fair value", deepThreshold: 0 };
+    ? { durations: [33, 64, 80, 94, 350, 423, 508], branchDay: 94, shortAvg: 67, longAvg: 427, median: 94, label: "overheated", labelKey: "overheated", deepThreshold: 1.0 }
+    : { durations: [], branchDay: 0, shortAvg: 0, longAvg: 0, median: 0, label: "at fair value", labelKey: "atFairValue", deepThreshold: 0 };
 
   const isDeepEnough = sig < 0
     ? episodePeak < (episodeHistory.deepThreshold || -1.0)
@@ -138,33 +141,113 @@ export function computeEpisodeAnalysis(sig, sigmaChart) {
   const nShorter = nEps - nLonger;
   const durRange = nEps > 0 ? `${Math.min(...episodeHistory.durations)}–${Math.max(...episodeHistory.durations)}` : "0";
 
+  // Build a structured callout instead of a pre-formatted English
+  // string so the React layer can render it via the i18n pipeline.
+  // `episodeCallout` is kept as the legacy English string for backwards
+  // compatibility with cached payloads and any consumer that hasn't
+  // migrated to `episodeCalloutData` yet.
+  const baseParams = {
+    days: episodeDays,
+    nEps,
+    nLonger,
+    nShorter,
+    range: durRange,
+    shortAvg: episodeHistory.shortAvg,
+    longAvg: episodeHistory.longAvg,
+    branchDay: episodeHistory.branchDay,
+    peak: episodePeak.toFixed(2),
+    pct: pctThrough,
+    longerList: longerEpisodes.join(", "),
+    labelKey: episodeHistory.labelKey,
+  };
+
+  let episodeCalloutData = null;
   let episodeCallout = "";
   if (Math.abs(sig) < 0.15) {
     episodeCallout = "";
   } else if (sig < 0) {
     if (pctThrough < 25) {
+      episodeCalloutData = {
+        key: "episode.callout.bear.early",
+        params: baseParams,
+        modKey: sigWorsening ? "episode.callout.bear.early.worsening"
+              : sigImproving ? "episode.callout.bear.early.improving"
+              : null,
+      };
       episodeCallout = `BTC has been in ${episodeHistory.label} territory for ${episodeDays} days. The ${nEps} previous episodes of this type lasted ${durRange} days. It's early — ${nLonger} of ${nEps} episodes lasted longer than this.${sigWorsening ? " The price is still drifting further from fair value, suggesting the bottom may not be in yet." : ""}${sigImproving ? ` However, the price is already moving back toward fair value — if this holds, it resembles the shorter episodes (${episodeHistory.shortAvg}d avg).` : ""}`;
     } else if (!pastBranchPoint) {
+      episodeCalloutData = {
+        key: "episode.callout.bear.beforeBranch",
+        params: baseParams,
+        // Two sub-pieces: a "tail" snippet that only shows when nShorter > 0,
+        // and a deep/shallow modifier that always applies.
+        tailKey: nShorter > 0 ? "episode.callout.bear.beforeBranch.tail" : null,
+        modKey: isDeepEnough
+          ? "episode.callout.bear.beforeBranch.deep"
+          : "episode.callout.bear.beforeBranch.shallow",
+      };
       episodeCallout = `Day ${episodeDays}: longer than ${nShorter} of ${nEps} historical episodes. The short bounces (${episodeHistory.shortAvg}d avg) would have ended by now${nShorter > 0 ? ` — ${nShorter} of ${nEps} did` : ""}. If we're still here past day ~${episodeHistory.branchDay}, the pattern matches a crypto winter (${episodeHistory.longAvg}d avg).${isDeepEnough ? ` The depth (${episodePeak.toFixed(2)}σ) suggests the longer scenario.` : ` The depth (${episodePeak.toFixed(2)}σ) is relatively shallow — still consistent with a bounce.`}`;
     } else if (pctThrough < 80) {
+      episodeCalloutData = {
+        key: "episode.callout.bear.pastBranch",
+        params: baseParams,
+        modKey: sigImproving ? "episode.callout.bear.pastBranch.improving" : null,
+      };
       episodeCallout = `Day ${episodeDays}: past the branch point (day ${episodeHistory.branchDay}). This is now a structurally long episode — only the ${nLonger} longest historical episodes (${longerEpisodes.join(", ")}d) went further. Every time BTC stayed below fair value this long, the eventual rally was 200–400%.${sigImproving ? " The price is starting to move back toward fair value — the turn may be forming." : ""}`;
     } else {
+      episodeCalloutData = {
+        key: "episode.callout.bear.extreme",
+        params: baseParams,
+        sampleKey: nLonger === 0
+          ? "episode.callout.bear.extreme.unprecedented"
+          : nLonger === 1
+            ? "episode.callout.bear.extreme.onlyOne"
+            : "episode.callout.bear.extreme.onlySome",
+        modKey: sigImproving ? "episode.callout.bear.extreme.improving" : null,
+      };
       episodeCallout = `Day ${episodeDays}: longer than ${pctThrough}% of all historical ${episodeHistory.label} episodes. ${nLonger === 0 ? "This is unprecedented — no previous episode lasted this long." : `Only ${nLonger} episode${nLonger > 1 ? "s" : ""} went further.`} In the ${nEps - nLonger} comparable episodes that ended near this point, the subsequent 12-month return was strongly positive — though the sample is small (n=${nEps}).${sigImproving ? " The price is already moving back toward fair value." : ""}`;
     }
   } else {
     if (pctThrough < 25) {
+      episodeCalloutData = {
+        key: "episode.callout.bull.early",
+        params: baseParams,
+        modKey: sigImproving ? "episode.callout.bull.early.improving"
+              : sigWorsening ? "episode.callout.bull.early.worsening"
+              : null,
+      };
       episodeCallout = `BTC has been in ${episodeHistory.label} territory for ${episodeDays} days. Previous episodes lasted ${durRange} days. It's early in the move — ${nLonger} of ${nEps} episodes lasted longer.${sigImproving ? " The price is cooling off, which could signal an early exit." : ""}${sigWorsening ? " The price is still pushing higher — the move has momentum." : ""}`;
     } else if (!pastBranchPoint) {
+      episodeCalloutData = {
+        key: "episode.callout.bull.beforeBranch",
+        params: baseParams,
+        modKey: isDeepEnough
+          ? "episode.callout.bull.beforeBranch.deep"
+          : "episode.callout.bull.beforeBranch.shallow",
+      };
       episodeCallout = `Day ${episodeDays}: the short spikes (${episodeHistory.shortAvg}d avg) would be correcting by now — ${nShorter} of ${nEps} already did. If we cross day ~${episodeHistory.branchDay} without correcting, history says this becomes a full bull run (${episodeHistory.longAvg}d avg).${isDeepEnough ? ` The peak of ${episodePeak.toFixed(2)}σ is in bull run territory.` : ` The peak of ${episodePeak.toFixed(2)}σ is modest — more consistent with a spike.`}`;
     } else if (pctThrough < 80) {
+      episodeCalloutData = {
+        key: "episode.callout.bull.pastBranch",
+        params: baseParams,
+        modKey: sigImproving ? "episode.callout.bull.pastBranch.improving" : null,
+      };
       episodeCallout = `Day ${episodeDays}: past the branch point. This is a full cycle — only extended bull runs (${longerEpisodes.join(", ")}d) lasted longer. The correction risk grows with each passing day. Historically, the drawdown from these levels was 40–70%.${sigImproving ? " The price is starting to cool off — an early warning sign." : ""}`;
     } else {
+      episodeCalloutData = {
+        key: "episode.callout.bull.extreme",
+        params: baseParams,
+        sampleKey: nLonger === 0
+          ? "episode.callout.bull.extreme.unprecedented"
+          : "episode.callout.bull.extreme.onlySome",
+      };
       episodeCallout = `Day ${episodeDays}: longer than ${pctThrough}% of all historical ${episodeHistory.label} episodes. ${nLonger === 0 ? "No previous episode lasted this long." : `Only ${nLonger} went further.`} The risk of a sharp correction is at maximum. Every overheated episode that lasted this long ended with a 50–70% drawdown within 6 months.`;
     }
   }
 
   return {
-    episodeCallout, conditionalRemaining, sigImproving, sigWorsening,
+    episodeCallout, episodeCalloutData,
+    conditionalRemaining, sigImproving, sigWorsening,
     episodeDays, episodeStart, episodePeak, pctThrough,
     episodeHistory, isDeepEnough, pastBranchPoint,
     longerEpisodes, nEps, nLonger, nShorter, durRange,

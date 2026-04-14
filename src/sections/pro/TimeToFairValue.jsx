@@ -3,12 +3,45 @@ import { useTheme } from "../../theme/ThemeContext";
 import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 
+// Resolves a structured episodeCalloutData object into a localised
+// string. The engine emits { key, params, modKey?, tailKey?, sampleKey? }
+// instead of a pre-formatted English sentence so the React layer can
+// translate prose without re-implementing the engine's branching logic.
+function renderEpisodeCallout(data, tr) {
+  if (!data?.key) return "";
+  // Translate the embedded {label} placeholder via the labelKey lookup
+  // so the prose reads "discount" / "descuento" / etc. depending on lang.
+  const labelText = data.params?.labelKey
+    ? tr(`episode.label.${data.params.labelKey}`)
+    : "";
+  const tail = data.tailKey ? tr(data.tailKey) : "";
+  const sample = data.sampleKey ? tr(data.sampleKey) : "";
+  const mod = data.modKey ? tr(data.modKey) : "";
+  let out = tr(data.key);
+  // Apply parameters first, then the snippet placeholders. Order
+  // matters for {tail}/{sample}/{mod} because they themselves can
+  // contain {…} placeholders that need substitution after embedding.
+  for (const [k, v] of Object.entries(data.params || {})) {
+    out = out.split(`{${k}}`).join(v);
+  }
+  out = out.split("{label}").join(labelText);
+  out = out.split("{tail}").join(tail);
+  out = out.split("{sample}").join(sample);
+  out = out.split("{mod}").join(mod);
+  // Run a second pass to resolve placeholders that lived inside the
+  // embedded snippets (e.g. {shortAvg} inside the "improving" mod).
+  for (const [k, v] of Object.entries(data.params || {})) {
+    out = out.split(`{${k}}`).join(v);
+  }
+  return out;
+}
+
 export default function TimeToFairValue({ sig, episode }) {
   const { t } = useTheme();
   const { t: tr } = useI18n();
   if (!episode) return null;
 
-  const { episodeCallout, episodeDays, episodePeak, episodeHistory,
+  const { episodeCallout, episodeCalloutData, episodeDays, episodePeak, episodeHistory,
     sigImproving, sigWorsening, conditionalRemaining, longerEpisodes,
     pctThrough, pastBranchPoint } = episode;
 
@@ -99,16 +132,25 @@ export default function TimeToFairValue({ sig, episode }) {
         ))}
       </div>
 
-      {/* Callout */}
-      {episodeCallout && (
+      {/* Callout. Prefer the structured data emitted by the new engine;
+          fall back to the legacy English string for cached payloads. */}
+      {(episodeCalloutData || episodeCallout) && (
         <div style={{ fontFamily: bd, fontSize: 14, color: t.dim, lineHeight: 1.7, marginBottom: 16 }}>
-          {episodeCallout}
+          {episodeCalloutData ? renderEpisodeCallout(episodeCalloutData, tr) : episodeCallout}
         </div>
       )}
 
-      {/* Historical duration bars */}
+      {/* Historical duration bars. The engine emits a stable `labelKey`
+          (e.g. "discount", "overheated") which we resolve via i18n; the
+          old free-text `label` field is kept as a fallback for cached
+          payloads from before the labelKey rollout. */}
       <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
-        {tr("pro.episode.previousLabel").replace("{label}", episodeHistory.label)}
+        {tr("pro.episode.previousLabel").replace(
+          "{label}",
+          episodeHistory.labelKey
+            ? tr(`episode.label.${episodeHistory.labelKey}`)
+            : episodeHistory.label
+        )}
       </div>
       {episodeHistory.durations.map((d, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
