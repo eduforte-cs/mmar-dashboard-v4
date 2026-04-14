@@ -32,13 +32,13 @@ export default function Hero({ d, derived }) {
               color: t.cream, letterSpacing: "-0.04em",
               lineHeight: 0.95, margin: 0,
             }}>
-              Should I buy<br />Bitcoin today?
+              {tr("hero.titleLine1")}<br />{tr("hero.titleLine2")}
             </h1>
             <p style={{
               fontFamily: bd, fontSize: 13, fontWeight: 300,
               color: t.faint, marginTop: 14, lineHeight: 1.6,
             }}>
-              A quantitative answer. 16 years of data. 2,000 simulated futures.
+              {tr("hero.subtitleQuant")}
             </p>
           </div>
           <div>
@@ -49,7 +49,7 @@ export default function Hero({ d, derived }) {
               {verdict.answer}
             </div>
             <div style={{ fontFamily: bd, fontSize: 14, color: t.dim, marginTop: 8 }}>
-              {verdict.subtitle} · Confidence {verdict.confidence}
+              {verdict.subtitle} · {tr("lite.confidence")} {verdict.confidence}
             </div>
           </div>
         </div>
@@ -138,7 +138,10 @@ export default function Hero({ d, derived }) {
       {bt && (
         <div style={{ padding: "10px 0 24px", borderBottom: `1px solid ${t.border}` }}>
           <div style={{ fontFamily: mn, fontSize: 11, color: t.dim }}>
-            Walk-forward backtest · Precision: {bt.precision}% · Avg return buy: +{bt.avgReturnYes}% · n={bt.nYes + bt.nNo}
+            {tr("hero.walkForwardNote")
+              .replace("{precision}", bt.precision)
+              .replace("{avgReturn}", bt.avgReturnYes)
+              .replace("{n}", bt.nYes + bt.nNo)}
           </div>
         </div>
       )}
