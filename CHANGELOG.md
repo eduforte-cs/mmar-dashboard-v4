@@ -16,6 +16,74 @@ pueda escanear rápido qué cambió y cuándo.
 
 ---
 
+## 2026-04-14 (2) — SEO meta copy refresh + hreflang scaffold
+
+Revisión del copy que Google y las redes sociales muestran cuando
+alguien busca o comparte el sitio. El copy anterior lideraba con "100%
+buy accuracy since 2017", un claim defendible pero agresivo para
+queries financieras (YMYL — Your Money Your Life). Lo reemplazamos
+por un gancho dual "Free + Backtested" que mantiene la credibilidad
+sin activar filtros de promesas exageradas.
+
+### Changed
+
+- **`<title>` (el que se ve en la pestaña del navegador y en Google):**
+  `Should I Buy Bitcoin Today? — Live Signal & Probability Model`
+  → `Should I Buy Bitcoin Today? Free, Backtested`
+- **`<meta name="description">` (snippet de Google):**
+  `Should I buy Bitcoin today? A live quantitative model with 100% buy accuracy since 2017. Your real odds of losing money at 1 and 3 years.`
+  → `Free Bitcoin signal, backtested daily since 2017. Get a plain-English answer and your real odds of losing money over 1 and 3 years.`
+- **`og:description` (preview en Facebook / WhatsApp / iMessage /
+  Telegram / LinkedIn):** arranca ahora con "Free." y usa "Backtested
+  against every day since 2017" en lugar del "100% buy accuracy".
+- **`twitter:description`:** mismo tratamiento, más corto.
+- **`WebApplication.description` en el JSON-LD** se reformula para
+  coincidir con el tono del meta description.
+- **`<noscript>` block** (lo que ven los crawlers sin JS y que sirve
+  también como fallback accesible) reescrito para alinear con el nuevo
+  tono.
+
+### Added
+
+- **Scaffolding de `hreflang`.** Tres tags `<link rel="alternate">`
+  comentados en `index.html` apuntando a `/`, `/es/` y `x-default`.
+  Están inactivos hasta que implementemos React Router + pre-render
+  (SEO Layer 3) con rutas reales por idioma. Hoy el sitio tiene una
+  sola URL que sirve un único HTML en inglés; el toggle EN/ES es
+  client-side y no afecta lo que Google ve. Al activar los tags más
+  adelante, Google indexará la versión en español como entrada
+  separada en los resultados.
+
+### Unchanged (decisiones explícitas)
+
+- **Los "100%" dentro del `FAQPage` JSON-LD se quedan.** El JSON-LD
+  es terreno de datos estructurados con claims verificables — Google
+  lo entiende distinto al snippet promocional y lo usa para generar
+  rich snippets ("People also ask") en los resultados de búsqueda.
+  Removerlos rompería ese canal sin ganancia clara.
+- **`og:image` y `twitter:image` siguen comentadas** porque el
+  archivo `public/og-image.png` todavía no existe. Cuando alguien
+  comparte el link, aparece sin imagen. Este es el siguiente punto
+  del sprint SEO cuando tengamos la imagen (1200×630 PNG).
+- **No se actualizó `sitemap.xml` ni la fecha de `llms.txt` en este
+  commit** para mantener el cambio enfocado solo en el copy. Eso va
+  en una pasada separada.
+
+### Referencia — los 3 packs propuestos
+
+El usuario eligió Pack 3 ("Free + backtested, credibilidad sutil")
+entre tres opciones presentadas:
+
+1. **Pack 1 — "La pregunta directa"**: lidera con "plain English",
+   tono accesible.
+2. **Pack 2 — "Free first"**: "Free" como protagonista absoluto,
+   posicionamiento combativo contra herramientas de pago.
+3. **Pack 3 — "Free + backtested" (elegido)**: balance entre gancho
+   comercial ("Free") y ancla de credibilidad ("Backtested since 2017")
+   sin los riesgos YMYL de "100% accuracy".
+
+---
+
 ## 2026-04-14 — Bilingüe EN/ES + estabilidad mobile
 
 Sesión grande de internacionalización completa al español rioplatense
