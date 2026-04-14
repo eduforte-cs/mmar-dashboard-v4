@@ -1,9 +1,11 @@
 import React from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 
 export default function Gauge({ sigma = -0.38 }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   // Map sigma range [-2.5, +2.5] to [0%, 100%]
   const pct = ((sigma + 2.5) / 5) * 100;
   const clamped = Math.max(0, Math.min(100, pct));
@@ -16,7 +18,7 @@ export default function Gauge({ sigma = -0.38 }) {
           fontFamily: bd, fontSize: 10, color: t.faint,
           textTransform: "uppercase", letterSpacing: "0.08em",
         }}>
-          Position
+          {tr("gauge.position")}
         </span>
         <span style={{ fontFamily: mn, fontSize: 11, color: t.cream }}>
           {sigma >= 0 ? "+" : ""}{sigma.toFixed(2)}σ
@@ -56,7 +58,7 @@ export default function Gauge({ sigma = -0.38 }) {
 
       {/* Labels */}
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-        {["−2.5σ", "−1σ", "Fair value", "+1σ", "+2.5σ"].map(l => (
+        {["−2.5σ", "−1σ", tr("gauge.fairValue"), "+1σ", "+2.5σ"].map(l => (
           <span key={l} style={{ fontFamily: mn, fontSize: 9, color: t.ghost }}>
             {l}
           </span>

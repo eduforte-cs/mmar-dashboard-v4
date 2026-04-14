@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK, daysSinceGenesis } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
@@ -8,16 +9,18 @@ import Toggle from "../components/Toggle";
 
 export default function PowerLaw({ d, derived }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const containerRef = useRef(null);
   const [dims, setDims] = useState({ w: 1200, h: 500 });
   const [zoom, setZoom] = useState(0);
 
+  // Zoom levels — labels resolved at render time via tr(labelKey).
   const ZOOM_LEVELS = [
-    { back: 1.5, fwd: 3.5, label: "Default" },   // 0
-    { back: 3,   fwd: 5,   label: "5Y" },          // 1
-    { back: 6,   fwd: 6,   label: "10Y" },         // 2
-    { back: 10,  fwd: 8,   label: "All" },          // 3
-    { back: 16,  fwd: 10,  label: "Full history" }, // 4
+    { back: 1.5, fwd: 3.5, labelKey: "pl.zoom.default" },     // 0
+    { back: 3,   fwd: 5,   labelKey: "pl.zoom.5y" },          // 1
+    { back: 6,   fwd: 6,   labelKey: "pl.zoom.10y" },         // 2
+    { back: 10,  fwd: 8,   labelKey: "pl.zoom.all" },         // 3
+    { back: 16,  fwd: 10,  labelKey: "pl.zoom.fullHistory" }, // 4
   ];
 
   useEffect(() => {
@@ -279,7 +282,7 @@ export default function PowerLaw({ d, derived }) {
           color: t.cream, letterSpacing: "-0.04em",
           lineHeight: 0.95, margin: 0,
         }}>
-          Power Law
+          {tr("pl.heading")}
         </h1>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 16 }}>
           <span style={{
@@ -300,7 +303,7 @@ export default function PowerLaw({ d, derived }) {
               background: "#27AE60",
               animation: "fi 2s ease-in-out infinite alternate",
             }} />
-            <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>Live</span>
+            <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>{tr("live")}</span>
           </div>
         </div>
       </div>
@@ -385,9 +388,9 @@ export default function PowerLaw({ d, derived }) {
           <path d={chart.toPath(chart.bands.support)} stroke={t.faint} strokeWidth={1} fill="none" strokeDasharray="6 4" opacity={0.5} />
 
           {/* Band labels */}
-          <text x={chart.fairLabelX} y={chart.fairLabelY - 8} fill={t.cream} fontSize={10} fontFamily={bd} opacity={0.4}>Fair value</text>
-          <text x={chart.fairLabelX} y={chart.bubbleLabelY - 8} fill={t.faint} fontSize={10} fontFamily={bd} opacity={0.35}>Bubble zone</text>
-          <text x={chart.fairLabelX} y={chart.supportLabelY + 14} fill={t.faint} fontSize={10} fontFamily={bd} opacity={0.35}>Support</text>
+          <text x={chart.fairLabelX} y={chart.fairLabelY - 8} fill={t.cream} fontSize={10} fontFamily={bd} opacity={0.4}>{tr("pl.bandFairValue")}</text>
+          <text x={chart.fairLabelX} y={chart.bubbleLabelY - 8} fill={t.faint} fontSize={10} fontFamily={bd} opacity={0.35}>{tr("pl.bandBubbleZone")}</text>
+          <text x={chart.fairLabelX} y={chart.supportLabelY + 14} fill={t.faint} fontSize={10} fontFamily={bd} opacity={0.35}>{tr("pl.bandSupport")}</text>
 
           {/* Historical price */}
           {chart.histPathStr && (
@@ -404,7 +407,7 @@ export default function PowerLaw({ d, derived }) {
           {/* YOU'RE HERE label */}
           <text x={chart.todayX} y={chart.todayY - 26} fill={t.cream}
             fontSize={11} fontFamily={bd} fontWeight={700} textAnchor="middle" letterSpacing="0.1em">
-            YOU'RE HERE
+            {tr("pl.youAreHere")}
           </text>
           <text x={chart.todayX} y={chart.todayY - 12} fill={t.cream}
             fontSize={13} fontFamily="monospace" fontWeight={500} textAnchor="middle" opacity={0.7}>
@@ -453,11 +456,11 @@ export default function PowerLaw({ d, derived }) {
 
           {/* Horizon labels below axis */}
           <text x={chart.todayX} y={chart.H - chart.pad.bottom + 40} fill={t.faint}
-            fontSize={9} fontFamily="monospace" textAnchor="middle">TODAY</text>
+            fontSize={9} fontFamily="monospace" textAnchor="middle">{tr("pl.todayLabel")}</text>
           <text x={chart.fv1yX} y={chart.H - chart.pad.bottom + 40} fill={t.ghost}
-            fontSize={9} fontFamily="monospace" textAnchor="middle">1 YEAR</text>
+            fontSize={9} fontFamily="monospace" textAnchor="middle">{tr("pl.oneYearLabel")}</text>
           <text x={chart.fv3yX} y={chart.H - chart.pad.bottom + 40} fill={t.ghost}
-            fontSize={9} fontFamily="monospace" textAnchor="middle">3 YEARS</text>
+            fontSize={9} fontFamily="monospace" textAnchor="middle">{tr("pl.threeYearsLabel")}</text>
 
           {/* ── Crosshair ── */}
           {hover && (
@@ -487,19 +490,19 @@ export default function PowerLaw({ d, derived }) {
 
                     {/* Date */}
                     <text x={tipX + 12} y={tipY + 18} fill={t.faint} fontSize={10} fontFamily={bd}>
-                      {hover.dateStr}{hover.isFuture ? " · projected" : ""}
+                      {hover.dateStr}{hover.isFuture ? tr("pl.tipProjected") : ""}
                     </text>
 
                     {/* Actual price (historical only) */}
                     {hover.actualPrice && (
                       <text x={tipX + 12} y={tipY + 36} fill={t.cream} fontSize={12} fontFamily="monospace" fontWeight={500}>
-                        BTC {fmtK(hover.actualPrice)}
+                        {tr("pl.tipBtc")} {fmtK(hover.actualPrice)}
                       </text>
                     )}
 
                     {/* Fair value */}
                     <text x={tipX + 12} y={tipY + (hover.actualPrice ? 56 : 40)} fill={t.faint} fontSize={9} fontFamily={bd}>
-                      Fair value
+                      {tr("pl.bandFairValue")}
                     </text>
                     <text x={tipX + tipW - 12} y={tipY + (hover.actualPrice ? 56 : 40)} fill={t.cream} fontSize={11} fontFamily="monospace" textAnchor="end">
                       {fmtK(hover.fair)}
@@ -507,7 +510,7 @@ export default function PowerLaw({ d, derived }) {
 
                     {/* Bubble */}
                     <text x={tipX + 12} y={tipY + (hover.actualPrice ? 74 : 58)} fill={t.faint} fontSize={9} fontFamily={bd}>
-                      Bubble zone
+                      {tr("pl.bandBubbleZone")}
                     </text>
                     <text x={tipX + tipW - 12} y={tipY + (hover.actualPrice ? 74 : 58)} fill={t.faint} fontSize={11} fontFamily="monospace" textAnchor="end">
                       {fmtK(hover.bubble)}
@@ -515,7 +518,7 @@ export default function PowerLaw({ d, derived }) {
 
                     {/* Support */}
                     <text x={tipX + 12} y={tipY + (hover.actualPrice ? 92 : 76)} fill={t.faint} fontSize={9} fontFamily={bd}>
-                      Support
+                      {tr("pl.bandSupport")}
                     </text>
                     <text x={tipX + tipW - 12} y={tipY + (hover.actualPrice ? 92 : 76)} fill={t.faint} fontSize={11} fontFamily="monospace" textAnchor="end">
                       {fmtK(hover.sup)}

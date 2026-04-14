@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import Chevron from "./Chevron";
 
@@ -8,6 +9,7 @@ export default function Toggle({
   defaultOpen = false, section, textOnly,
 }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -79,7 +81,7 @@ export default function Toggle({
                     paddingBottom: 1,
                   }}
                 >
-                  Close
+                  {tr("common.close")}
                 </span>
               </div>
             </div>

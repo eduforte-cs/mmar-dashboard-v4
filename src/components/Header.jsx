@@ -124,7 +124,7 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
               padding: "0 22px", display: "flex", alignItems: "center",
               borderLeft: `1px solid ${t.border}`, cursor: "pointer", gap: 6,
             }}
-            title="Sign out"
+            title={tr("nav.signOut")}
           >
             <div style={{
               width: 20, height: 20, borderRadius: "50%",
@@ -312,7 +312,7 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
                 onClick={toggle}
               >
                 <span style={{ fontFamily: bd, fontSize: 11, color: t.faint }}>
-                  {mode === "dark" ? "Light" : "Dark"}
+                  {mode === "dark" ? tr("nav.light") : tr("nav.dark")}
                 </span>
                 <div style={{
                   width: 24, height: 12, borderRadius: 12,

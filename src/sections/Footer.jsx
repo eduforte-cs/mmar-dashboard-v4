@@ -23,7 +23,7 @@ export default function Footer() {
       <p style={{
         fontFamily: bd, fontSize: 10, color: t.ghost, lineHeight: 1.7,
       }}>
-        Santostasi Power Law · Mandelbrot MMAR · DFA · Regime-switching · EVT/GPD · Walk-forward backtest · Spot refreshes 60s · Browser-only
+        {tr("footer.tech")}
       </p>
 
       <div className="footer-bottom" style={{
@@ -35,7 +35,7 @@ export default function Footer() {
           {tr("footer.notFinancialAdvice")}
         </span>
         <span style={{ fontFamily: bd, fontSize: 9, color: t.ghost }}>
-          © {new Date().getFullYear()} CommonSense Technologies S.L.
+          {tr("footer.copyright").replace("{year}", new Date().getFullYear())}
         </span>
       </div>
     </div>
