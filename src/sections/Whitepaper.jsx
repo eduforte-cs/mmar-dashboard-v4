@@ -1,12 +1,38 @@
 import React, { useState, useMemo } from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import CatLabel from "../components/CatLabel";
 import { trackWhitepaperSection } from "../tracking";
 
+// Renders an i18n string with inline markup:
+//   **bold**   → <Em> (semibold accent)
+//   [d]dim[/d] → <Dim> (faint colour)
+// Plain text passes through. Returns an array of React nodes.
+function renderMd(str) {
+  if (str == null) return null;
+  const re = /\*\*(.+?)\*\*|\[d\]([\s\S]+?)\[\/d\]/g;
+  const out = [];
+  let cursor = 0;
+  let key = 0;
+  let m;
+  while ((m = re.exec(str)) !== null) {
+    if (m.index > cursor) out.push(str.slice(cursor, m.index));
+    if (m[1] !== undefined) {
+      out.push(<Em key={`md-${key++}`}>{m[1]}</Em>);
+    } else {
+      out.push(<Dim key={`md-${key++}`}>{m[2]}</Dim>);
+    }
+    cursor = m.index + m[0].length;
+  }
+  if (cursor < str.length) out.push(str.slice(cursor));
+  return out;
+}
+
 // ── WpToggle ──
 function WpToggle({ title, num, children, defaultOpen = true }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div style={{ borderBottom: `1px solid ${t.border}` }}>
@@ -21,7 +47,7 @@ function WpToggle({ title, num, children, defaultOpen = true }) {
       {open && (
         <div style={{ paddingBottom: 40 }}>
           <div style={{ display: "flex", gap: 20, fontFamily: bd, fontSize: 11, color: t.faint, marginBottom: 20 }}>
-            <span onClick={() => setOpen(false)} style={{ cursor: "pointer", borderBottom: `1px solid ${t.borderFaint}`, paddingBottom: 1 }}>Close</span>
+            <span onClick={() => setOpen(false)} style={{ cursor: "pointer", borderBottom: `1px solid ${t.borderFaint}`, paddingBottom: 1 }}>{tr("wp.close")}</span>
           </div>
           {children}
         </div>
@@ -45,6 +71,7 @@ function Em({ children }) {
 // ── SVG 1: Power Law log-log ──
 function PLChart({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const svg = useMemo(() => {
     try {
       if (!d?.sigmaChart?.length || !d.a || !d.b) return null;
@@ -120,9 +147,9 @@ function PLChart({ d }) {
       <polyline points={svg.bandDn} fill="none" stroke="#27AE60" strokeWidth={1} strokeDasharray="6 4" opacity={0.4} />
       <polyline points={svg.pricePath} fill="none" stroke={t.cream} strokeWidth={0.8} opacity={0.12} />
       {svg.dots.map((d, i) => <circle key={i} cx={d.cx} cy={d.cy} r={2} fill={d.color} opacity={0.7} />)}
-      <text x={svg.W - svg.pad.right - 4} y={svg.pad.top + 14} fill="#EB5757" fontSize={9} fontFamily={bd} textAnchor="end" opacity={0.5}>+2σ bubble zone</text>
-      <text x={svg.W - svg.pad.right - 4} y={svg.H - svg.pad.bottom - 6} fill="#27AE60" fontSize={9} fontFamily={bd} textAnchor="end" opacity={0.5}>−1σ support</text>
-      <text x={svg.pad.left + svg.cw / 2} y={svg.H - 6} fill={t.dim} fontSize={9} fontFamily={mn} textAnchor="middle">Bitcoin price history (log scale)</text>
+      <text x={svg.W - svg.pad.right - 4} y={svg.pad.top + 14} fill="#EB5757" fontSize={9} fontFamily={bd} textAnchor="end" opacity={0.5}>{tr("wp.svg.bubbleZone")}</text>
+      <text x={svg.W - svg.pad.right - 4} y={svg.H - svg.pad.bottom - 6} fill="#27AE60" fontSize={9} fontFamily={bd} textAnchor="end" opacity={0.5}>{tr("wp.svg.support")}</text>
+      <text x={svg.pad.left + svg.cw / 2} y={svg.H - 6} fill={t.dim} fontSize={9} fontFamily={mn} textAnchor="middle">{tr("wp.svg.btcHistory")}</text>
     </svg>
   );
 }
@@ -130,6 +157,7 @@ function PLChart({ d }) {
 // ── SVG 2: OLS vs WLS ──
 function DivergenceChart({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const svg = useMemo(() => {
     try {
       if (!d?.a || !d?.b) return null;
@@ -179,7 +207,7 @@ function DivergenceChart({ d }) {
         <g key={tick.label}><line x1={svg.pad.left} y1={tick.py} x2={svg.W - svg.pad.right} y2={tick.py} stroke={t.border} strokeWidth={0.3} /><text x={svg.pad.left - 6} y={parseFloat(tick.py) + 3} fill={t.dim} fontSize={9} fontFamily={mn} textAnchor="end">{tick.label}</text></g>
       ))}
       <line x1={svg.todayX} y1={svg.pad.top} x2={svg.todayX} y2={svg.H - svg.pad.bottom} stroke={t.border} strokeWidth={0.5} strokeDasharray="4 4" />
-      <text x={svg.todayX} y={svg.H - 8} fill={t.dim} fontSize={9} fontFamily={bd} textAnchor="middle">today</text>
+      <text x={svg.todayX} y={svg.H - 8} fill={t.dim} fontSize={9} fontFamily={bd} textAnchor="middle">{tr("wp.svg.today")}</text>
       <polyline points={svg.olsLine} fill="none" stroke="#EB5757" strokeWidth={1.3} opacity={0.5} strokeDasharray="6 3" />
       <polyline points={svg.wlsLine} fill="none" stroke={t.cream} strokeWidth={1.8} />
       <text x={svg.W - svg.pad.right - 4} y={parseFloat(svg.olsEndY) - 8} fill="#EB5757" fontSize={10} fontFamily={bd} textAnchor="end" opacity={0.6}>OLS b=5.85</text>
@@ -191,6 +219,7 @@ function DivergenceChart({ d }) {
 // ── SVG 3: Fat tails ──
 function FatTailsChart({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const svg = useMemo(() => {
     try {
       if (!d?.resReturns?.length) return null;
@@ -225,9 +254,9 @@ function FatTailsChart({ d }) {
       <line x1={svg.pad.left} y1={svg.H - svg.pad.bottom} x2={svg.W - svg.pad.right} y2={svg.H - svg.pad.bottom} stroke={t.border} strokeWidth={0.5} />
       {svg.rects.map((r, i) => <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill={r.tail ? "#EB5757" : t.faint} opacity={r.tail ? 0.5 : 0.25} rx={0.5} />)}
       <polyline points={svg.gaussPts} fill="none" stroke="#F2994A" strokeWidth={1.8} strokeDasharray="5 3" opacity={0.7} />
-      <text x={svg.pad.left + 4} y={svg.pad.top + 14} fill="#EB5757" fontSize={10} fontFamily={bd} opacity={0.6}>Fat tails — actual</text>
-      <text x={svg.pad.left + 4} y={svg.pad.top + 28} fill="#F2994A" fontSize={10} fontFamily={bd} opacity={0.6}>Normal distribution</text>
-      <text x={svg.pad.left + svg.cw / 2} y={svg.H - 8} fill={t.dim} fontSize={9} fontFamily={mn} textAnchor="middle">Daily residual returns</text>
+      <text x={svg.pad.left + 4} y={svg.pad.top + 14} fill="#EB5757" fontSize={10} fontFamily={bd} opacity={0.6}>{tr("wp.svg.fatTails")}</text>
+      <text x={svg.pad.left + 4} y={svg.pad.top + 28} fill="#F2994A" fontSize={10} fontFamily={bd} opacity={0.6}>{tr("wp.svg.normalDist")}</text>
+      <text x={svg.pad.left + svg.cw / 2} y={svg.H - 8} fill={t.dim} fontSize={9} fontFamily={mn} textAnchor="middle">{tr("wp.svg.dailyResiduals")}</text>
     </svg>
   );
 }
@@ -235,17 +264,18 @@ function FatTailsChart({ d }) {
 // ── SVG 4: Sigma ruler ──
 function SigmaRuler({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   if (!d) return null;
   const sig = d.sigmaFromPL || 0;
   const W = 680, H = 90, padL = 10, cw = W - 20;
   const zones = [
-    { label: "Strong Buy", min: -2.5, max: -1.0, color: "#1B8A4A", acc: "100%" },
-    { label: "Buy", min: -1.0, max: -0.5, color: "#27AE60", acc: "100%" },
-    { label: "Accumulate", min: -0.5, max: 0, color: "#6FCF97", acc: "100%" },
-    { label: "Neutral", min: 0, max: 0.3, color: t.faint, acc: "83%" },
-    { label: "Caution", min: 0.3, max: 0.5, color: "#E8A838", acc: "56%" },
-    { label: "Reduce", min: 0.5, max: 0.8, color: "#F2994A", acc: "33%" },
-    { label: "Sell", min: 0.8, max: 2.5, color: "#EB5757", acc: "0%" },
+    { label: tr("wp.zone.strongBuy"), min: -2.5, max: -1.0, color: "#1B8A4A", acc: "100%" },
+    { label: tr("wp.zone.buy"), min: -1.0, max: -0.5, color: "#27AE60", acc: "100%" },
+    { label: tr("wp.zone.accumulate"), min: -0.5, max: 0, color: "#6FCF97", acc: "100%" },
+    { label: tr("wp.zone.neutral"), min: 0, max: 0.3, color: t.faint, acc: "83%" },
+    { label: tr("wp.zone.caution"), min: 0.3, max: 0.5, color: "#E8A838", acc: "56%" },
+    { label: tr("wp.zone.reduce"), min: 0.5, max: 0.8, color: "#F2994A", acc: "33%" },
+    { label: tr("wp.zone.sell"), min: 0.8, max: 2.5, color: "#EB5757", acc: "0%" },
   ];
   const tx = v => padL + Math.max(0, Math.min(1, (v + 2.5) / 5)) * cw;
   const mx = tx(Math.max(-2.5, Math.min(2.5, sig)));
@@ -269,6 +299,7 @@ function SigmaRuler({ d }) {
 // ── SVG 5: MC Calibration ──
 function CalibrationChart({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const svg = useMemo(() => {
     try {
       const cal = d?.backtestResults?.calibrationBuckets;
@@ -305,107 +336,118 @@ function CalibrationChart({ d }) {
         </g>
       ))}
       <rect x={svg.pad.left} y={svg.H - 18} width={10} height={8} fill="#F2994A" opacity={0.5} rx={1} />
-      <text x={svg.pad.left + 14} y={svg.H - 11} fill={t.faint} fontSize={9} fontFamily={bd}>MC predicted</text>
+      <text x={svg.pad.left + 14} y={svg.H - 11} fill={t.faint} fontSize={9} fontFamily={bd}>{tr("wp.svg.mcPredicted")}</text>
       <rect x={svg.pad.left + 120} y={svg.H - 18} width={10} height={8} fill="#EB5757" opacity={0.6} rx={1} />
-      <text x={svg.pad.left + 134} y={svg.H - 11} fill={t.faint} fontSize={9} fontFamily={bd}>Actual loss rate</text>
+      <text x={svg.pad.left + 134} y={svg.H - 11} fill={t.faint} fontSize={9} fontFamily={bd}>{tr("wp.svg.actualLoss")}</text>
     </svg>
   );
 }
 
-// ── Sections nav ──
-const SECTIONS = ["Foundation", "Divergence", "Fractals", "Simulation", "Signal", "Validation"];
+// ── Sections nav (id stays in English so deep links never break;
+//    label is translated at render time) ──
+const SECTIONS = [
+  { id: "Foundation", labelKey: "wp.cat.foundation" },
+  { id: "Divergence", labelKey: "wp.cat.divergence" },
+  { id: "Fractals", labelKey: "wp.cat.fractals" },
+  { id: "Simulation", labelKey: "wp.cat.simulation" },
+  { id: "Signal", labelKey: "wp.cat.signal" },
+  { id: "Validation", labelKey: "wp.cat.validation" },
+];
 
 export default function Whitepaper({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const [activeCat, setActiveCat] = useState("Foundation");
+
+  const bValue = d?.b?.toFixed(2) || "5.36";
 
   return (
     <div style={{ animation: "fi 0.3s ease" }}>
       <div style={{ padding: "48px 0 36px", borderBottom: `1px solid ${t.border}` }}>
-        <h2 style={{ fontFamily: bd, fontSize: 56, fontWeight: 800, color: t.cream, letterSpacing: "-0.04em", lineHeight: 0.95, margin: 0 }}>Whitepaper</h2>
-        <p style={{ fontFamily: bd, fontSize: 15, color: t.faint, lineHeight: 1.5, margin: "12px 0 0", maxWidth: 560 }}>A quantitative framework for answering the only question that matters</p>
+        <h2 style={{ fontFamily: bd, fontSize: 56, fontWeight: 800, color: t.cream, letterSpacing: "-0.04em", lineHeight: 0.95, margin: 0 }}>{tr("wp.title")}</h2>
+        <p style={{ fontFamily: bd, fontSize: 15, color: t.faint, lineHeight: 1.5, margin: "12px 0 0", maxWidth: 560 }}>{tr("wp.subtitle")}</p>
       </div>
       <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${t.border}`, gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <span style={{ fontFamily: mn, fontSize: 10, color: t.ghost, padding: "14px 0", marginRight: "auto", whiteSpace: "nowrap" }}>7 sections</span>
-        {SECTIONS.map(cat => (
-          <span key={cat} onClick={() => { trackWhitepaperSection(cat); setActiveCat(cat); document.getElementById("wp-" + cat)?.scrollIntoView({ behavior: "smooth", block: "start" }); }} style={{
-            fontFamily: bd, fontSize: 13, fontWeight: 500, color: activeCat === cat ? t.cream : t.faint,
+        <span style={{ fontFamily: mn, fontSize: 10, color: t.ghost, padding: "14px 0", marginRight: "auto", whiteSpace: "nowrap" }}>{tr("wp.sectionsCount")}</span>
+        {SECTIONS.map(({ id, labelKey }) => (
+          <span key={id} onClick={() => { trackWhitepaperSection(id); setActiveCat(id); document.getElementById("wp-" + id)?.scrollIntoView({ behavior: "smooth", block: "start" }); }} style={{
+            fontFamily: bd, fontSize: 13, fontWeight: 500, color: activeCat === id ? t.cream : t.faint,
             padding: "14px 20px", cursor: "pointer", whiteSpace: "nowrap",
-            borderBottom: activeCat === cat ? `2px solid ${t.cream}` : "2px solid transparent", marginBottom: -1,
-          }}>{cat}</span>
+            borderBottom: activeCat === id ? `2px solid ${t.cream}` : "2px solid transparent", marginBottom: -1,
+          }}>{tr(labelKey)}</span>
         ))}
         <span style={{ fontFamily: bd, fontSize: 11, color: t.dim, padding: "14px 20px", marginLeft: "auto", borderLeft: `1px solid ${t.border}`, whiteSpace: "nowrap" }}>Edu Forte · CommonSense</span>
       </div>
 
-      <div id="wp-Foundation"><CatLabel label="Foundation" />
-        <WpToggle num="01" title="The question">
-          <P>Everyone who looks at Bitcoin eventually asks the same thing: should I buy it now?</P>
-          <P><Dim>The problem isn't information — there's too much of it. Twitter threads, YouTube analysts, on-chain metrics, technical indicators, macro takes. Most of it is noise dressed as signal. And the few tools that try to be rigorous tend to be either too academic to be useful or too simple to be honest.</Dim></P>
-          <P>We wanted to build something different. A model that takes 16 years of daily price data, runs it through institutional-grade quantitative analysis, and gives you one answer: <Em>yes or no</Em>, with your actual odds of losing money at 1 year and 3 years.</P>
+      <div id="wp-Foundation"><CatLabel label={tr("wp.cat.foundation")} />
+        <WpToggle num="01" title={tr("wp.t01.title")}>
+          <P>{renderMd(tr("wp.t01.p1"))}</P>
+          <P><Dim>{tr("wp.t01.p2")}</Dim></P>
+          <P>{renderMd(tr("wp.t01.p3"))}</P>
         </WpToggle>
-        <WpToggle num="02" title="The Power Law foundation">
-          <P>In 2019, Giovanni Santostasi published an observation that would become one of the most debated ideas in Bitcoin analysis: Bitcoin's price follows a power law. Not approximately — with an R² above 0.95 across the entire history of the asset.</P>
-          <P><Dim>A power law means that when you plot price against time on a log-log scale, you get a straight line. Power laws appear in network effects, city sizes, earthquake magnitudes. They describe systems where growth decelerates as the system matures.</Dim></P>
-          <P>Harold Christopher Burger popularized this into a model: fit an OLS regression in log-log space, draw standard deviation bands around it, and you get a corridor. The bottom is the support floor. The top is the bubble zone. Fair value is the line.</P>
+        <WpToggle num="02" title={tr("wp.t02.title")}>
+          <P>{renderMd(tr("wp.t02.p1"))}</P>
+          <P><Dim>{tr("wp.t02.p2")}</Dim></P>
+          <P>{renderMd(tr("wp.t02.p3"))}</P>
           <PLChart d={d} />
-          <P>It's an elegant framework. And it's largely correct. But it has three problems.</P>
+          <P>{renderMd(tr("wp.t02.p4"))}</P>
         </WpToggle>
       </div>
 
-      <div id="wp-Divergence"><CatLabel label="Divergence" />
-        <WpToggle num="03" title="Where we diverge: WLS, RANSAC, EVT">
-          <P><Em>Problem 1: OLS treats all data equally.</Em> <Dim>Burger's model gives the same weight to a $1 trade in 2011 and a $70,000 trade in 2024. But these are fundamentally different markets.</Dim></P>
-          <P>Our fix: <Em>Weighted Least Squares</Em> with exponential decay. We give more weight to recent data using a 4-year half-life. Our slope (b={d?.b?.toFixed(2) || "5.36"}) is lower than Burger's (b=5.85). That means our model sees Bitcoin's growth as decelerating — which is what you'd expect from a maturing asset.</P>
+      <div id="wp-Divergence"><CatLabel label={tr("wp.cat.divergence")} />
+        <WpToggle num="03" title={tr("wp.t03.title")}>
+          <P>{renderMd(tr("wp.t03.p1"))}</P>
+          <P>{renderMd(tr("wp.t03.p2").replace("{bValue}", bValue))}</P>
           <DivergenceChart d={d} />
-          <P><Em>Problem 2: The support floor ignores bubbles.</Em> <Dim>OLS fits to all data, including bubble peaks. Those peaks pull the regression line up, making the floor unreliable during crashes.</Dim></P>
-          <P>Our fix: <Em>RANSAC</Em> (Random Sample Consensus). A robust regression that excludes outliers automatically. The RANSAC fit has its own steeper slope, meaning the support envelope has its own structural dynamics.</P>
-          <P><Em>Problem 3: The bubble ceiling is arbitrary.</Em> Our fix: <Em>Extreme Value Theory</Em> with a Generalized Pareto Distribution fitted to actual positive residuals above the 85th percentile.</P>
-          <P><Dim>All three changes build on the same Power Law. We're not replacing Santostasi and Burger. We're calibrating their model for today's market.</Dim></P>
+          <P>{renderMd(tr("wp.t03.p3"))}</P>
+          <P>{renderMd(tr("wp.t03.p4"))}</P>
+          <P>{renderMd(tr("wp.t03.p5"))}</P>
+          <P>{renderMd(tr("wp.t03.p6"))}</P>
         </WpToggle>
       </div>
 
-      <div id="wp-Fractals"><CatLabel label="Fractals" />
-        <WpToggle num="04" title="Why normal models fail Bitcoin">
-          <P>Bitcoin's daily returns have a kurtosis above 10. A normal distribution has a kurtosis of 3. Extreme moves happen 5 to 10 times more often than Gaussian models predict.</P>
+      <div id="wp-Fractals"><CatLabel label={tr("wp.cat.fractals")} />
+        <WpToggle num="04" title={tr("wp.t04.title")}>
+          <P>{renderMd(tr("wp.t04.p1"))}</P>
           <FatTailsChart d={d} />
-          <P><Dim>This isn't a quirk. It's structural. Bitcoin exhibits fat tails, volatility clustering, and long memory (Hurst exponent H &gt; 0.55).</Dim></P>
-          <P>Our solution: <Em>Mandelbrot's Multifractal Model of Asset Returns (MMAR)</Em>. Volatility isn't random — it has a self-similar structure across time scales.</P>
-          <P><Dim>We implement MMAR through DFA for the Hurst exponent, multifractal partition function for λ², and regime-switching Ornstein-Uhlenbeck for state detection.</Dim></P>
+          <P>{renderMd(tr("wp.t04.p2"))}</P>
+          <P>{renderMd(tr("wp.t04.p3"))}</P>
+          <P>{renderMd(tr("wp.t04.p4"))}</P>
         </WpToggle>
       </div>
 
-      <div id="wp-Simulation"><CatLabel label="Simulation" />
-        <WpToggle num="05" title="2,000 possible futures">
-          <P>We simulate 2,000 paths over a 3-year horizon. Each path uses fractal cascades, Hurst-correlated noise, empirical shock resampling, and a reflective floor at RANSAC support.</P>
-          <P>What we deliberately excluded: <Em>the Ornstein-Uhlenbeck mean-reversion force</Em>. <Dim>Early versions pulled prices back toward fair value. This artificially dampened tail risk. The paths were more honest on pure MMAR/Hurst dynamics.</Dim></P>
-          <P>From 2,000 paths we extract: percentiles at each horizon, probability of loss at 1 month through 3 years, and probability of reaching fair value.</P>
+      <div id="wp-Simulation"><CatLabel label={tr("wp.cat.simulation")} />
+        <WpToggle num="05" title={tr("wp.t05.title")}>
+          <P>{renderMd(tr("wp.t05.p1"))}</P>
+          <P>{renderMd(tr("wp.t05.p2"))}</P>
+          <P>{renderMd(tr("wp.t05.p3"))}</P>
         </WpToggle>
       </div>
 
-      <div id="wp-Signal"><CatLabel label="Signal" />
-        <WpToggle num="06" title="The signal: pure σ, no optimization">
-          <P>The signal is simple. Not because we couldn't build something complex, but because we tested the complex version and it wasn't more accurate — just harder to defend.</P>
+      <div id="wp-Signal"><CatLabel label={tr("wp.cat.signal")} />
+        <WpToggle num="06" title={tr("wp.t06.title")}>
+          <P>{renderMd(tr("wp.t06.p1"))}</P>
           <SigmaRuler d={d} />
-          <P><Dim>σ is the number of standard deviations from Power Law fair value. No neural networks. No optimization.</Dim></P>
-          <P>Why not optimize? <Em>Because optimization lies.</Em> When you run a grid search over 625 weight combinations and report the best result, you're reporting in-sample accuracy.</P>
-          <P><Dim>We built a robust backtest that refits the Power Law at each point using only historical data. σ &lt; -0.5 works with 100% accuracy even with 8 years of data. The threshold is structural.</Dim></P>
-          <P>The sell signal at σ ≥ 0.8 requires PL maturity (b &gt; 4.0). The Power Law needs ~8 years before the slope converges.</P>
+          <P>{renderMd(tr("wp.t06.p2"))}</P>
+          <P>{renderMd(tr("wp.t06.p3"))}</P>
+          <P>{renderMd(tr("wp.t06.p4"))}</P>
+          <P>{renderMd(tr("wp.t06.p5"))}</P>
         </WpToggle>
       </div>
 
-      <div id="wp-Validation"><CatLabel label="Validation" />
-        <WpToggle num="07" title="What we know, and what we don't">
-          <P><Em>What the model gets right:</Em> The buy signal has never been wrong. 100% accuracy across every cycle since 2016. The sell signal: when σ exceeded 0.8, 94% lost money at 12 months.</P>
-          <P><Em>What the model gets wrong:</Em> The Monte Carlo systematically underestimates risk above σ = 0.5.</P>
+      <div id="wp-Validation"><CatLabel label={tr("wp.cat.validation")} />
+        <WpToggle num="07" title={tr("wp.t07.title")}>
+          <P>{renderMd(tr("wp.t07.p1"))}</P>
+          <P>{renderMd(tr("wp.t07.p2"))}</P>
           <CalibrationChart d={d} />
-          <P><Dim>The MC predicts 6-24% loss in elevated zones. Actual: 62-94%. This is why the sell signal uses σ thresholds directly.</Dim></P>
-          <P>The Power Law is empirical, not physical. Episode analysis uses 5-7 episodes — a tiny sample. The model cannot predict structural breaks.</P>
-          <P><Em>This is a probability map — the best one we know how to build. That is not a guarantee.</Em></P>
+          <P>{renderMd(tr("wp.t07.p3"))}</P>
+          <P>{renderMd(tr("wp.t07.p4"))}</P>
+          <P>{renderMd(tr("wp.t07.p5"))}</P>
         </WpToggle>
       </div>
 
       <div style={{ padding: "32px 0", fontFamily: bd, fontSize: 12, color: t.dim, lineHeight: 1.6 }}>
-        Built by Edu Forte and CommonSense Digital Asset Management. Barcelona.
+        {tr("wp.builtBy")}
       </div>
     </div>
   );
