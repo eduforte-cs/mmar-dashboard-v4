@@ -1,0 +1,311 @@
+<!doctype html>
+<!--
+  OG image preview — Option 3 variants (pure typography)
+
+  Temporary dev file. NOT in public/, so it's not deployed to Vercel.
+  Open with "Open File" in Chrome, scroll through, pick your favourite.
+  Each card is rendered at the true 1200 × 630 Open Graph dimensions
+  using the same Switzer + DM Mono fonts as the live site.
+
+  After picking, this file will be replaced with a final PNG at
+  public/og-image.png.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1260">
+  <title>OG previews — Option 3 variants</title>
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600,700,800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      font-family: 'Switzer', sans-serif;
+      color: #F0EDDF;
+      padding: 48px 24px 80px;
+      min-width: 1248px;
+    }
+    h1 {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      color: #F0EDDF;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    h1 + p {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: #706E64;
+      margin-bottom: 40px;
+    }
+    .label {
+      font-family: 'DM Mono', monospace;
+      color: #B0AD9F;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin: 48px 0 12px;
+    }
+    .label .sub {
+      color: #706E64;
+      text-transform: none;
+      letter-spacing: 0.02em;
+      margin-left: 10px;
+    }
+    /* Every OG is rendered at exactly 1200 x 630 so you can screenshot it */
+    .og {
+      width: 1200px;
+      height: 630px;
+      background: #1A1B18;
+      color: #F0EDDF;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      border: 1px solid #2E2F2A;
+    }
+
+    /* ═══ Variant A — Classic left stack, green question mark ═══ */
+    .og-a {
+      padding: 72px 88px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .og-a .brand {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 600;
+      font-size: 20px;
+      color: #706E64;
+      letter-spacing: 0.02em;
+    }
+    .og-a .brand strong {
+      color: #F0EDDF;
+      font-weight: 700;
+    }
+    .og-a .question {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 800;
+      font-size: 140px;
+      line-height: 0.92;
+      letter-spacing: -0.045em;
+    }
+    .og-a .accent { color: #27AE60; }
+    .og-a .footer {
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      color: #706E64;
+      letter-spacing: 0.02em;
+    }
+    .og-a .footer .sep { color: #3A3B36; margin: 0 10px; }
+
+    /* ═══ Variant B — Centered with green dot ═══ */
+    .og-b {
+      padding: 72px 88px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .og-b .question {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 800;
+      font-size: 130px;
+      line-height: 0.92;
+      letter-spacing: -0.045em;
+    }
+    .og-b .dot {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      background: #27AE60;
+      border-radius: 50%;
+      vertical-align: baseline;
+      margin-left: 18px;
+      transform: translateY(-8px);
+      box-shadow: 0 0 22px rgba(39, 174, 96, 0.35);
+    }
+    .og-b .footer {
+      position: absolute;
+      bottom: 56px;
+      left: 0; right: 0;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: #706E64;
+      letter-spacing: 0.04em;
+    }
+    .og-b .footer .sep { color: #3A3B36; margin: 0 10px; }
+
+    /* ═══ Variant C — Mixed weight, BITCOIN dominates ═══ */
+    .og-c {
+      padding: 72px 88px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+    .og-c .line1 {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 300;
+      font-size: 64px;
+      color: #706E64;
+      letter-spacing: -0.015em;
+      line-height: 1;
+    }
+    .og-c .line2 {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 800;
+      font-size: 210px;
+      line-height: 0.88;
+      letter-spacing: -0.055em;
+      color: #F0EDDF;
+      margin: 4px 0 -4px -10px;
+    }
+    .og-c .line3 {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 400;
+      font-size: 78px;
+      color: #F0EDDF;
+      letter-spacing: -0.025em;
+      line-height: 1;
+    }
+    .og-c .qmark { color: #27AE60; }
+    .og-c .footer {
+      position: absolute;
+      bottom: 56px;
+      left: 88px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: #706E64;
+      letter-spacing: 0.02em;
+    }
+    .og-c .footer .sep { color: #3A3B36; margin: 0 10px; }
+
+    /* ═══ Variant D — Sentence case, elegant ═══ */
+    .og-d {
+      padding: 72px 88px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+    .og-d .question {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 700;
+      font-size: 118px;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+    .og-d .accent { color: #27AE60; }
+    .og-d .footer {
+      position: absolute;
+      bottom: 56px;
+      left: 88px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: #706E64;
+      letter-spacing: 0.02em;
+    }
+    .og-d .footer .sep { color: #3A3B36; margin: 0 10px; }
+
+    /* ═══ Variant E — With credibility strip ═══ */
+    .og-e {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+    }
+    .og-e .question {
+      font-family: 'Switzer', sans-serif;
+      font-weight: 800;
+      font-size: 134px;
+      line-height: 0.92;
+      letter-spacing: -0.045em;
+      padding: 0 88px;
+      margin-bottom: 64px;
+    }
+    .og-e .accent { color: #27AE60; }
+    .og-e .strip {
+      height: 78px;
+      border-top: 1px solid #2E2F2A;
+      display: flex;
+      align-items: center;
+      padding: 0 88px;
+      gap: 48px;
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      color: #B0AD9F;
+      letter-spacing: 0.03em;
+    }
+    .og-e .strip .fact { display: flex; align-items: center; gap: 12px; }
+    .og-e .strip .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #27AE60;
+      box-shadow: 0 0 12px rgba(39, 174, 96, 0.5);
+    }
+    .og-e .strip .sep { color: #3A3B36; }
+    .og-e .strip .brand {
+      margin-left: auto;
+      color: #706E64;
+      font-family: 'Switzer', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Open Graph image — Option 3 variants</h1>
+  <p>Each card is rendered at exactly 1200 × 630 with the site's real Switzer + DM Mono fonts. Pick your favourite and tell Claude "variant X".</p>
+
+  <!-- ═══ A ═══ -->
+  <div class="label">Variant A <span class="sub">— Classic stack, left-aligned, green question mark</span></div>
+  <div class="og og-a">
+    <div class="brand"><strong>CommonSense</strong> · Free quant signal</div>
+    <div class="question">SHOULD I BUY<br>BITCOIN<br>TODAY<span class="accent">?</span></div>
+    <div class="footer">free<span class="sep">·</span>backtested daily since 2017<span class="sep">·</span>shouldibuybitcointoday.com</div>
+  </div>
+
+  <!-- ═══ B ═══ -->
+  <div class="label">Variant B <span class="sub">— Centered, green dot accent</span></div>
+  <div class="og og-b">
+    <div class="question">SHOULD I BUY<br>BITCOIN<br>TODAY?<span class="dot"></span></div>
+    <div class="footer">free<span class="sep">·</span>backtested daily since 2017<span class="sep">·</span>shouldibuybitcointoday.com</div>
+  </div>
+
+  <!-- ═══ C ═══ -->
+  <div class="label">Variant C <span class="sub">— Mixed weight hierarchy (BITCOIN dominates)</span></div>
+  <div class="og og-c">
+    <div class="line1">Should I buy</div>
+    <div class="line2">BITCOIN</div>
+    <div class="line3">today<span class="qmark">?</span></div>
+    <div class="footer">free<span class="sep">·</span>backtested daily since 2017<span class="sep">·</span>shouldibuybitcointoday.com</div>
+  </div>
+
+  <!-- ═══ D ═══ -->
+  <div class="label">Variant D <span class="sub">— Sentence case, elegant (The Economist vibe)</span></div>
+  <div class="og og-d">
+    <div class="question">Should I buy<br>Bitcoin today<span class="accent">?</span></div>
+    <div class="footer">free<span class="sep">·</span>backtested daily since 2017<span class="sep">·</span>shouldibuybitcointoday.com</div>
+  </div>
+
+  <!-- ═══ E ═══ -->
+  <div class="label">Variant E <span class="sub">— With credibility strip at the bottom</span></div>
+  <div class="og og-e">
+    <div class="question">SHOULD I BUY<br>BITCOIN<br>TODAY<span class="accent">?</span></div>
+    <div class="strip">
+      <div class="fact"><div class="dot"></div>free forever</div>
+      <div class="sep">·</div>
+      <div class="fact">backtested daily since 2017</div>
+      <div class="sep">·</div>
+      <div class="fact">16 years of data</div>
+      <div class="brand">shouldibuybitcointoday.com</div>
+    </div>
+  </div>
+
+</body>
+</html>
