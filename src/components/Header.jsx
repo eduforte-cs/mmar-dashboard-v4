@@ -33,7 +33,7 @@ const MOBILE_MENU_TABS = [
 
 export default function Header({ tab, setTab, r2, user, onLogout }) {
   const { t, mode, toggle } = useTheme();
-  const { lang, setLang } = useI18n();
+  const { lang, setLang, t: tr } = useI18n();
   const [mobileMenu, setMobileMenu] = useState(false);
 
   return (
