@@ -16,6 +16,50 @@ pueda escanear rápido qué cambió y cuándo.
 
 ---
 
+## 2026-04-14 (4) — Auto-updating lastmod dates
+
+Close out the SEO sprint pendings by automating what used to be
+manual date-bumps in the three crawler-facing text assets.
+
+### Added
+
+- **`lastModPlugin`** in `vite.config.js` — a small build-time Vite
+  plugin (runs only on `vite build`, not `dev`) that walks the
+  output `dist/` directory after the main bundle is written and
+  rewrites every `{{LAST_MOD}}` token in `sitemap.xml`, `llms.txt`
+  and `llms-full.txt` with the current ISO date (`YYYY-MM-DD`).
+  Source files in `public/` keep the placeholder verbatim so the
+  git history doesn't churn on every build; only the shipped copy
+  in `dist/` gets the real date baked in.
+
+### Changed
+
+- **`public/sitemap.xml`** — replace hardcoded `<lastmod>2026-03-26</lastmod>`
+  with `<lastmod>{{LAST_MOD}}</lastmod>`. Google Search Console
+  will now see a fresh `lastmod` on every deploy, which helps
+  re-crawling priority after the meta-description and OG image
+  updates from today's earlier commits.
+- **`public/llms.txt`** and **`public/llms-full.txt`** — same
+  treatment for the `> Last updated: YYYY-MM-DD` header line.
+
+### Still manual (pending user action, no code change possible)
+
+- **Google Search Console sitemap re-submit.** The user needs to
+  visit https://search.google.com/search-console, select the
+  `shouldibuybitcointoday.com` property, go to Sitemaps, remove
+  the old entry (if any), re-submit `https://shouldibuybitcointoday.com/sitemap.xml`,
+  and trigger a fresh URL inspection + "Request indexing" on the
+  root URL so Google picks up the new title / meta description
+  / OG image within 24–48 hours instead of the usual weeks.
+- **Facebook Debugger re-scrape.** Still pending from the OG
+  image commit earlier today. Link:
+  https://developers.facebook.com/tools/debug/ → paste URL →
+  "Scrape Again". Also clears WhatsApp / iMessage / LinkedIn
+  caches indirectly because they all consume the Facebook OpenGraph
+  scrape results.
+
+---
+
 ## 2026-04-14 (3) — OG image + favicon set
 
 Ship the first real Open Graph image and a proper multi-size favicon

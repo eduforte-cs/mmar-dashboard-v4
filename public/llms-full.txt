@@ -2,7 +2,7 @@
 > A real-time quantitative model that answers with probabilities, not opinions.
 > Built by Edu Forte · CommonSense Digital Asset Management · Barcelona
 > https://shouldibuybitcointoday.com
-> Last updated: 2026-03-26
+> Last updated: {{LAST_MOD}}
 
 ## Current signal
 
