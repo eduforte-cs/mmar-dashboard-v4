@@ -7,9 +7,11 @@
 // and satori's entire stack weighs ~20 MB vs puppeteer's ~200 MB.
 //
 // Font stack:
-//   • Inter (via @fontsource/inter) — fallback for Switzer, which
-//     lives only on Fontshare's blocked CDN. Visually close enough
-//     that the result reads as "modern brand typography".
+//   • Switzer Bold / Extrabold (OTF) — the live site's brand font.
+//     Shipped as local files in scripts/ because Fontshare's CDN is
+//     blocked from the sandbox. Download refresh: grab new TTF/OTF
+//     from https://www.fontshare.com/fonts/switzer and drop into
+//     scripts/.
 //   • DM Mono (via @fontsource/dm-mono) — matches the live site's
 //     monospace used for data and captions.
 //
@@ -25,15 +27,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 // ── Load fonts as ArrayBuffers ──────────────────────────────────
-function loadFont(relPath) {
-  const full = path.join(root, "node_modules", relPath);
-  return fs.readFileSync(full);
+function loadLocal(relPath) {
+  return fs.readFileSync(path.join(root, relPath));
+}
+function loadModule(relPath) {
+  return fs.readFileSync(path.join(root, "node_modules", relPath));
 }
 
-// Satori supports TTF/OTF/WOFF. Try WOFF first (what @fontsource ships).
-const interRegular = loadFont("@fontsource/inter/files/inter-latin-600-normal.woff");
-const interBold    = loadFont("@fontsource/inter/files/inter-latin-800-normal.woff");
-const dmMonoReg    = loadFont("@fontsource/dm-mono/files/dm-mono-latin-500-normal.woff");
+// Switzer OTF files live under scripts/ (committed to the repo).
+const switzerBold      = loadLocal("scripts/Switzer-Bold.otf");
+const switzerExtrabold = loadLocal("scripts/Switzer-Extrabold.otf");
+// DM Mono from @fontsource (WOFF; satori accepts WOFF too).
+const dmMonoReg        = loadModule("@fontsource/dm-mono/files/dm-mono-latin-500-normal.woff");
 
 // ── Colour palette (matches src/theme/tokens.js DARK) ───────────
 const C = {
@@ -56,7 +61,7 @@ const design = {
       backgroundColor: C.bg,
       display: "flex",
       flexDirection: "column",
-      fontFamily: "Inter",
+      fontFamily: "Switzer",
     },
     children: [
       // ── Header strip ────────────────────────────────────────
@@ -117,7 +122,7 @@ const design = {
                         alignItems: "center",
                         gap: "14px",
                         fontSize: "26px",
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: C.dim,
                         letterSpacing: "0.12em",
                       },
@@ -215,9 +220,9 @@ const svg = await satori(design, {
   width: 1200,
   height: 630,
   fonts: [
-    { name: "Inter", data: interRegular, weight: 600, style: "normal" },
-    { name: "Inter", data: interBold, weight: 800, style: "normal" },
-    { name: "DM Mono", data: dmMonoReg, weight: 500, style: "normal" },
+    { name: "Switzer", data: switzerBold,      weight: 700, style: "normal" },
+    { name: "Switzer", data: switzerExtrabold, weight: 800, style: "normal" },
+    { name: "DM Mono", data: dmMonoReg,        weight: 500, style: "normal" },
   ],
 });
 
