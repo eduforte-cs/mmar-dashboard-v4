@@ -1,5 +1,6 @@
 import React from "react";
 import { useTheme } from "../../theme/ThemeContext";
+import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 import { fmtK } from "../../engine/constants.js";
 import { plPrice } from "../../engine/powerlaw.js";
@@ -23,6 +24,7 @@ function ChartTooltip({ active, payload, label, t }) {
 }
 
 export function MCChart({ percentiles, plForecast, horizon, stats, t }) {
+  const { t: tr } = useI18n();
   if (!percentiles?.length) return null;
   const maxDays = horizon === "1Y" ? 365 : 365 * 3;
   const tickFormat = horizon === "1Y" ? (v => `${Math.round(v / 30)}m`) : (v => `${(v / 365).toFixed(1)}y`);
@@ -69,8 +71,8 @@ export function MCChart({ percentiles, plForecast, horizon, stats, t }) {
         </ResponsiveContainer>
       </div>
       <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 6 }}>
-        {[{ label: "P50 median", color: t.cream }, { label: "P5/P95", color: t.faint }, { label: "Power Law", color: "#27AE60" }].map(l => (
-          <span key={l.label} style={{ fontFamily: mn, fontSize: 9, color: l.color }}>{l.label}</span>
+        {[{ id: "p50", labelKey: "pro.legend.p50median", color: t.cream }, { id: "p5p95", labelKey: "pro.legend.p5p95", color: t.faint }, { id: "pl", labelKey: "pro.legend.powerLaw", color: "#27AE60" }].map(l => (
+          <span key={l.id} style={{ fontFamily: mn, fontSize: 9, color: l.color }}>{tr(l.labelKey)}</span>
         ))}
       </div>
     </>
@@ -78,6 +80,7 @@ export function MCChart({ percentiles, plForecast, horizon, stats, t }) {
 }
 
 export function SigmaChart({ sigmaChart, t }) {
+  const { t: tr } = useI18n();
   if (!sigmaChart?.length) return null;
 
   // Sample for performance (every 3rd point)
@@ -86,7 +89,7 @@ export function SigmaChart({ sigmaChart, t }) {
   return (
     <>
       <p style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.6, margin: "0 0 14px" }}>
-        How far Bitcoin has deviated from the Power Law model throughout its history. Extreme positive values preceded corrections, extreme negative values preceded rallies.
+        {tr("pro.note.sigmaChart")}
       </p>
       <div style={{ background: t.bgAlt, border: `1px solid ${t.borderFaint}`, borderRadius: 4, padding: "12px 8px 4px", height: 240 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -106,38 +109,39 @@ export function SigmaChart({ sigmaChart, t }) {
         </ResponsiveContainer>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        <span style={{ fontFamily: mn, fontSize: 9, color: "#2F80ED" }}>← undervalued</span>
-        <span style={{ fontFamily: mn, fontSize: 9, color: "#F2994A" }}>overvalued →</span>
+        <span style={{ fontFamily: mn, fontSize: 9, color: "#2F80ED" }}>{tr("pro.legend.undervalued")}</span>
+        <span style={{ fontFamily: mn, fontSize: 9, color: "#F2994A" }}>{tr("pro.legend.overvalued")}</span>
       </div>
     </>
   );
 }
 
 export function MCHorizonTable({ d, t }) {
+  const { t: tr } = useI18n();
   const { S0, a, b, t0, percentiles, percentiles3y, plToday, pl1y, pl2y, pl3y } = d;
 
   const rows = [
-    { label: "Today", days: 0, pcts: percentiles, plV: plToday },
-    { label: "6 months", days: 182, pcts: percentiles, plV: plPrice(a, b, t0 + 182) },
-    { label: "1 year", days: 365, pcts: percentiles, plV: pl1y },
-    { label: "2 years", days: 730, pcts: percentiles3y, plV: pl2y },
-    { label: "3 years", days: 1095, pcts: percentiles3y, plV: pl3y },
+    { id: "today", labelKey: "pro.horizon.today", days: 0, pcts: percentiles, plV: plToday },
+    { id: "6m",    labelKey: "pro.horizon.6m",    days: 182, pcts: percentiles, plV: plPrice(a, b, t0 + 182) },
+    { id: "1y",    labelKey: "pro.horizon.1y",    days: 365, pcts: percentiles, plV: pl1y },
+    { id: "2y",    labelKey: "pro.horizon.2y",    days: 730, pcts: percentiles3y, plV: pl2y },
+    { id: "3y",    labelKey: "pro.horizon.3y",    days: 1095, pcts: percentiles3y, plV: pl3y },
   ];
 
   return (
     <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       {/* Header */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}`, minWidth: 400 }}>
-        {["Horizon", "PL Target", "Bear (P5)", "Base (P50)", "Bull (P95)"].map(h => (
-          <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Horizon" ? "left" : "right" }}>{h}</div>
+        {[{ k: "pro.horizon", align: "left" }, { k: "pro.col.plTarget", align: "right" }, { k: "pro.bear", align: "right" }, { k: "pro.median", align: "right", suffix: " (P50)" }, { k: "pro.bull", align: "right" }].map((h, i) => (
+          <div key={i} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h.align }}>{tr(h.k)}{h.suffix || ""}</div>
         ))}
       </div>
       {rows.map(r => {
         const idx = Math.min(Math.floor(r.days / 5), r.pcts.length - 1);
         const row = r.days === 0 ? { p5: S0, p50: S0, p95: S0 } : r.pcts[idx] || {};
         return (
-          <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}`, minWidth: 400 }}>
-            <div style={{ fontFamily: bd, fontSize: 12, fontWeight: r.days === 0 ? 600 : 400, color: t.cream }}>{r.label}</div>
+          <div key={r.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.borderFaint}`, minWidth: 400 }}>
+            <div style={{ fontFamily: bd, fontSize: 12, fontWeight: r.days === 0 ? 600 : 400, color: t.cream }}>{tr(r.labelKey)}</div>
             <div style={{ fontFamily: mn, fontSize: 12, color: "#27AE60", textAlign: "right" }}>{fmtK(r.plV)}</div>
             <div style={{ fontFamily: mn, fontSize: 12, color: "#EB5757", textAlign: "right" }}>{fmtK(row.p5)}</div>
             <div style={{ fontFamily: mn, fontSize: 12, color: t.cream, textAlign: "right", fontWeight: 600 }}>{fmtK(row.p50)}</div>

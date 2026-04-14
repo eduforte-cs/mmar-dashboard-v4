@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useTheme } from "../../theme/ThemeContext";
+import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 import { fmtK, fmtY, daysSinceGenesis } from "../../engine/constants.js";
 import { plPrice } from "../../engine/powerlaw.js";
@@ -19,6 +20,7 @@ function fmtLogT(v) {
 
 export default function PowerLawChart({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const [range, setRange] = useState("2017");
 
   const { a, b, resMean, resStd, resFloor, ransac, sigmaChart, t0, lastDate } = d;
@@ -84,19 +86,19 @@ export default function PowerLawChart({ d }) {
   }, [sigmaChart, a, b, resMean, resStd, resFloor, ransac, t0, lastDate, range]);
 
   const legendItems = [
-    { color: "#EB5757", label: "Bubble zone", dash: false },
-    { color: "#F2994A", label: "Cycle ceiling", dash: true },
-    { color: "#E8A838", label: "Slightly warm", dash: true },
-    { color: "#27AE60", label: "Fair Value", dash: false },
-    { color: "#56CCF2", label: "Mild discount", dash: true },
-    { color: "#2F80ED", label: "Support", dash: false },
-    { color: t.cream, label: "BTC Price", dash: false },
+    { id: "bub",  color: "#EB5757", labelKey: "pro.legend.bubbleZone",   dash: false },
+    { id: "ceil", color: "#F2994A", labelKey: "pro.legend.cycleCeiling", dash: true },
+    { id: "warm", color: "#E8A838", labelKey: "pro.legend.slightlyWarm", dash: true },
+    { id: "fv",   color: "#27AE60", labelKey: "pro.legend.fairValue",    dash: false },
+    { id: "mild", color: "#56CCF2", labelKey: "pro.legend.mildDiscount", dash: true },
+    { id: "sup",  color: "#2F80ED", labelKey: "pro.legend.support",      dash: false },
+    { id: "btc",  color: t.cream,   labelKey: "pro.legend.btcPrice",     dash: false },
   ];
 
   return (
     <>
       <p style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.6, margin: "0 0 14px" }}>
-        Bitcoin's price has followed a power law growth curve since 2010. The bands show historical deviation ranges. When price touches the upper bands, it tends to correct. When it reaches lower bands, it tends to recover.
+        {tr("pro.note.plChart")}
       </p>
 
       {/* Range selector */}
@@ -109,19 +111,19 @@ export default function PowerLawChart({ d }) {
             color: range === r ? t.bg : t.faint,
             cursor: "pointer", borderRadius: 4, fontWeight: 500,
           }}>
-            {r === "all" ? "All time" : `${r}+`}
+            {r === "all" ? tr("pro.range.allTime") : `${r}+`}
           </button>
         ))}
       </div>
 
       {/* Legend */}
       <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
-        {legendItems.map(({ color, dash, label }) => (
-          <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        {legendItems.map(({ id, color, dash, labelKey }) => (
+          <div key={id} style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <svg width="16" height="3">
               <line x1="0" y1="1.5" x2="16" y2="1.5" stroke={color} strokeWidth={2} strokeDasharray={dash ? "4 2" : undefined} />
             </svg>
-            <span style={{ fontFamily: bd, fontSize: 10, color: t.faint }}>{label}</span>
+            <span style={{ fontFamily: bd, fontSize: 10, color: t.faint }}>{tr(labelKey)}</span>
           </div>
         ))}
       </div>
@@ -165,7 +167,7 @@ export default function PowerLawChart({ d }) {
       </div>
 
       <div style={{ fontFamily: mn, fontSize: 9, color: t.ghost, textAlign: "center", marginTop: 6 }}>
-        Log-log scale · X: log₁₀(days since genesis) · Y: log₁₀(price USD)
+        {tr("pro.note.plLogScale")}
       </div>
     </>
   );

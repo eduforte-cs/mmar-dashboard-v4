@@ -1,5 +1,6 @@
 import React from "react";
 import { useTheme } from "../../theme/ThemeContext";
+import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 import { fmtK } from "../../engine/constants.js";
 import { plPrice } from "../../engine/powerlaw.js";
@@ -8,13 +9,14 @@ import { keyLevels, allBands, supportFloor } from "../../engine/bands.js";
 
 export function KeyLevels({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const { S0, a, b, t0, resMean, resStd, resFloor, ransac } = d;
   const levels = keyLevels(t0, S0, { a, b, resMean, resStd, resFloor, ransac });
 
   return (
     <>
       <p style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.6, margin: "0 0 14px" }}>
-        Structurally important price levels from the Power Law model. They act as gravitational anchors across market cycles.
+        {tr("pro.note.keyLevels")}
       </p>
       {levels.map((lv, i) => {
         const pct = ((lv.price - S0) / S0 * 100);
@@ -39,14 +41,15 @@ export function KeyLevels({ d }) {
 
 export function ForwardProjections({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const { S0, a, b, t0, resMean, resStd, resFloor, ransac } = d;
 
   const horizons = [
-    { label: "1 month", days: 30 },
-    { label: "3 months", days: 90 },
-    { label: "6 months", days: 182 },
-    { label: "1 year", days: 365 },
-    { label: "3 years", days: 1095 },
+    { id: "1m", labelKey: "pro.horizon.1m", days: 30 },
+    { id: "3m", labelKey: "pro.horizon.3m", days: 90 },
+    { id: "6m", labelKey: "pro.horizon.6m", days: 182 },
+    { id: "1y", labelKey: "pro.horizon.1y", days: 365 },
+    { id: "3y", labelKey: "pro.horizon.3y", days: 1095 },
   ].map(h => {
     const bParams = { a, b, resMean, resStd, resFloor, ransac };
     const bl = allBands(t0 + h.days, bParams);
@@ -67,19 +70,19 @@ export function ForwardProjections({ d }) {
   return (
     <>
       <p style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.6, margin: "0 0 14px" }}>
-        Power Law fair value at each horizon with the full σ-band structure. All percentages relative to today's {fmtK(S0)}.
+        {tr("pro.note.forwardProj").replace("{price}", fmtK(S0))}
       </p>
       <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       {/* Header */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}`, minWidth: 500 }}>
-        {["Horizon", "Support", "Discount", "Fair Value", "Ceiling", "Bubble"].map(h => (
-          <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Horizon" ? "left" : "right" }}>{h}</div>
+        {[{ k: "pro.horizon", align: "left" }, { k: "pro.col.support", align: "right" }, { k: "pro.col.discount", align: "right" }, { k: "pro.level.fairValue", align: "right" }, { k: "pro.col.ceiling", align: "right" }, { k: "pro.col.bubble", align: "right" }].map((h, i) => (
+          <div key={i} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h.align }}>{tr(h.k)}</div>
         ))}
       </div>
       {/* Rows */}
       {horizons.map(h => (
-        <div key={h.label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr", padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}`, minWidth: 500 }}>
-          <div style={{ fontFamily: bd, fontSize: 12, fontWeight: 500, color: t.cream }}>{h.label}</div>
+        <div key={h.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr", padding: "10px 0", borderBottom: `1px solid ${t.borderFaint}`, minWidth: 500 }}>
+          <div style={{ fontFamily: bd, fontSize: 12, fontWeight: 500, color: t.cream }}>{tr(h.labelKey)}</div>
           {[h.support, h.discount, h.plF, h.ceiling, h.bubble].map((price, i) => (
             <div key={i} style={{ textAlign: "right" }}>
               <div style={{ fontFamily: mn, fontSize: 11, color: t.cream, fontWeight: i === 2 ? 600 : 400 }}>{fmtK(price)}</div>
@@ -95,6 +98,7 @@ export function ForwardProjections({ d }) {
 
 export function RiskMatrix({ d }) {
   const { t } = useTheme();
+  const { t: tr } = useI18n();
   const { S0, a, b, t0, resMean, resStd, resFloor, percentiles } = d;
 
   const riskLevels = [5, 10, 25, 50, 75, 90, 95];
@@ -114,13 +118,13 @@ export function RiskMatrix({ d }) {
   return (
     <>
       <p style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.6, margin: "0 0 14px" }}>
-        Power Law statistical distribution vs Monte Carlo simulation at each percentile (1Y horizon).
+        {tr("pro.note.riskMatrix")}
       </p>
       <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       {/* Header */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "8px 0", borderBottom: `1px solid ${t.border}`, minWidth: 360 }}>
-        {["Percentile", "PL + σ", "Monte Carlo", "Δ"].map(h => (
-          <div key={h} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h === "Percentile" ? "left" : "right" }}>{h}</div>
+        {[{ k: "pro.col.percentile", align: "left" }, { k: "pro.col.plPlusSigma", align: "right" }, { k: "pro.col.monteCarlo", align: "right" }, { k: "pro.col.delta", align: "right" }].map((h, i) => (
+          <div key={i} style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: h.align }}>{tr(h.k)}</div>
         ))}
       </div>
       {rows.map(r => (
