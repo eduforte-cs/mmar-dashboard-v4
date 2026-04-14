@@ -43,12 +43,16 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
         borderBottom: `1px solid ${t.border}`,
         display: "flex", alignItems: "stretch",
       }}>
-        {/* Brand */}
-        <div style={{
-          padding: "20px 28px",
-          borderRight: `1px solid ${t.border}`,
-          display: "flex", alignItems: "center",
-        }}>
+        {/* Brand — clicking goes home (Lite) */}
+        <div
+          onClick={() => setTab("lite")}
+          style={{
+            padding: "20px 28px",
+            borderRight: `1px solid ${t.border}`,
+            display: "flex", alignItems: "center",
+            cursor: "pointer",
+          }}
+        >
           <span style={{
             fontFamily: bd, fontSize: 18, fontWeight: 700,
             color: t.cream, letterSpacing: "-0.02em",
@@ -178,13 +182,17 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
         display: "flex", alignItems: "stretch",
         width: "100%", boxSizing: "border-box", overflow: "hidden",
       }}>
-        {/* Brand */}
-        <div style={{
-          padding: "14px 16px",
-          borderRight: `1px solid ${t.border}`,
-          display: "flex", alignItems: "center",
-          flexShrink: 0,
-        }}>
+        {/* Brand — clicking goes home (Lite) */}
+        <div
+          onClick={() => { setTab("lite"); setMobileMenu(false); }}
+          style={{
+            padding: "14px 16px",
+            borderRight: `1px solid ${t.border}`,
+            display: "flex", alignItems: "center",
+            flexShrink: 0,
+            cursor: "pointer",
+          }}
+        >
           <span style={{
             fontFamily: bd, fontSize: 14, fontWeight: 700,
             color: t.cream, letterSpacing: "-0.02em",
