@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
+import { I18nProvider } from "./i18n/I18nContext";
 import { bd, mn } from "./theme/tokens";
 import useEngine from "./hooks/useEngine";
 import Header from "./components/Header";
+import Splash, { msgToProgress } from "./components/Splash";
 import Hero from "./sections/Hero";
 import Lite from "./sections/Lite";
 import Pro from "./sections/Pro";
@@ -15,28 +17,12 @@ import About from "./sections/About";
 import Footer from "./sections/Footer";
 import Landing from "./sections/Landing";
 import { supabase } from "./lib/supabase";
+import { fetchSpotPrice } from "./data/fetch.js";
 import { trackTabView, trackPageView, trackSignalView } from "./tracking";
 
-function Loading({ msg }) {
-  const { t } = useTheme();
-  return (
-    <div style={{
-      background: t.bg, minHeight: "100vh",
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 32, marginBottom: 16 }}>₿</div>
-        <div style={{
-          fontFamily: bd, color: t.faint, fontSize: 14,
-          animation: "fi 1.5s ease-in-out infinite alternate",
-        }}>
-          {msg}
-        </div>
-      </div>
-    </div>
-  );
-}
-
+// ─────────────────────────────────────────────────────────────────
+// ErrorScreen — shown when the engine fails.
+// ─────────────────────────────────────────────────────────────────
 function ErrorScreen({ msg, onRetry }) {
   const { t } = useTheme();
   return (
@@ -71,53 +57,39 @@ function ErrorScreen({ msg, onRetry }) {
   );
 }
 
-function Placeholder({ label }) {
-  const { t } = useTheme();
-  return (
-    <div style={{
-      minHeight: "60vh", display: "flex", flexDirection: "column",
-      justifyContent: "center", alignItems: "center", gap: 12,
-    }}>
-      <div style={{ fontFamily: bd, fontSize: 24, fontWeight: 700, color: t.cream, letterSpacing: "-0.03em" }}>{label}</div>
-      <div style={{ fontFamily: bd, fontSize: 14, color: t.faint }}>Coming soon</div>
-    </div>
-  );
-}
-
+// ─────────────────────────────────────────────────────────────────
+// Dashboard (root) — owns auth state, decides what to mount.
+//
+// Decision tree:
+//   authChecked === false    →  <Splash> "Checking session..."
+//   session === null         →  <LandingShell>  (lightweight, no engine)
+//   session === object       →  <AuthedDashboard>  (runs useEngine)
+//
+// The split matters because useEngine() spins up a Web Worker that
+// runs a ~20-30 second cold computation (Power Law fit + Hurst +
+// 2,000 Monte Carlo paths + walk-forward backtest). Running that
+// while the user is still looking at the landing page is wasted
+// effort — the landing only needs the current spot price, which is
+// a single fetch call.
+// ─────────────────────────────────────────────────────────────────
 function Dashboard() {
-  const { t } = useTheme();
-  const [tab, setTabRaw] = useState("lite");
-  const setTab = useCallback((t) => { trackTabView(t); setTabRaw(t); }, []);
-  const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
-
-  // ── Auth state ──
   const [session, setSession] = useState(undefined); // undefined = loading, null = no session, object = logged in
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     if (!supabase) { setSession(null); setAuthChecked(true); return; }
 
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setAuthChecked(true);
     });
 
-    // Listen for auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const showLanding = authChecked && !session;
-
-  // Track signal when data loads
-  useEffect(() => {
-    if (d?.sigma != null) trackSignalView(d.answerLabel || "–", d.sigma);
-    trackPageView(showLanding ? "landing" : "dashboard");
-  }, [d?.sigma, showLanding]);
 
   // ── Auth handlers ──
   const handleAuth = async (method, email) => {
@@ -146,25 +118,78 @@ function Dashboard() {
     setSession(null);
   };
 
-  // Show loading while checking auth
-  if (!authChecked) return <Loading msg="Checking session..." />;
+  // ── Render decision ──
+  if (!authChecked) {
+    return <Splash msg="Checking session..." progress={3} />;
+  }
 
-  if (phase === "loading") return <Loading msg={msg} />;
-  if (phase === "error") return <ErrorScreen msg={msg} onRetry={retry} />;
+  if (!session) {
+    return <LandingShell onAuth={handleAuth} />;
+  }
 
-  if (showLanding) {
-    const handleTabClick = () => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      Landing.showNudge?.();
-    };
-    return (
-      <div style={{ background: t.bg, minHeight: "100vh" }}>
-        <Header tab={null} setTab={handleTabClick} r2={d?.r2} />
-        <div className="page-pad" style={{ padding: "0 24px" }}>
-          <Landing d={d} onAuth={handleAuth} setTab={setTab} />
-        </div>
+  return <AuthedDashboard session={session} onLogout={handleLogout} />;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// LandingShell — renders the Landing page with just the spot price.
+//
+// No Web Worker, no cache, no Monte Carlo. Just a single fetch
+// against the spot price endpoint (~200-400ms). If that fails, the
+// landing still renders with a "..." placeholder where the price
+// would be — no blocking.
+// ─────────────────────────────────────────────────────────────────
+function LandingShell({ onAuth }) {
+  const { t } = useTheme();
+  const [spotData, setSpotData] = useState(null);
+
+  useEffect(() => {
+    trackPageView("landing");
+    let cancelled = false;
+    fetchSpotPrice()
+      .then(({ spot }) => {
+        if (cancelled) return;
+        if (spot && spot > 1000) setSpotData({ S0: spot });
+      })
+      .catch(() => { /* non-fatal — landing renders without price */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleTabClick = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    Landing.showNudge?.();
+  };
+
+  return (
+    <div style={{ background: t.bg, minHeight: "100vh" }}>
+      <Header tab={null} setTab={handleTabClick} r2={null} />
+      <div className="page-pad" style={{ padding: "0 24px" }}>
+        <Landing d={spotData} onAuth={onAuth} setTab={() => {}} />
       </div>
-    );
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AuthedDashboard — the full dashboard. Only mounts after login so
+// useEngine() fires exactly once the user is authenticated.
+// ─────────────────────────────────────────────────────────────────
+function AuthedDashboard({ session, onLogout }) {
+  const { t } = useTheme();
+  const [tab, setTabRaw] = useState("lite");
+  const setTab = useCallback((tabId) => { trackTabView(tabId); setTabRaw(tabId); }, []);
+  const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
+
+  // Track signal when data loads
+  useEffect(() => {
+    if (d?.sigma != null) trackSignalView(d.answerLabel || "–", d.sigma);
+    trackPageView("dashboard");
+  }, [d?.sigma]);
+
+  if (phase === "loading") {
+    return <Splash msg={msg} progress={msgToProgress(msg)} />;
+  }
+  if (phase === "error") {
+    return <ErrorScreen msg={msg} onRetry={retry} />;
   }
 
   // Full-bleed tabs (no page-pad)
@@ -177,7 +202,7 @@ function Dashboard() {
       background: t.bg, minHeight: "100vh",
       transition: "background 0.3s ease",
     }}>
-      <Header tab={tab} setTab={setTab} r2={d?.r2} user={session?.user} onLogout={handleLogout} />
+      <Header tab={tab} setTab={setTab} r2={d?.r2} user={session?.user} onLogout={onLogout} />
 
       {fullBleedTabs.includes(tab) ? (
         <div style={{ animation: "fi 0.3s ease" }}>
@@ -201,8 +226,6 @@ function Dashboard() {
     </div>
   );
 }
-
-import { I18nProvider } from "./i18n/I18nContext";
 
 export default function App() {
   return (

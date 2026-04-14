@@ -16,6 +16,94 @@ pueda escanear rápido qué cambió y cuándo.
 
 ---
 
+## 2026-04-14 (5) — Branded Splash + defer engine until after login
+
+First-impression loading redesign. Two independent problems solved
+in one commit:
+
+1. The old `<Loading />` component was a single centered `₿` + a
+   text line. No progress feedback, no branding, ~20-35 seconds
+   of near-blank screen on a cache miss.
+2. The Web Worker (Power Law fit + Hurst + 2,000 Monte Carlo paths
+   + walk-forward backtest) was kicking off at app mount, BEFORE
+   the auth check finished. Visitors who never logged in still paid
+   the full compute cost sitting behind the Landing page they were
+   about to read, which is pure waste — the Landing only needs the
+   current spot price.
+
+### Added
+
+- **`src/components/Splash.jsx`** — new branded loading screen with:
+  - 120 px `₿` with a soft green halo (24 px blur behind a fill layer)
+    pulsing on a 2.4 s ease-in-out cycle
+  - The hero tagline "Should I buy Bitcoin today?" in Switzer 800 at
+    `clamp(28px, 4.5vw, 44px)`, matching the OG image vibe
+  - Subtitle "real-time quant signal · backtested daily since 2017"
+    in the project's faint tone
+  - A live gradient progress bar (1B8A4A → 27AE60 → 33C97B) with a
+    green glow shadow and a 480 ms eased width transition
+  - A monospace phase caption below the bar that shows whatever the
+    worker is currently doing
+  - Radial-gradient background (bgAlt → bg → #0A0B09) for depth
+- **`msgToProgress()`** helper exported from the same file. Maps the
+  worker's free-text progress messages to an approximate 0-100 value
+  by regex-matching known phase strings ("Fitting Power Law" → 22,
+  "Running Monte Carlo 800/2000" → 54 + (done/total)×30, etc.). The
+  mapping is heuristic on purpose: exact phase timing varies by
+  device, but as long as the bar keeps moving forward the user
+  reads it as "the thing is working".
+- **Radial-gradient + pulse keyframe** in `global.css`:
+  ```
+  @keyframes splashPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.86; transform: scale(1.04); }
+  }
+  ```
+
+### Changed
+
+- **`App.jsx` refactored into three components:**
+  - `Dashboard` (root) — owns auth state only. Decides whether to
+    show Splash (checking session), LandingShell (not logged in)
+    or AuthedDashboard (logged in).
+  - `LandingShell` — mounts the Landing page with **only a single
+    `fetchSpotPrice()` call** instead of the full engine. That
+    single fetch is ~200-400 ms so the "$74.3k" title in the
+    landing hero lands almost instantly. If the fetch fails the
+    landing still renders with a "..." placeholder — non-blocking.
+  - `AuthedDashboard` — runs `useEngine()` only after the user is
+    authenticated. Any visitor who never logs in costs nothing
+    beyond a single price fetch.
+- **All three loading-state screens** (auth check, engine cold path,
+  any intermediate state) now render through the new `<Splash />`
+  component. The old inline `<Loading />` is removed.
+
+### Fixed
+
+- **Visitors who don't log in no longer trigger a full engine
+  computation.** Before: every landing visit spun up the Web
+  Worker and ran a 20-35 second Monte Carlo that the user never
+  saw. After: the Landing fetches only the spot price, saving both
+  CPU cycles and client battery.
+
+### Deferred (next iteration)
+
+- **Skeleton screens for the Lite tab** — on cache miss, the UI
+  could show a shimmer placeholder of the Lite tab structure
+  while waiting for real data, smoothing the transition from
+  Splash → real content. Not in this commit because the Splash
+  already lifts perceived speed substantially.
+- **Progressive disclosure** — break the worker into phased posts
+  so the Lite tab can render as soon as the Power Law fit is done
+  (~1-2 s) instead of waiting for Monte Carlo + backtest to finish.
+  Bigger refactor, saved for a dedicated iteration.
+- **Cache preload via cron** — a serverless job that precomputes
+  the heavy engine once a day and writes to Supabase, so even
+  first-time visitors always hit cache. Ties into the pending
+  `/api/verdict` endpoint.
+
+---
+
 ## 2026-04-14 (4) — Auto-updating lastmod dates
 
 Close out the SEO sprint pendings by automating what used to be
