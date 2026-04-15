@@ -402,10 +402,10 @@ export default function Pro({ d, derived, setTab }) {
           const burgerFV = Math.pow(10, burgerA + burgerB * Math.log10(today));
           const fvDelta = ((ourFV - burgerFV) / burgerFV * 100);
           const rows = [
-            { id: "intercept", labelKey: "pro.cmp.intercept", burger: burgerA.toFixed(3), ours: a10.toFixed(3), delta: deltaA },
-            { id: "slope",     labelKey: "pro.cmp.slope",     burger: burgerB.toFixed(3), ours: b.toFixed(3),    delta: deltaB },
-            { id: "r2",        labelKey: "pro.cmp.r2",        burger: "0.931",            ours: fmt(r2, 4),      delta: null },
-            { id: "fvToday",   labelKey: "pro.cmp.fvToday",   burger: fmtK(burgerFV),     ours: fmtK(ourFV),     delta: fvDelta },
+            { id: "intercept", labelKey: "pro.cmp.intercept", termId: "powerLaw", burger: burgerA.toFixed(3), ours: a10.toFixed(3), delta: deltaA },
+            { id: "slope",     labelKey: "pro.cmp.slope",     termId: "powerLaw", burger: burgerB.toFixed(3), ours: b.toFixed(3),    delta: deltaB },
+            { id: "r2",        labelKey: "pro.cmp.r2",        termId: "r2",       burger: "0.931",            ours: fmt(r2, 4),      delta: null },
+            { id: "fvToday",   labelKey: "pro.cmp.fvToday",   termId: null,       burger: fmtK(burgerFV),     ours: fmtK(ourFV),     delta: fvDelta },
           ];
           return (
             <div style={{ marginTop: 16, padding: "16px 0", borderTop: `1px solid ${t.border}` }}>
@@ -423,7 +423,10 @@ export default function Pro({ d, derived, setTab }) {
                 <tbody>
                   {rows.map(row => (
                     <tr key={row.id} style={{ borderBottom: `1px solid ${t.borderFaint}` }}>
-                      <td style={{ padding: "8px", fontFamily: bd, color: t.cream, fontWeight: 500 }}>{tr(row.labelKey)}</td>
+                      <td style={{ padding: "8px", fontFamily: bd, color: t.cream, fontWeight: 500 }}>
+                        {tr(row.labelKey)}
+                        {row.termId && <Term id={row.termId} iconSize={11} />}
+                      </td>
                       <td style={{ padding: "8px", textAlign: "right", fontFamily: mn, color: t.faint }}>{row.burger}</td>
                       <td style={{ padding: "8px", textAlign: "right", fontFamily: mn, color: t.cream, fontWeight: 600 }}>{row.ours}</td>
                       <td style={{ padding: "8px", textAlign: "right", fontFamily: mn, fontSize: 11, color: row.delta === null ? t.faint : Math.abs(row.delta) < 5 ? "#27AE60" : Math.abs(row.delta) < 15 ? "#F2994A" : "#EB5757" }}>

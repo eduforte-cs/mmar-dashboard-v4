@@ -302,8 +302,8 @@ export default function Backtest({ d }) {
                   <th style={th}></th>
                   <th style={thR}>{tr("backtest.return")}</th>
                   <th style={thR}>{tr("backtest.finalValue")}</th>
-                  <th style={thR}>{tr("backtest.sortino")}</th>
-                  <th style={thR}>{tr("backtest.maxDD")}</th>
+                  <th style={thR}>{tr("backtest.sortino")} <Term id="sortino" iconSize={10} /></th>
+                  <th style={thR}>{tr("backtest.maxDD")} <Term id="drawdown" iconSize={10} /></th>
                   <th style={thR}>{tr("backtest.cashHeld")}</th>
                 </tr>
               </thead>
@@ -378,8 +378,8 @@ export default function Backtest({ d }) {
               <tr>
                 <th style={th}></th>
                 <th style={thR}>{tr("backtest.return")}</th>
-                <th style={thR}>{tr("backtest.maxDD")}</th>
-                <th style={thR}>{tr("backtest.sortino")}</th>
+                <th style={thR}>{tr("backtest.maxDD")} <Term id="drawdown" iconSize={10} /></th>
+                <th style={thR}>{tr("backtest.sortino")} <Term id="sortino" iconSize={10} /></th>
                 <th style={thR}>{tr("backtest.finalValue")}</th>
               </tr>
             </thead>

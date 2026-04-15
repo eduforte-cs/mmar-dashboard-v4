@@ -3,6 +3,7 @@ import { useTheme } from "../../theme/ThemeContext";
 import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 import { fmt } from "../../engine/constants.js";
+import Term from "../../components/Term";
 
 // Returns i18n keys; resolved by the caller via tr().
 function getComboSignalKey(sig, H) {
@@ -65,7 +66,9 @@ export default function HurstRegime({ d }) {
       </div>
 
       {/* Multi-scale Hurst */}
-      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{tr("pro.multiScaleHurst")}</div>
+      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center" }}>
+        {tr("pro.multiScaleHurst")} <Term id="dfa" iconSize={11} />
+      </div>
       <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 16 }}>
         {[
           { id: "h30",  l: tr("pro.hurst.h30"),  v: fmt(cur.h30, 3),         s: hLabel(cur.h30) },
@@ -90,7 +93,9 @@ export default function HurstRegime({ d }) {
       </div>
 
       {/* Vol compression */}
-      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{tr("pro.volCompression")}</div>
+      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center" }}>
+        {tr("pro.volCompression")} <Term id="mmar" iconSize={11} />
+      </div>
       <div style={{ padding: "12px 0", borderBottom: `1px solid ${t.borderFaint}`, marginBottom: 12 }}>
         <div style={{ fontFamily: bd, fontSize: 16, fontWeight: 700, color: t.cream, marginBottom: 4 }}>{tr(`pro.hurst.vol.${volSignalKey}`)}</div>
         <div style={{ fontFamily: bd, fontSize: 13, color: t.dim, lineHeight: 1.5 }}>{tr(`pro.hurst.vol.${volSignalKey}Desc`)}</div>

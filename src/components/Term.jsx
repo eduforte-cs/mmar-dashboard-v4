@@ -186,6 +186,39 @@ const GLOSSARY = {
       body: "La velocidad de reversión a la media en el modelo de Ornstein-Uhlenbeck. Un κ más grande = reversión más rápida al valor justo. Relacionado con la vida media vía vida_media = ln(2) / κ. Se usa como diagnóstico — no como el motor principal del Monte Carlo.",
     },
   },
+
+  ou: {
+    en: {
+      title: "Ornstein-Uhlenbeck (OU)",
+      body: "A stochastic process that models mean-reverting behaviour — the distance from fair value is dragged back toward zero at a speed set by κ. Used here as a diagnostic to classify the current volatility regime (calm vs volatile), not as the main driver of the Monte Carlo.",
+    },
+    es: {
+      title: "Ornstein-Uhlenbeck (OU)",
+      body: "Un proceso estocástico que modela el comportamiento de reversión a la media — la distancia al valor justo es arrastrada hacia cero a una velocidad definida por κ. Se usa acá como diagnóstico para clasificar el régimen de volatilidad actual (calmo vs volátil), no como el motor principal del Monte Carlo.",
+    },
+  },
+
+  evt: {
+    en: {
+      title: "EVT / GPD",
+      body: "Extreme Value Theory with a Generalised Pareto Distribution fitted to the biggest positive residuals above the 85th percentile. Gives us an empirical upside cap for Bitcoin's tail — a data-driven ceiling for the bubble zone instead of an arbitrary multiple.",
+    },
+    es: {
+      title: "EVT / GPD",
+      body: "Teoría de Valores Extremos con una Distribución Generalizada de Pareto ajustada a los residuales positivos más grandes por encima del percentil 85. Nos da un techo empírico para la cola alcista de Bitcoin — un límite basado en datos para la zona de burbuja en lugar de un múltiplo arbitrario.",
+    },
+  },
+
+  autocorrelation: {
+    en: {
+      title: "Autocorrelation",
+      body: "How much a series of returns is correlated with its own past values at a given lag. Positive autocorrelation means momentum (recent direction tends to continue). Negative means mean-reversion. We average lags 1, 2, 3 and 5 to build the momentum diagnostic.",
+    },
+    es: {
+      title: "Autocorrelación",
+      body: "Cuánto se correlaciona una serie de retornos con sus propios valores pasados a un lag dado. La autocorrelación positiva significa momentum (la dirección reciente tiende a continuar). Negativa significa reversión a la media. Promediamos los lags 1, 2, 3 y 5 para construir el diagnóstico de momentum.",
+    },
+  },
 };
 
 // ── Info SVG icon — shapes only, no glyph fallback risk ─────────

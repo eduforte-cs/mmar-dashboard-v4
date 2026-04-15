@@ -3,6 +3,7 @@ import { useTheme } from "../../theme/ThemeContext";
 import { useI18n } from "../../i18n/I18nContext";
 import { bd, mn } from "../../theme/tokens";
 import { fmt } from "../../engine/constants.js";
+import Term from "../../components/Term";
 
 // SIG_LABELS are pure σ ranges (no language) so we keep them as constants.
 const SIG_LABELS = { deepValue: "σ < -1.0", discount: "-1.0 to -0.5", fair: "-0.5 to 0.3", elevated: "0.3 to 0.8", overheated: "σ > 0.8" };
@@ -123,7 +124,9 @@ export default function MarketRegime({ d, derived }) {
           <div style={{ fontFamily: bd, fontSize: 10, color: t.faint, marginTop: 2 }}>{tr("pro.regime.zoneValidated").replace("{zone}", tr(SIG_ZONE_KEYS[domRegime.sigZone]))}</div>
         </div>
         <div style={{ padding: "12px 0 12px 14px" }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{tr("pro.directionMomentum")}</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, display: "flex", alignItems: "center" }}>
+            {tr("pro.directionMomentum")} <Term id="autocorrelation" iconSize={11} />
+          </div>
           <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 600, color: t.cream }}>{mom?.toFixed(3) || "0"}</div>
           <div style={{ fontFamily: bd, fontSize: 10, color: t.faint, marginTop: 2 }}>{tr("pro.regime.autocorr").replace("{label}", tr(MOM_KEYS[domRegime.momZone]))}</div>
         </div>
@@ -160,18 +163,18 @@ export default function MarketRegime({ d, derived }) {
       </div>
 
       {/* ── OU Regime ── */}
-      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
-        {tr("pro.regime.ouTitle")}
+      <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10, display: "flex", alignItems: "center" }}>
+        {tr("pro.regime.ouTitle")} <Term id="ou" iconSize={11} />
       </div>
       <div className="grid-4" style={{ marginBottom: 8 }}>
         {[
-          { id: "state",   label: tr("pro.regime.ouCurrentState"), value: currentOURegime, color: currentOUKey === "ouVolatile" ? "#F2994A" : "#27AE60" },
-          { id: "halflife", label: tr("pro.regime.ouHalfLife"), value: `${halfLife}d`, sub: halfLife < 30 ? tr("pro.regime.ouFastReversion") : halfLife < 90 ? tr("pro.regime.ouModerate") : tr("pro.regime.ouSlow") },
-          { id: "kappa",   label: tr("pro.regime.ouKappaSpeed"), value: fmt(kappa, 4), sub: tr("pro.regime.ouGlobal") },
-          { id: "annvol",  label: tr("pro.regime.ouAnnVol"), value: `${(annualVol * 100).toFixed(0)}%`, sub: annualVol > 0.8 ? tr("pro.regime.ouHigh") : annualVol > 0.4 ? tr("pro.regime.ouNormal") : tr("pro.regime.ouLow") },
+          { id: "state",    label: tr("pro.regime.ouCurrentState"),                                                              value: currentOURegime, color: currentOUKey === "ouVolatile" ? "#F2994A" : "#27AE60" },
+          { id: "halflife", label: <>{tr("pro.regime.ouHalfLife")} <Term id="halfLife" iconSize={10} /></>,                     value: `${halfLife}d`, sub: halfLife < 30 ? tr("pro.regime.ouFastReversion") : halfLife < 90 ? tr("pro.regime.ouModerate") : tr("pro.regime.ouSlow") },
+          { id: "kappa",    label: <>{tr("pro.regime.ouKappaSpeed")} <Term id="kappa" iconSize={10} /></>,                      value: fmt(kappa, 4), sub: tr("pro.regime.ouGlobal") },
+          { id: "annvol",   label: tr("pro.regime.ouAnnVol"),                                                                    value: `${(annualVol * 100).toFixed(0)}%`, sub: annualVol > 0.8 ? tr("pro.regime.ouHigh") : annualVol > 0.4 ? tr("pro.regime.ouNormal") : tr("pro.regime.ouLow") },
         ].map((s, i) => (
           <div key={s.id} style={{ padding: "10px 0", borderRight: i < 3 ? `1px solid ${t.borderFaint}` : "none", paddingRight: i < 3 ? 12 : 0, paddingLeft: i > 0 ? 12 : 0 }}>
-            <div style={{ fontFamily: bd, fontSize: 8, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{s.label}</div>
+            <div style={{ fontFamily: bd, fontSize: 8, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3, display: "flex", alignItems: "center" }}>{s.label}</div>
             <div style={{ fontFamily: mn, fontSize: 15, fontWeight: 500, color: s.color || t.cream }}>{s.value}</div>
             {s.sub && <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, marginTop: 1 }}>{s.sub}</div>}
           </div>

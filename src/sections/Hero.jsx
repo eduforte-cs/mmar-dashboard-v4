@@ -5,6 +5,7 @@ import { localizeVerdict } from "../i18n/localizeVerdict";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import Gauge from "../components/Gauge";
+import Term from "../components/Term";
 
 export default function Hero({ d, derived }) {
   const { t } = useTheme();
@@ -61,12 +62,12 @@ export default function Hero({ d, derived }) {
         borderBottom: `1px solid ${t.border}`,
       }}>
         {[
-          { l: tr("hero.price"), v: fmtK(S0), s: `${d.source?.split("(")[0] || tr("live")}` },
-          { l: "σ", v: `${sigma >= 0 ? "+" : ""}${sigma.toFixed(2)}σ`, s: sigmaLabel },
-          { l: tr("hero.fairValue"), v: fmtK(plToday), s: `Power Law WLS · R² ${r2.toFixed(3)}` },
-          { l: tr("hero.supportFloor"), v: fmtK(supportPrice), s: `RANSAC ${d.resFloorSigma?.toFixed(1) || ""}σ` },
+          { id: "price", l: tr("hero.price"),                                         v: fmtK(S0),            s: `${d.source?.split("(")[0] || tr("live")}` },
+          { id: "sigma", l: <>σ <Term id="sigma" iconSize={11} /></>,                 v: `${sigma >= 0 ? "+" : ""}${sigma.toFixed(2)}σ`, s: sigmaLabel },
+          { id: "fv",    l: tr("hero.fairValue"),                                     v: fmtK(plToday),       s: `Power Law WLS · R² ${r2.toFixed(3)}` },
+          { id: "sup",   l: <>{tr("hero.supportFloor")} <Term id="ransac" iconSize={11} /></>, v: fmtK(supportPrice), s: `RANSAC ${d.resFloorSigma?.toFixed(1) || ""}σ` },
         ].map((item, i) => (
-          <div key={item.l} style={{
+          <div key={item.id} style={{
             padding: "20px 0",
             borderRight: (i % 2 === 0) ? `1px solid ${t.border}` : "none",
             paddingRight: (i % 2 === 0) ? 24 : 0,
@@ -76,6 +77,7 @@ export default function Hero({ d, derived }) {
             <div style={{
               fontFamily: bd, fontSize: 10, color: t.faint,
               textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6,
+              display: "flex", alignItems: "center",
             }}>
               {item.l}
             </div>
