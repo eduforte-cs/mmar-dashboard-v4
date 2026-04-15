@@ -219,6 +219,17 @@ const GLOSSARY = {
       body: "Cuánto se correlaciona una serie de retornos con sus propios valores pasados a un lag dado. La autocorrelación positiva significa momentum (la dirección reciente tiende a continuar). Negativa significa reversión a la media. Promediamos los lags 1, 2, 3 y 5 para construir el diagnóstico de momentum.",
     },
   },
+
+  percentile: {
+    en: {
+      title: "Percentile (P5, P50, P95, …)",
+      body: "A value that marks a given share of a distribution. P5 means 5% of the simulated paths ended below this number (worst 5%). P50 is the median — half of the paths ended above, half below. P95 is the top 5%. Together they describe the range of plausible outcomes.",
+    },
+    es: {
+      title: "Percentil (P5, P50, P95, …)",
+      body: "Un valor que marca una porción dada de una distribución. P5 significa que el 5% de los caminos simulados terminó por debajo de este número (el peor 5%). P50 es la mediana — la mitad de los caminos terminó arriba, la mitad abajo. P95 es el 5% superior. Juntos describen el rango de resultados plausibles.",
+    },
+  },
 };
 
 // ── Info SVG icon — shapes only, no glyph fallback risk ─────────

@@ -5,6 +5,7 @@ import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
 import Toggle from "../components/Toggle";
+import Term from "../components/Term";
 
 export default function MonteCarlo({ d, derived }) {
   const { t } = useTheme();
@@ -149,8 +150,9 @@ export default function MonteCarlo({ d, derived }) {
           fontFamily: bd, fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 700,
           color: t.cream, letterSpacing: "-0.04em",
           lineHeight: 0.95, margin: 0,
+          display: "inline-flex", alignItems: "center",
         }}>
-          {tr("mc.heading")}
+          {tr("mc.heading")} <Term id="monteCarlo" iconSize={16} />
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
           <span style={{ fontFamily: bd, fontSize: 13, color: t.faint }}>BTC</span>

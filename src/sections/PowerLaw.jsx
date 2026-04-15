@@ -6,6 +6,7 @@ import { fmtK, daysSinceGenesis } from "../engine/constants.js";
 import { plPrice } from "../engine/powerlaw.js";
 import { allBands, supportFloor, bandsLog10 } from "../engine/bands.js";
 import Toggle from "../components/Toggle";
+import Term from "../components/Term";
 
 export default function PowerLaw({ d, derived }) {
   const { t } = useTheme();
@@ -281,8 +282,9 @@ export default function PowerLaw({ d, derived }) {
           fontFamily: bd, fontSize: 36, fontWeight: 700,
           color: t.cream, letterSpacing: "-0.04em",
           lineHeight: 0.95, margin: 0,
+          display: "inline-flex", alignItems: "center",
         }}>
-          {tr("pl.heading")}
+          {tr("pl.heading")} <Term id="powerLaw" iconSize={15} />
         </h1>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 16 }}>
           <span style={{
@@ -541,14 +543,18 @@ export default function PowerLaw({ d, derived }) {
         <div style={{ padding: "24px 20px 24px 0", borderRight: `1px solid ${t.border}` }}>
           <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{tr("pl.horizonToday")}</div>
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{tr("pl.cardFairValue")}</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3, display: "flex", alignItems: "center" }}>
+              {tr("pl.cardFairValue")} <Term id="powerLaw" iconSize={10} />
+            </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.cream }}>{fmtK(chart.plToday)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctFV_today >= 0 ? "+" : ""}{chart.pctFV_today.toFixed(0)}%</span>
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{tr("pl.cardWorstCase")}</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3, display: "flex", alignItems: "center" }}>
+              {tr("pl.cardWorstCase")} <Term id="ransac" iconSize={10} />
+            </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontFamily: mn, fontSize: 20, fontWeight: 500, color: t.faint }}>{fmtK(chart.wcToday)}</span>
               <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>{chart.pctWC_today.toFixed(0)}%</span>

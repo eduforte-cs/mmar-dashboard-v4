@@ -312,13 +312,23 @@ export default function Pro({ d, derived, setTab }) {
 
         {/* Percentile table */}
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{tr("pro.percentileTable")}</div>
+          <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8, display: "flex", alignItems: "center" }}>
+            {tr("pro.percentileTable")} <Term id="percentile" iconSize={10} />
+          </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
               <thead>
                 <tr>
-                  {[tr("pro.horizon"), tr("pro.bear"), "P25", tr("pro.median"), "P75", tr("pro.bull"), tr("pro.plTarget")].map((h, i) => (
-                    <th key={h} style={{ ...tableHead, textAlign: i === 0 ? "left" : "right" }}>{h}</th>
+                  {[
+                    { id: "h",   label: tr("pro.horizon") },
+                    { id: "p5",  label: tr("pro.bear") },
+                    { id: "p25", label: "P25" },
+                    { id: "p50", label: tr("pro.median") },
+                    { id: "p75", label: "P75" },
+                    { id: "p95", label: tr("pro.bull") },
+                    { id: "pl",  label: tr("pro.plTarget") },
+                  ].map((h, i) => (
+                    <th key={h.id} style={{ ...tableHead, textAlign: i === 0 ? "left" : "right" }}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
