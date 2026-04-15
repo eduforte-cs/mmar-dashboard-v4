@@ -1,12 +1,16 @@
 /* ── Font imports ── */
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
 
-@font-face { font-family: 'Switzer'; font-weight: 300; src: url('https://cdn.fontshare.com/wf/YXKVCZHSWFYDTFPNWL5ALGJV2ZWNW4HW/MGZGOJQHIRGVQIHKSQF7WOKQFP4OEJQJ/QNMH4NLNQRPBFPJ7WLQJW7RN6KA6DQLE.woff2') format('woff2'); }
-@font-face { font-family: 'Switzer'; font-weight: 400; src: url('https://cdn.fontshare.com/wf/BPJWBY4ZHFQYRGB23HLSCXK3VLBPJAYS/KAL5QYG5OFCG66JFDRTDQPMZZWF57MSK/GXRSRSQCHB3KPJLXICD2AHPHWF2IDZWH.woff2') format('woff2'); }
-@font-face { font-family: 'Switzer'; font-weight: 500; src: url('https://cdn.fontshare.com/wf/QK5GAZDDNPNXVCBJPB2STVI7O6BPH2KJ/QVB7A2VWBJIQALX6XETBFWDG6GFJUFOT/FT3KBYWIKGP47IWK4PPPIPFIWX5GLLFC.woff2') format('woff2'); }
-@font-face { font-family: 'Switzer'; font-weight: 600; src: url('https://cdn.fontshare.com/wf/MMHCVP4ZGEERDWETL7JHPIMPCQZ2A6K7/YVQOIKFDRK5FPH5NKCJKUXBMQJODOPWL/5HMX3MJWUVSAHZMZ3HJ3DXSCIXOAL2A7.woff2') format('woff2'); }
-@font-face { font-family: 'Switzer'; font-weight: 700; src: url('https://cdn.fontshare.com/wf/UY5BMTPUDEJB6GHXL7MEKC7BI4YIX3JD/AJYLTQPMJVJIPVJB3PCFZ7XDPJPQN3KM/2GXPPIGKXPIWFIQFR3UPZRVDDX7QOA7V.woff2') format('woff2'); }
-@font-face { font-family: 'Switzer'; font-weight: 800; src: url('https://cdn.fontshare.com/wf/UY5BMTPUDEJB6GHXL7MEKC7BI4YIX3JD/AJYLTQPMJVJIPVJB3PCFZ7XDPJPQN3KM/2GXPPIGKXPIWFIQFR3UPZRVDDX7QOA7V.woff2') format('woff2'); }
+/* font-display: swap — render fallback immediately and swap in Switzer
+   when it arrives, instead of iOS Safari's default FOIT (Flash of
+   Invisible Text) which hides the text for up to 3 s and then
+   permanently falls back to sans-serif on slow mobile connections. */
+@font-face { font-family: 'Switzer'; font-weight: 300; font-display: swap; src: url('https://cdn.fontshare.com/wf/YXKVCZHSWFYDTFPNWL5ALGJV2ZWNW4HW/MGZGOJQHIRGVQIHKSQF7WOKQFP4OEJQJ/QNMH4NLNQRPBFPJ7WLQJW7RN6KA6DQLE.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 400; font-display: swap; src: url('https://cdn.fontshare.com/wf/BPJWBY4ZHFQYRGB23HLSCXK3VLBPJAYS/KAL5QYG5OFCG66JFDRTDQPMZZWF57MSK/GXRSRSQCHB3KPJLXICD2AHPHWF2IDZWH.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 500; font-display: swap; src: url('https://cdn.fontshare.com/wf/QK5GAZDDNPNXVCBJPB2STVI7O6BPH2KJ/QVB7A2VWBJIQALX6XETBFWDG6GFJUFOT/FT3KBYWIKGP47IWK4PPPIPFIWX5GLLFC.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 600; font-display: swap; src: url('https://cdn.fontshare.com/wf/MMHCVP4ZGEERDWETL7JHPIMPCQZ2A6K7/YVQOIKFDRK5FPH5NKCJKUXBMQJODOPWL/5HMX3MJWUVSAHZMZ3HJ3DXSCIXOAL2A7.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 700; font-display: swap; src: url('https://cdn.fontshare.com/wf/UY5BMTPUDEJB6GHXL7MEKC7BI4YIX3JD/AJYLTQPMJVJIPVJB3PCFZ7XDPJPQN3KM/2GXPPIGKXPIWFIQFR3UPZRVDDX7QOA7V.woff2') format('woff2'); }
+@font-face { font-family: 'Switzer'; font-weight: 800; font-display: swap; src: url('https://cdn.fontshare.com/wf/UY5BMTPUDEJB6GHXL7MEKC7BI4YIX3JD/AJYLTQPMJVJIPVJB3PCFZ7XDPJPQN3KM/2GXPPIGKXPIWFIQFR3UPZRVDDX7QOA7V.woff2') format('woff2'); }
 
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; }

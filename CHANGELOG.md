@@ -16,6 +16,72 @@ pueda escanear rápido qué cambió y cuándo.
 
 ---
 
+## 2026-04-15 — Glossary tooltips + iOS Safari font fix
+
+Two things shipped together because they were touched in the same
+review pass: a new glossary component that explains quant terms in
+context, and a font-loading fix that was biting iOS Safari users.
+
+### Added
+
+- **`src/components/Term.jsx`** — a `<Term id="..." />` component
+  that renders a small info icon (custom SVG, no glyph fallback
+  risk) next to any technical term. Clicking opens a portaled
+  popover with the term's title and a 1-3 sentence definition.
+  Popover auto-positions above the trigger (falls back to below
+  if there isn't enough vertical room) and horizontally clamps
+  to the viewport. Closes on click-outside, Escape, or scroll.
+- **Inline glossary dictionary** with 15 bilingual entries
+  (EN + ES) covering: sigma, hurst, sortino, r², powerLaw, ransac,
+  mmar, lambda2, dfa, drawdown, smartDCA, walkForward, monteCarlo,
+  halfLife, kappa. Kept inline in `Term.jsx` rather than in the
+  i18n JSON files because each entry is ~200 chars and the total
+  weight is small; co-locating with the component keeps editing
+  simple.
+- **Wire-up on Pro tab metrics strip**: info icons now appear
+  next to "Hurst (90d)", "λ² multifractal", and the Signal card
+  (which explains σ when tapped).
+- **Wire-up on Backtest Smart DCA hero cards**: info icons next
+  to "Smart DCA return" (explaining what Smart DCA is) and
+  "Smart DCA Sortino" (explaining the Sortino ratio).
+
+### Fixed
+
+- **Switzer not loading on iOS Safari mobile.** The user reported
+  the site was rendering in a system font (Helvetica / San
+  Francisco) on iPhone but in the correct Switzer on desktop. An
+  Explore agent traced it to two missing pieces in the font
+  loading strategy:
+
+  1. **No `font-display` on the six `@font-face` declarations in
+     `global.css`.** Without it, iOS Safari defaults to FOIT
+     (Flash of Invisible Text) — hides the text for up to 3
+     seconds waiting for the font, and if the CDN doesn't
+     respond in time, falls back permanently to system fonts.
+     On slow 4G/LTE connections to Fontshare's CDN (based in
+     Europe, often routed far from mobile networks) this
+     triggered the permanent fallback.
+  2. **No `<link rel="preconnect">` to `cdn.fontshare.com` or to
+     Google Fonts in `index.html`.** The browser had to do a
+     cold TCP + TLS handshake after parsing the CSS, adding
+     300-800 ms of latency on mobile before Switzer could even
+     start downloading.
+
+  Fixes applied:
+  - Add `font-display: swap` to all six Switzer `@font-face`
+    declarations. Text now renders immediately in the fallback
+    font and swaps in Switzer when it arrives — no invisible
+    window and no permanent fallback.
+  - Add three `<link rel="preconnect">` tags to the `<head>`
+    pointing at `cdn.fontshare.com`, `fonts.googleapis.com` and
+    `fonts.gstatic.com`. The handshake now happens in parallel
+    with HTML parsing instead of serially after CSS parses.
+
+  Desktop behaviour is unchanged. Mobile now sees the real
+  Switzer typography consistently.
+
+---
+
 ## 2026-04-14 (5) — Branded Splash + defer engine until after login
 
 First-impression loading redesign. Two independent problems solved

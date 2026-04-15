@@ -7,6 +7,7 @@ import { plPrice } from "../engine/powerlaw.js";
 import { localizeVerdict } from "../i18n/localizeVerdict";
 import Toggle from "../components/Toggle";
 import CatLabel from "../components/CatLabel";
+import Term from "../components/Term";
 import { trackChartInteraction } from "../tracking";
 import DriversPanel from "./pro/DriversPanel";
 import TimeToFairValue from "./pro/TimeToFairValue";
@@ -34,12 +35,37 @@ export default function Pro({ d, derived, setTab }) {
   const plForecast3y = Array.from({ length: Math.ceil(365 * 3 / 5) + 1 }, (_, i) => ({ t: i * 5, pl: +plPrice(a, b, t0 + i * 5).toFixed(0) }));
   const last3y = percentiles3y[percentiles3y.length - 1];
 
-  // Metrics strip
+  // Metrics strip. Stable `id` is used as the React key so it
+  // doesn't depend on the (potentially translated) label string,
+  // and the `l` field can now be a JSX node that includes a
+  // glossary icon after the text.
   const metrics = [
-    { l: tr("pro.hurst90d"), v: H.toFixed(2), s: H > 0.55 ? tr("pro.persistent") : tr("pro.meanReverting") },
-    { l: tr("pro.metric.lambda2"), v: lambda2.toFixed(2), s: tr("pro.metric.partitionFn") },
-    { l: tr("pro.metric.signal"), v: verdict.subtitle, s: `σ = ${sig.toFixed(2)}`, color: verdict.subtitleColor },
-    { l: tr("pro.metric.regime"), v: domRegime.label, s: domRegime.zone || "", color: domRegime.zone === "Buy" || domRegime.zone === "Strong Buy" ? "#27AE60" : domRegime.zone === "Sell" ? "#EB5757" : domRegime.zone === "Reduce" ? "#F2994A" : t.cream },
+    {
+      id: "hurst",
+      l: <>{tr("pro.hurst90d")} <Term id="hurst" iconSize={11} /></>,
+      v: H.toFixed(2),
+      s: H > 0.55 ? tr("pro.persistent") : tr("pro.meanReverting"),
+    },
+    {
+      id: "lambda2",
+      l: <>{tr("pro.metric.lambda2")} <Term id="lambda2" iconSize={11} /></>,
+      v: lambda2.toFixed(2),
+      s: tr("pro.metric.partitionFn"),
+    },
+    {
+      id: "signal",
+      l: <>{tr("pro.metric.signal")} <Term id="sigma" iconSize={11} /></>,
+      v: verdict.subtitle,
+      s: `σ = ${sig.toFixed(2)}`,
+      color: verdict.subtitleColor,
+    },
+    {
+      id: "regime",
+      l: tr("pro.metric.regime"),
+      v: domRegime.label,
+      s: domRegime.zone || "",
+      color: domRegime.zone === "Buy" || domRegime.zone === "Strong Buy" ? "#27AE60" : domRegime.zone === "Sell" ? "#EB5757" : domRegime.zone === "Reduce" ? "#F2994A" : t.cream,
+    },
   ];
 
   // Key price levels
@@ -105,8 +131,8 @@ export default function Pro({ d, derived, setTab }) {
       {/* ── METRICS STRIP ── */}
       <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${t.border}` }}>
         {metrics.map((m, i) => (
-          <div key={m.l} style={{ padding: "18px 0", borderRight: (i % 2 === 0) ? `1px solid ${t.border}` : "none", paddingRight: (i % 2 === 0) ? 24 : 0, paddingLeft: (i % 2 === 1) ? 24 : 0, borderBottom: i < 2 ? `1px solid ${t.borderFaint}` : "none" }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{m.l}</div>
+          <div key={m.id} style={{ padding: "18px 0", borderRight: (i % 2 === 0) ? `1px solid ${t.border}` : "none", paddingRight: (i % 2 === 0) ? 24 : 0, paddingLeft: (i % 2 === 1) ? 24 : 0, borderBottom: i < 2 ? `1px solid ${t.borderFaint}` : "none" }}>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4, display: "flex", alignItems: "center" }}>{m.l}</div>
             <div style={{ fontFamily: mn, fontSize: 18, fontWeight: 500, color: m.color || t.cream }}>{m.v}</div>
             <div style={{ fontFamily: bd, fontSize: 10, color: t.faint, marginTop: 2 }}>{m.s}</div>
           </div>

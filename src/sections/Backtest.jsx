@@ -5,6 +5,7 @@ import { renderMd as renderMdRaw } from "../i18n/renderMd";
 import { bd, mn } from "../theme/tokens";
 import Toggle from "../components/Toggle";
 import CatLabel from "../components/CatLabel";
+import Term from "../components/Term";
 
 export default function Backtest({ d }) {
   const { t } = useTheme();
@@ -233,12 +234,16 @@ export default function Backtest({ d }) {
       {bm.dca && (
         <div className="signal-cards" style={{ borderBottom: `1px solid ${t.border}` }}>
           <div style={{ padding: "20px 16px 20px 0", borderRight: `1px solid ${t.border}` }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{tr("backtest.smartDCAReturn")}</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center" }}>
+              {tr("backtest.smartDCAReturn")} <Term id="smartDCA" iconSize={11} />
+            </div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>+{bm.dca.smartDcaReturn}%</div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs +{bm.dca.dcaReturn}% blind DCA</div>
           </div>
           <div style={{ padding: "20px 0 20px 16px" }}>
-            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{tr("backtest.smartDCASortino")}</div>
+            <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center" }}>
+              {tr("backtest.smartDCASortino")} <Term id="sortino" iconSize={11} />
+            </div>
             <div style={{ fontFamily: mn, fontSize: 28, fontWeight: 500, color: "#BB6BD9" }}>{bm.dca.smart.sortino ?? "–"}</div>
             <div style={{ fontFamily: bd, fontSize: 11, color: t.faint, marginTop: 3 }}>vs {bm.dca.dca.sortino ?? "–"} blind DCA</div>
           </div>
