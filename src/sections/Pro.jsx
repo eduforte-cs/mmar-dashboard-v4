@@ -102,23 +102,28 @@ export default function Pro({ d, derived, setTab }) {
   const horizonKeyByDays = { 30: "pro.horizon.1m", 90: "pro.horizon.3m", 182: "pro.horizon.6m", 365: "pro.horizon.1y", 1095: "pro.horizon.3y" };
   const lossCurve = mcLossHorizons.filter(h => h.days >= 30);
 
-  // Model parameters
+  // Model parameters. Each row has a stable `id` (used as React key),
+  // an optional `term` that lights up a glossary tooltip on the FIRST
+  // occurrence of each concept family (a/b both covered by powerLaw;
+  // κ global covers κ calm/volatile; RANSAC a covers b/floor). This
+  // avoids sprinkling 13 identical icons down the list while still
+  // keeping every jargon family one click away from its definition.
   const modelParams = [
-    { l: "a (intercept)", v: fmt(a, 2), s: "WLS" },
-    { l: "b (slope)", v: fmt(b, 2), s: "WLS" },
-    { l: "R²", v: fmt(r2, 3), s: "Weighted" },
-    { l: "σ residual", v: fmt(resStd, 2), s: "ln-space" },
-    { l: "H (DFA-1)", v: fmt(H, 2), s: "90-day" },
-    { l: "λ²", v: fmt(lambda2, 2), s: "Partition fn" },
-    { l: "κ global", v: fmt(kappa, 4), s: "OU" },
-    { l: "κ calm", v: fmt(ouRegimes.regimes[0]?.kappa, 4), s: "Regime 0" },
-    { l: "κ volatile", v: fmt(ouRegimes.regimes[1]?.kappa || kappa, 4), s: "Regime 1" },
-    { l: "Vol calm", v: `${fmt(ouRegimes.regimes[0]?.volScale, 2)}x`, s: "Scale" },
-    { l: "Vol volatile", v: `${fmt(ouRegimes.regimes[1]?.volScale || 1, 2)}x`, s: "Scale" },
-    { l: "EVT cap", v: `+${fmt(evtCap, 2)}σ`, s: "GPD P99.5" },
-    { l: "RANSAC a", v: fmt(ransac?.a, 2), s: "Robust" },
-    { l: "RANSAC b", v: fmt(ransac?.b, 2), s: "Robust" },
-    { l: "RANSAC floor", v: fmt(ransac?.floor, 2), s: "ln-space" },
+    { id: "a",            l: "a (intercept)", term: "powerLaw", v: fmt(a, 2), s: "WLS" },
+    { id: "b",            l: "b (slope)",     term: null,       v: fmt(b, 2), s: "WLS" },
+    { id: "r2",           l: "R²",            term: "r2",       v: fmt(r2, 3), s: "Weighted" },
+    { id: "resStd",       l: "σ residual",    term: null,       v: fmt(resStd, 2), s: "ln-space" },
+    { id: "h",            l: "H (DFA-1)",     term: "hurst",    v: fmt(H, 2), s: "90-day" },
+    { id: "lambda2",      l: "λ²",            term: "lambda2",  v: fmt(lambda2, 2), s: "Partition fn" },
+    { id: "kappaGlobal",  l: "κ global",      term: "kappa",    v: fmt(kappa, 4), s: "OU" },
+    { id: "kappaCalm",    l: "κ calm",        term: null,       v: fmt(ouRegimes.regimes[0]?.kappa, 4), s: "Regime 0" },
+    { id: "kappaVol",     l: "κ volatile",    term: null,       v: fmt(ouRegimes.regimes[1]?.kappa || kappa, 4), s: "Regime 1" },
+    { id: "volCalm",      l: "Vol calm",      term: null,       v: `${fmt(ouRegimes.regimes[0]?.volScale, 2)}x`, s: "Scale" },
+    { id: "volVol",       l: "Vol volatile",  term: null,       v: `${fmt(ouRegimes.regimes[1]?.volScale || 1, 2)}x`, s: "Scale" },
+    { id: "evtCap",       l: "EVT cap",       term: "evt",      v: `+${fmt(evtCap, 2)}σ`, s: "GPD P99.5" },
+    { id: "ransacA",      l: "RANSAC a",      term: "ransac",   v: fmt(ransac?.a, 2), s: "Robust" },
+    { id: "ransacB",      l: "RANSAC b",      term: null,       v: fmt(ransac?.b, 2), s: "Robust" },
+    { id: "ransacFloor",  l: "RANSAC floor",  term: null,       v: fmt(ransac?.floor, 2), s: "ln-space" },
   ];
 
   // Helpers
@@ -382,8 +387,11 @@ export default function Pro({ d, derived, setTab }) {
       <Toggle section="pro" label={tr("pro.modelParams")} badge={tr("common.advanced")}>
         <div className="data-grid-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
           {modelParams.map((dm, i) => (
-            <div key={dm.l} style={{ padding: "12px 0", borderBottom: `1px solid ${t.borderFaint}`, borderRight: (i % 2 === 0) ? `1px solid ${t.borderFaint}` : "none", paddingRight: (i % 2 === 0) ? 20 : 0, paddingLeft: (i % 2 === 1) ? 20 : 0 }}>
-              <div style={{ fontFamily: bd, fontSize: 8, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{dm.l}</div>
+            <div key={dm.id} style={{ padding: "12px 0", borderBottom: `1px solid ${t.borderFaint}`, borderRight: (i % 2 === 0) ? `1px solid ${t.borderFaint}` : "none", paddingRight: (i % 2 === 0) ? 20 : 0, paddingLeft: (i % 2 === 1) ? 20 : 0 }}>
+              <div style={{ fontFamily: bd, fontSize: 8, color: t.faint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2, display: "flex", alignItems: "center" }}>
+                {dm.l}
+                {dm.term && <Term id={dm.term} iconSize={9} />}
+              </div>
               <div style={{ fontFamily: mn, fontSize: 15, color: t.cream, fontWeight: 500 }}>{dm.v}</div>
               <div style={{ fontFamily: bd, fontSize: 9, color: t.faint, marginTop: 1 }}>{dm.s}</div>
             </div>
