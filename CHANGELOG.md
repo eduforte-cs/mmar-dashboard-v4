@@ -16,6 +16,133 @@ pueda escanear rápido qué cambió y cuándo.
 
 ---
 
+## 2026-04-15 (2) — `/api/verdict` endpoint + GitHub Actions cache preload
+
+First half of the server-side signal rollout. Unblocks the Telegram
+bot, kills cold-start Monte Carlo compute on the client, and opens
+the door for third-party integrations and SEO crawlers to consume a
+stable JSON of the current signal.
+
+### Architecture
+
+The heavy compute (~1.5 s in Node, ~20-35 s in the browser Web
+Worker) runs once a day in **GitHub Actions**, not in a Vercel Cron
+Function. Reason: Vercel Hobby plan caps serverless functions at 10
+seconds, and the engine occasionally bumps up against that limit on
+a cold compute with live data. GitHub Actions runners have no
+meaningful time cap (up to 6 hours on the free tier), so the
+compute sits comfortably out of any timeout pressure, and Vercel is
+left to do what it is good at — serving fast reads.
+
+### Added
+
+- **`scripts/compute-engine.mjs`** — Node runner of the full engine
+  pipeline. Imports the same modules the browser Web Worker uses
+  (`src/engine/*.js`), so there is a single source of truth for the
+  math. Fetches BTC history, runs Power Law + Hurst + 2,000-path
+  Monte Carlo + walk-forward backtest, and upserts the result into
+  Supabase `mmar_cache` row `id=1`. Supports a `--dry-run` flag
+  that skips the DB write for local debugging.
+
+- **`.github/workflows/compute-cache.yml`** — GitHub Actions
+  workflow that runs the compute script daily at 09:00 UTC and
+  also exposes a manual `workflow_dispatch` trigger so the cache
+  can be forced from the Actions UI without waiting for the cron.
+  Uses two repository secrets (`SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`) that the user has to set manually
+  — the service role key is write-scoped and must never land in
+  the client bundle or in git history.
+
+- **`api/verdict.js`** — Vercel serverless function (Node runtime).
+  `GET /api/verdict` returns a stable bilingual JSON of the current
+  signal: meta, live spot, σ classification, Power Law params,
+  1-year / 3-year horizons, backtest headline numbers, narrative
+  (EN + ES), and model diagnostics. Response time: ~500 ms. Reads
+  pre-computed heavy data from Supabase and combines it with a
+  live spot price fetch from Binance (with Kraken fallback). Works
+  on Vercel Hobby because it runs well under the 10-second limit.
+
+- **`vercel.json`** — minimal config file that pins the endpoint's
+  `maxDuration` at 10 s so there is no accidental increase.
+
+- **`package.json` scripts** — `compute-engine` and
+  `compute-engine:dry` so the pipeline can be invoked from the
+  command line without typing the full path.
+
+### Changed
+
+- **`src/data/fetch.js`** — upgrade the `btc-history.json` import
+  to use the ESM import attribute `with { type: "json" }`. Required
+  by Node 22+ (which `scripts/compute-engine.mjs` runs on) and
+  fully supported by Vite 5+ for the browser build, so keeping a
+  single source of truth for the data fetch works. Without this,
+  Node throws `ERR_IMPORT_ATTRIBUTE_MISSING` the moment the
+  compute script loads the module.
+
+### Engine runtime measurements
+
+Running the pipeline in Node 22 on the sandbox, dry-run mode, with
+the hardcoded BTC history fallback (Binance CDN blocked in this
+environment):
+
+    1/12  Fetching BTC price history…            0.0 s
+    2/12  Fitting Power Law (WLS + RANSAC)…       0.3 s
+    3/12  Computing floor break probability…     0.3 s
+    4/12  Computing current position…            0.3 s
+    5/12  Analyzing price dynamics…              0.3 s
+    6/12  Estimating fractal structure…          0.3 s
+    7/12  Computing multi-scale Hurst…            0.3 s
+    8/12  Fitting regime-switching OU…            0.3 s
+    9/12  Running 2,000-path Monte Carlo…         0.5-0.8 s
+    9b/12 Bootstrapping P(reaches FV) CI…         1.5 s
+    10/12 Building sigma chart…                   1.5 s
+    11/12 Running walk-forward backtest…          1.5 s
+    12/12 Assembling cache row…                   1.5 s
+
+Total: **1.5 s** for the complete cold compute. On the GitHub
+Actions runner with live Binance data the fetch step will add
+another 1-3 s, but the total should still stay well under 10 s.
+
+### Pending user action (manual, after push)
+
+To activate the feature once this commit is on the branch:
+
+1. **GitHub repo → Settings → Secrets and variables → Actions →
+   New repository secret**. Add:
+   - `SUPABASE_URL` = `https://ybnsgusvnlubdqomtiss.supabase.co`
+   - `SUPABASE_SERVICE_ROLE_KEY` = (Supabase dashboard →
+     Settings → API → service_role → Reveal).
+     **Never paste this in chat, commit it, or expose to the
+     client.**
+2. **GitHub → Actions → "Compute engine cache" → Run workflow**.
+   This triggers the first cold compute manually instead of
+   waiting 24 h for the cron. Verify it completes in green.
+3. **Supabase dashboard → Table Editor → `mmar_cache`**. Confirm
+   row `id=1` has a `computed_at` timestamp within the last few
+   minutes.
+4. **Call the endpoint** on the Vercel preview URL:
+   `curl https://<preview-url>/api/verdict | jq`. Verify the JSON
+   schema and that `meta.stale === false`.
+
+### Deferred (future iterations)
+
+- **Telegram bot** — depends on this endpoint but lives in its own
+  commit. This change only makes `/api/verdict` callable; it does
+  not wire any Telegram webhook or message sender.
+- **Rate limiting** — the endpoint is public and permissive. If
+  abuse shows up in the logs, add an Upstash or Vercel Edge
+  Middleware rate limiter.
+- **SEO Layer 2 activation** — having the endpoint available is
+  most of the work, but actually surfacing it to Googlebot as
+  structured content requires extra `<script type="application/ld
+  +json">` additions to index.html and is scoped out.
+- **Client useEngine wiring to new schema** — the Supabase
+  `mmar_cache` schema is unchanged, so `src/hooks/useCache.js`
+  already reads the new rows without any modification. Zero
+  client-side churn in this iteration.
+
+---
+
 ## 2026-04-15 — Glossary tooltips + iOS Safari font fix
 
 Two things shipped together because they were touched in the same

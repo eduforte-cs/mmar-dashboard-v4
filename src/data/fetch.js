@@ -1,5 +1,8 @@
 // ── Data fetching — Binance klines + spot price ──
-import btcHistory from "./btc-history.json";
+// Import attribute `with { type: "json" }` is mandatory in Node 22+
+// ESM (used by scripts/compute-engine.mjs) and fully supported by
+// Vite 5+ for the browser build, so we can keep one source of truth.
+import btcHistory from "./btc-history.json" with { type: "json" };
 
 function mergeAndDedupe(...sources) {
   const map = new Map();

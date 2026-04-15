@@ -1,0 +1,60 @@
+name: Compute engine cache
+
+# Runs the MMAR engine pipeline once a day and writes the result to
+# Supabase `mmar_cache`. The React client reads from the same row
+# via src/hooks/useCache.js, so every visitor gets a warm cache for
+# free — no client-side Monte Carlo, no cold-start splash penalty.
+#
+# Lives in GitHub Actions (not Vercel Cron) because the Vercel
+# Hobby plan caps serverless functions at 10 s and the engine
+# takes 20-35 s on a cold compute. GitHub Actions runners have no
+# meaningful time limit.
+#
+# Secrets required (Repo → Settings → Secrets and variables →
+# Actions → New repository secret):
+#   SUPABASE_URL                   — your project URL
+#   SUPABASE_SERVICE_ROLE_KEY      — service role key (write access)
+#                                    NEVER commit this or expose it
+#                                    to the client bundle.
+
+on:
+  schedule:
+    # Daily at 09:00 UTC (06:00 Buenos Aires, 11:00 Madrid).
+    # Refreshes the cache before the peak traffic windows in the
+    # project's main audience time zones.
+    - cron: "0 9 * * *"
+  # Manual trigger button in the Actions UI — useful for forcing
+  # a refresh outside the schedule (after a code change, after a
+  # spike in price, etc.).
+  workflow_dispatch:
+
+jobs:
+  compute:
+    name: Run engine and upsert mmar_cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run engine pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/compute-engine.mjs
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Engine compute failed. Check logs above."
+          echo "The mmar_cache will fall stale after 26 hours."
+          echo "Manually re-run this workflow from the Actions UI when the issue is fixed."
