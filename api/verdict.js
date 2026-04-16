@@ -11,10 +11,10 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { createClient } from "@supabase/supabase-js";
-import { fetchSpotPrice } from "./lib/spot.js";
-import { classifySignal, deviation, supportFloorPrice } from "./lib/helpers.js";
-import { faqShouldIBuy, faqWillKeepFalling, faqWillGoUp, faqHowMuch, faqOvervalued, faqTooLate, faqShouldSell, faqBubble, faqWorstCase } from "./lib/faq-core.js";
-import { faqDCA, faqFairPrice, faqSupport, faqPowerLaw, faqPrediction, faqGoodInvestment, faqBestTime, faqWhyMoving, faqWhenHit } from "./lib/faq-extra.js";
+import { fetchSpotPrice } from "./_lib/spot.js";
+import { classifySignal, deviation, supportFloorPrice } from "./_lib/helpers.js";
+import { faqShouldIBuy, faqWillKeepFalling, faqWillGoUp, faqHowMuch, faqOvervalued, faqTooLate, faqShouldSell, faqBubble, faqWorstCase } from "./_lib/faq-core.js";
+import { faqDCA, faqFairPrice, faqSupport, faqPowerLaw, faqPrediction, faqGoodInvestment, faqBestTime, faqWhyMoving, faqWhenHit } from "./_lib/faq-extra.js";
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL
   || process.env.SUPABASE_URL

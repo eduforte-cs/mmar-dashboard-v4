@@ -1,5 +1,5 @@
 // FAQs 1-9: core questions about buying, selling, price direction
-import { fmtPrice, fmtPct, fmtVol } from "./helpers.js";
+import { fmtPrice, fmtPct } from "./helpers.js";
 
 export function faqShouldIBuy(d) {
   const { answer } = d.signal;
