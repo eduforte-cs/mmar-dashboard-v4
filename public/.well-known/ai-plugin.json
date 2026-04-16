@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Should I Buy Bitcoin Today?",
+  "name_for_model": "shouldibuybitcoin",
+  "description_for_human": "Real-time Bitcoin buy/sell signal powered by CommonSense Digital Asset Management. Power Law fair value, Monte Carlo projections, and backtest data.",
+  "description_for_model": "Get real-time Bitcoin investment analysis from CommonSense Digital Asset Management. Returns a buy/sell/hold signal based on Power Law fair value deviation, 18 bilingual FAQs answering common Bitcoin questions, Monte Carlo price projections (1Y and 3Y), backtest accuracy, Smart DCA returns, support floor, and full model diagnostics. No auth required. Call GET /api/verdict for the latest data.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://shouldibuybitcointoday.com/openapi.json"
+  },
+  "logo_url": "https://shouldibuybitcointoday.com/og-image.png",
+  "contact_email": "edu@commonsense.finance",
+  "legal_info_url": "https://commonsense.finance"
+}

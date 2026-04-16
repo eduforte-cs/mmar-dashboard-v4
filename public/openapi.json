@@ -1,0 +1,95 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Should I Buy Bitcoin Today? API",
+    "description": "Real-time Bitcoin investment analysis by CommonSense Digital Asset Management (Edu Forte). Returns buy/sell signals, Power Law fair value, Monte Carlo projections, and 18 bilingual FAQs.",
+    "version": "2.0.0",
+    "contact": {
+      "name": "CommonSense Digital Asset Management",
+      "url": "https://commonsense.finance"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://shouldibuybitcointoday.com",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/api/verdict": {
+      "get": {
+        "operationId": "getVerdict",
+        "summary": "Get the current Bitcoin buy/sell verdict with 18 FAQs",
+        "description": "Returns a comprehensive JSON response with: a buy/sell/hold signal based on Power Law deviation, 18 bilingual (EN/ES) FAQs answering common Bitcoin questions, live spot price, fair value projections, Monte Carlo simulations (2,000 paths), backtest results, support floor, and full model diagnostics. No authentication required.",
+        "responses": {
+          "200": {
+            "description": "Current Bitcoin verdict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "about": { "type": "string" },
+                    "source": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "analyst": { "type": "string" },
+                        "website": { "type": "string", "format": "uri" },
+                        "dashboard": { "type": "string", "format": "uri" }
+                      }
+                    },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "faq": {
+                      "type": "object",
+                      "description": "18 dynamically generated bilingual FAQs. Each has 'en' and 'es' fields, some also have 'answer' (yes/no/hold)."
+                    },
+                    "signal": {
+                      "type": "object",
+                      "properties": {
+                        "sigma": { "type": "number", "description": "Standard deviations from Power Law fair value" },
+                        "level": { "type": "string", "enum": ["strongBuy", "buy", "hold", "caution", "reduce", "sell"] },
+                        "answer": { "type": "string", "enum": ["yes", "hold", "no"] },
+                        "confidence": { "type": "string", "enum": ["high", "moderate", "low"] }
+                      }
+                    },
+                    "spot": {
+                      "type": "object",
+                      "properties": {
+                        "price": { "type": "integer" },
+                        "source": { "type": "string" },
+                        "fetchedAt": { "type": "string", "format": "date-time" }
+                      }
+                    },
+                    "powerLaw": {
+                      "type": "object",
+                      "properties": {
+                        "accuracy": { "type": "string" },
+                        "fairValue": { "type": "object" },
+                        "currentDiscount": { "type": "string" },
+                        "supportFloor": { "type": "integer", "nullable": true }
+                      }
+                    },
+                    "monteCarlo": {
+                      "type": "object",
+                      "properties": {
+                        "paths": { "type": "integer" },
+                        "1y": { "type": "object" },
+                        "3y": { "type": "object" },
+                        "floorBreakProb1y": { "type": "number" },
+                        "profitProbCI": { "type": "object" }
+                      }
+                    },
+                    "backtest": { "type": "object" },
+                    "model": { "type": "object" },
+                    "disclaimer": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
