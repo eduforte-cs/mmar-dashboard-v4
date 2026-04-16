@@ -1,6 +1,7 @@
 // ── ChatOverlay.jsx — Fullscreen chat, Lite aesthetic ──
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useTheme } from "../theme/ThemeContext";
+import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import Orb from "./Orb.jsx";
 
@@ -63,12 +64,14 @@ function buildSuggestions(signal, d) {
 
 export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
   const { t } = useTheme();
+  const { lang } = useI18n();
   const [phase, setPhase] = useState("expanding");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [orbState, setOrbState] = useState("responding");
   const inputRef = useRef(null);
   const chatEndRef = useRef(null);
+  const abortRef = useRef(null);
 
   const signalColor = signal === "sell" ? "#EB5757" : signal === "hold" ? "#E8A838" : "#27AE60";
 
@@ -83,29 +86,114 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
     }
   }, [phase]);
 
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
   const handleClose = () => {
+    abortRef.current?.abort();
     setPhase("contracting");
     setTimeout(() => onClose(), 400);
   };
 
-  const handleSend = (text) => {
+  const handleSend = useCallback(async (text) => {
     const msg = text || input.trim();
-    if (!msg) return;
+    if (!msg || orbState === "thinking") return;
+
+    // Add user message
     setMessages(prev => [...prev, { role: "user", text: msg }]);
     setInput("");
     setOrbState("thinking");
 
-    setTimeout(() => {
+    // Build history from current messages (last 10)
+    const currentMessages = [...messages, { role: "user", text: msg }];
+    const history = currentMessages.slice(-10).map(m => ({
+      role: m.role === "bot" ? "assistant" : "user",
+      text: m.text,
+    }));
+
+    // Abort any previous request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, history: history.slice(0, -1), lang }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Request failed (${response.status})`);
+      }
+
+      // Read SSE stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let botText = "";
+      let buffer = "";
+
+      // Add empty bot message that we'll fill as chunks arrive
+      setMessages(prev => [...prev, { role: "bot", text: "" }]);
       setOrbState("responding");
-      setTimeout(() => {
-        setMessages(prev => [...prev, {
-          role: "bot",
-          text: "This is a prototype — the AI agent isn't connected yet. When live, I'll answer using real-time data from CommonSense's quantitative model."
-        }]);
-        setOrbState("idle");
-      }, 800);
-    }, 1500);
-  };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        // Keep the last potentially incomplete line in buffer
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const event = JSON.parse(jsonStr);
+            if (event.type === "text") {
+              botText += event.text;
+              const snapshot = botText;
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "bot", text: snapshot };
+                return updated;
+              });
+            } else if (event.type === "error") {
+              throw new Error(event.error || "Stream error");
+            }
+            // "done" type — stream ends naturally
+          } catch (parseErr) {
+            if (parseErr.message === "Stream error") throw parseErr;
+            // Ignore JSON parse errors for partial chunks
+          }
+        }
+      }
+
+      setOrbState("idle");
+    } catch (err) {
+      if (err.name === "AbortError") return; // User navigated away
+
+      console.error("Chat error:", err);
+      setOrbState("idle");
+
+      const errorMsg = lang === "es"
+        ? "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo."
+        : "Sorry, something went wrong. Please try again.";
+
+      setMessages(prev => {
+        // Remove empty bot message if it was added
+        const cleaned = prev.filter((m, i) => !(i === prev.length - 1 && m.role === "bot" && m.text === ""));
+        return [...cleaned, { role: "bot", text: errorMsg }];
+      });
+    }
+  }, [input, messages, orbState, lang]);
 
   const handleKey = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
