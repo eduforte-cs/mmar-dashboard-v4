@@ -127,9 +127,24 @@ export default async function handler(req, res) {
         currentDiscount: (devPct < 0 ? fmtPctSimple(devPct) + " discount" : fmtPctSimple(devPct) + " premium"),
         supportFloor: floor ? Math.round(floor) : null,
       },
-      projections: {
-        "1y": { p5: Math.round(last1y?.p5 || 0), median: Math.round(last1y?.p50 || 0), p95: Math.round(last1y?.p95 || 0) },
-        "3y": { p5: Math.round(last3y?.p5 || 0), median: Math.round(last3y?.p50 || 0), p95: Math.round(last3y?.p95 || 0) },
+      monteCarlo: {
+        paths: 2000,
+        "1y": {
+          p5: Math.round(last1y?.p5 || 0),
+          p25: Math.round(last1y?.p25 || 0),
+          median: Math.round(last1y?.p50 || 0),
+          p75: Math.round(last1y?.p75 || 0),
+          p95: Math.round(last1y?.p95 || 0),
+        },
+        "3y": {
+          p5: Math.round(last3y?.p5 || 0),
+          p25: Math.round(last3y?.p25 || 0),
+          median: Math.round(last3y?.p50 || 0),
+          p75: Math.round(last3y?.p75 || 0),
+          p95: Math.round(last3y?.p95 || 0),
+        },
+        floorBreakProb1y: row.p_floor_break_1y,
+        profitProbCI: row.p30_ci,
       },
       backtest: {
         buyAccuracy: row.backtest_results?.precision ?? null,
