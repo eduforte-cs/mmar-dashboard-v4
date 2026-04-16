@@ -78,14 +78,14 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
         setPhase("open");
         setOrbState("idle");
         inputRef.current?.focus();
-      }, 700);
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [phase]);
 
   const handleClose = () => {
     setPhase("contracting");
-    setTimeout(() => onClose(), 500);
+    setTimeout(() => onClose(), 400);
   };
 
   const handleSend = (text) => {
@@ -118,42 +118,47 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Gradient fade transition — orb colors spread then settle into bg
-  if (phase === "expanding" || phase === "contracting") {
-    const c1 = signal === "sell" ? "#EB5757" : signal === "hold" ? "#E8A838" : "#27AE60";
-    const c2 = "#BB6BD9";
-    return (
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 9999,
-        animation: phase === "expanding"
-          ? "chatFadeIn 0.65s cubic-bezier(0.16,1,0.3,1) forwards"
-          : "chatFadeOut 0.45s cubic-bezier(0.16,1,0.3,1) forwards",
-      }}>
-        {/* Gradient layer — fades out to reveal bg */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: `
-            radial-gradient(ellipse 80% 60% at 70% 80%, ${c1}55 0%, transparent 70%),
-            radial-gradient(ellipse 60% 80% at 30% 30%, ${c2}44 0%, transparent 65%),
-            ${t.bg}
-          `,
-          animation: phase === "expanding"
-            ? "chatGradientIn 0.65s cubic-bezier(0.16,1,0.3,1) forwards"
-            : "none",
-        }} />
-      </div>
-    );
-  }
+  const isClosing = phase === "contracting";
 
   const suggestions = buildSuggestions(signal, engineData);
 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
-      display: "flex", flexDirection: "column",
-      background: t.bg,
-      animation: "chatContentIn 0.8s cubic-bezier(0.16,1,0.3,1) both",
     }}>
+      {/* Backdrop */}
+      <div
+        onClick={handleClose}
+        style={{
+          position: "absolute", inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          animation: isClosing
+            ? "chatBackdropOut 0.35s ease forwards"
+            : "chatBackdropIn 0.3s ease forwards",
+        }}
+      />
+      {/* Sheet */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        height: "92vh",
+        borderRadius: "16px 16px 0 0",
+        background: t.bg,
+        display: "flex", flexDirection: "column",
+        overflow: "hidden",
+        animation: isClosing
+          ? "chatSlideDown 0.35s cubic-bezier(0.22,1,0.36,1) forwards"
+          : "chatSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards",
+      }}>
+      {/* Handle bar */}
+      <div style={{
+        display: "flex", justifyContent: "center",
+        padding: "10px 0 2px",
+      }}>
+        <div style={{
+          width: 36, height: 4, borderRadius: 2,
+          background: t.border,
+        }} />
+      </div>
       {/* Header — minimal, Lite style */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -366,6 +371,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
           Powered by CommonSense · commonsense.finance
         </div>
       </div>
+    </div>
     </div>
   );
 }

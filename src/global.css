@@ -104,24 +104,22 @@ button:focus-visible { outline: 2px solid rgba(232, 230, 220, 0.4); outline-offs
 .orb-responding .orb-ring-2 { animation: orbRingDrift 6s linear infinite; }
 .orb-responding .orb-ring-3 { opacity: 0.4; }
 
-/* Chat transitions */
-@keyframes chatFadeIn {
-  0%   { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
+/* Chat transitions — bottom sheet */
+@keyframes chatSlideUp {
+  0%   { transform: translateY(100%); }
+  100% { transform: translateY(0); }
 }
-@keyframes chatFadeOut {
-  0%   { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(20px); }
+@keyframes chatSlideDown {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(100%); }
 }
-@keyframes chatContentIn {
-  0%   { opacity: 0; filter: blur(8px); transform: translateY(12px); }
-  60%  { opacity: 0.7; filter: blur(3px); }
-  100% { opacity: 1; filter: blur(0px); transform: translateY(0); }
+@keyframes chatBackdropIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
 }
-@keyframes chatGradientIn {
-  0%   { opacity: 0; filter: blur(30px); transform: scale(0.5); }
-  50%  { opacity: 1; filter: blur(10px); transform: scale(1.1); }
-  100% { opacity: 1; filter: blur(0px); transform: scale(1); }
+@keyframes chatBackdropOut {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* ── Responsive: mobile-first ── */
