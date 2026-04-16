@@ -77,7 +77,7 @@ function renderChatText(text) {
   });
 }
 
-export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
+export default function ChatOverlay({ signal = "buy", engineData, onClose, onAuth }) {
   const { t } = useTheme();
   const { t: tr, lang } = useI18n();
   const [phase, setPhase] = useState("expanding");
@@ -119,6 +119,14 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
     // Add user message
     setMessages(prev => [...prev, { role: "user", text: msg }]);
     setInput("");
+
+    // Auth gate — show login prompt instead of calling Claude
+    if (onAuth) {
+      setOrbState("idle");
+      setMessages(prev => [...prev, { role: "auth", text: msg }]);
+      return;
+    }
+
     setOrbState("thinking");
 
     // Build history from current messages (last 10)
@@ -368,6 +376,42 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
                     }}>
                       {m.text}
                     </div>
+                  </div>
+                ) : m.role === "auth" ? (
+                  <div>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      marginBottom: 8,
+                    }}>
+                      <Orb state="idle" signal={signal} size={16} />
+                      <span style={{
+                        fontFamily: mn, fontSize: 9, color: t.faint,
+                        textTransform: "uppercase", letterSpacing: "0.08em",
+                      }}>
+                        {tr("chat.brand")}
+                      </span>
+                    </div>
+                    <div style={{
+                      fontFamily: bd, fontSize: "clamp(15px, 1.5vw, 19px)",
+                      fontWeight: 400, color: t.cream, lineHeight: 1.7,
+                      marginBottom: 16,
+                    }}>
+                      {lang === "es"
+                        ? "Para responder tu pregunta necesito que inicies sesión. Es gratis y solo toma un segundo."
+                        : "To answer your question I need you to sign in. It's free and takes just a second."}
+                    </div>
+                    <button
+                      onClick={() => onAuth?.("google")}
+                      style={{
+                        fontFamily: bd, fontSize: 14, fontWeight: 500,
+                        background: t.cream, color: t.bg,
+                        border: "none", borderRadius: 8,
+                        padding: "10px 20px", cursor: "pointer",
+                        width: "100%",
+                      }}
+                    >
+                      {lang === "es" ? "Continuar con Google" : "Continue with Google"}
+                    </button>
                   </div>
                 ) : (
                   <div>

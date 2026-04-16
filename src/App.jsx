@@ -188,6 +188,7 @@ function LandingShell({ onAuth }) {
           signal="buy"
           engineData={null}
           onClose={() => setChatOpen(false)}
+          onAuth={onAuth}
         />
       )}
     </div>
