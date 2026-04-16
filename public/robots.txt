@@ -1,5 +1,30 @@
 User-agent: *
 Allow: /
 
+# AI crawlers — explicitly welcomed
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
 Sitemap: https://shouldibuybitcointoday.com/sitemap.xml
 Host: https://shouldibuybitcointoday.com
+
+# LLM discovery files
+# /llms.txt — site overview for LLMs
+# /openapi.json — API spec for /api/verdict
+# /.well-known/ai-plugin.json — plugin manifest
+# /api/verdict — public JSON endpoint (no auth)
