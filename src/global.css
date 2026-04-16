@@ -35,6 +35,93 @@ button:focus-visible { outline: 2px solid rgba(232, 230, 220, 0.4); outline-offs
   50%      { opacity: 0.86; transform: scale(1.04); }
 }
 
+/* ── Orb animations ── */
+/* Idle: breathe + morph + rotate gradient */
+@keyframes orbBreathe {
+  0%   { transform: scale(1) rotate(0deg); border-radius: 50%; opacity: 1; }
+  25%  { transform: scale(1.08) rotate(5deg); border-radius: 48% 52% 50% 50%; opacity: 0.9; }
+  50%  { transform: scale(1.04) rotate(-3deg); border-radius: 52% 48% 48% 52%; opacity: 0.85; }
+  75%  { transform: scale(1.1) rotate(4deg); border-radius: 48% 50% 52% 48%; opacity: 0.92; }
+  100% { transform: scale(1) rotate(0deg); border-radius: 50%; opacity: 1; }
+}
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+@keyframes orbRingDrift {
+  0%   { transform: scale(1) rotate(0deg); opacity: 0.5; }
+  33%  { transform: scale(1.2) rotate(120deg); opacity: 0.25; }
+  66%  { transform: scale(1.1) rotate(240deg); opacity: 0.4; }
+  100% { transform: scale(1) rotate(360deg); opacity: 0.5; }
+}
+@keyframes orbLayerA {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(15%, 10%) scale(1.1); }
+  66%  { transform: translate(-10%, -5%) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes orbLayerB {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(-12%, -8%) scale(0.9); }
+  66%  { transform: translate(10%, 12%) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.orb-idle { animation: orbFloat 4s ease-in-out infinite; }
+.orb-idle .orb-core { animation: orbBreathe 5s ease-in-out infinite; }
+.orb-idle .orb-layer-a { animation: orbLayerA 6s ease-in-out infinite; }
+.orb-idle .orb-layer-b { animation: orbLayerB 6s ease-in-out infinite; }
+.orb-idle .orb-ring-2 { animation: orbRingDrift 8s linear infinite; }
+.orb-idle .orb-ring-3 { animation: orbRingDrift 12s linear reverse infinite; }
+
+/* Thinking: fast morph + ripple outward */
+@keyframes orbThink {
+  0%   { transform: scale(1) rotate(0deg); border-radius: 50%; }
+  25%  { transform: scale(1.15) rotate(10deg); border-radius: 44% 56% 50% 50%; }
+  50%  { transform: scale(0.95) rotate(-8deg); border-radius: 56% 44% 44% 56%; }
+  75%  { transform: scale(1.12) rotate(6deg); border-radius: 46% 54% 52% 48%; }
+  100% { transform: scale(1) rotate(0deg); border-radius: 50%; }
+}
+@keyframes orbRipple {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.orb-thinking { animation: none; }
+.orb-thinking .orb-core { animation: orbThink 1s ease-in-out infinite; }
+.orb-thinking .orb-layer-a { animation: orbLayerA 2s ease-in-out infinite; }
+.orb-thinking .orb-layer-b { animation: orbLayerB 2s ease-in-out infinite; }
+.orb-thinking .orb-ring-2 { animation: orbRipple 1s ease-out infinite; }
+.orb-thinking .orb-ring-3 { animation: orbRipple 1s ease-out 0.3s infinite; }
+
+/* Responding: gentle morph + glow */
+@keyframes orbGlow {
+  0%, 100% { transform: scale(1.02) rotate(0deg); border-radius: 50%; }
+  50%      { transform: scale(1.06) rotate(3deg); border-radius: 48% 52% 50% 50%; }
+}
+.orb-responding { animation: orbFloat 3s ease-in-out infinite; }
+.orb-responding .orb-core { animation: orbGlow 2.5s ease-in-out infinite; }
+.orb-responding .orb-layer-a { animation: orbLayerA 4s ease-in-out infinite; }
+.orb-responding .orb-layer-b { animation: orbLayerB 4s ease-in-out infinite; }
+.orb-responding .orb-ring-2 { animation: orbRingDrift 6s linear infinite; }
+.orb-responding .orb-ring-3 { opacity: 0.4; }
+
+/* Chat transitions — bottom sheet */
+@keyframes chatSlideUp {
+  0%   { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+@keyframes chatSlideDown {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+@keyframes chatBackdropIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes chatBackdropOut {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* ── Responsive: mobile-first ── */
 .header-desktop { display: none !important; }
 .header-mobile  { display: flex !important; }

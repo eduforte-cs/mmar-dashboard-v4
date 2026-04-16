@@ -31,7 +31,7 @@ const MOBILE_MENU_TABS = [
   { label: "About", key: "about" },
 ];
 
-export default function Header({ tab, setTab, r2, user, onLogout }) {
+export default function Header({ tab, setTab, r2, user, onLogout, onAskOpen }) {
   const { t, mode, toggle } = useTheme();
   const { lang, setLang, t: tr } = useI18n();
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -106,6 +106,21 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
             </button>
           );
         })}
+
+        {/* Ask AI */}
+        <button
+          onClick={onAskOpen}
+          style={{
+            fontFamily: bd, fontSize: 13, fontWeight: 500,
+            color: "#27AE60",
+            background: "none", border: "none",
+            cursor: "pointer", padding: "0 14px",
+            display: "flex", alignItems: "center", gap: 6,
+            borderLeft: `1px solid ${t.border}`,
+          }}
+        >
+          Ask AI
+        </button>
 
         {/* R² */}
         <div style={{
@@ -222,6 +237,20 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
           );
         })}
 
+        {/* Ask AI — mobile */}
+        <button
+          onClick={onAskOpen}
+          style={{
+            padding: "0 12px", border: "none",
+            cursor: "pointer", fontFamily: bd, fontSize: 13, fontWeight: 500,
+            color: "#27AE60",
+            background: "transparent",
+            flexShrink: 0,
+          }}
+        >
+          Ask AI
+        </button>
+
         {/* Hamburger — pushed to far right */}
         <button
           onClick={() => setMobileMenu(m => !m)}
@@ -261,6 +290,19 @@ export default function Header({ tab, setTab, r2, user, onLogout }) {
           background: t.bg, borderBottom: `1px solid ${t.border}`,
           display: "flex", flexDirection: "column",
         }}>
+          {/* Ask AI — top of mobile menu */}
+          <button
+            onClick={() => { onAskOpen?.(); setMobileMenu(false); }}
+            style={{
+              padding: "16px 20px", border: "none",
+              borderBottom: `1px solid ${t.borderFaint}`,
+              cursor: "pointer", fontFamily: bd, fontSize: 14, fontWeight: 500,
+              color: "#27AE60",
+              background: "transparent", textAlign: "left",
+            }}
+          >
+            Ask AI
+          </button>
           {MOBILE_MENU_TABS.map(n => (
             <button
               key={n.key}

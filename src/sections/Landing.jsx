@@ -4,9 +4,10 @@ import { useI18n } from "../i18n/I18nContext";
 import { bd, mn } from "../theme/tokens";
 import { fmtK } from "../engine/constants.js";
 import Chevron from "../components/Chevron";
+import Orb from "../components/Orb.jsx";
 import { trackAuthStart, trackAuthComplete, trackCtaClick } from "../tracking";
 
-export default function Landing({ d, onAuth, setTab }) {
+export default function Landing({ d, onAuth, setTab, onAskOpen }) {
   const { t } = useTheme();
   const { t: tr } = useI18n();
   const topRef = useRef(null);
@@ -101,6 +102,28 @@ export default function Landing({ d, onAuth, setTab }) {
           }}>
             {(() => { const p = tr("landing.subtitle").split("{yesOrNo}"); return <>{p[0]}<strong style={{ fontWeight: 700, color: t.cream }}>{tr("landing.yesOrNo")}</strong>{p[1]}</>; })()}
           </p>
+
+          {/* Ask anything input */}
+          <div style={{
+            marginTop: "clamp(16px, 2vh, 32px)",
+            display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <Orb state="idle" signal="buy" size={32} />
+            <div
+              onClick={() => onAskOpen?.()}
+              style={{
+                flex: 1,
+                borderBottom: `1px solid ${t.border}`,
+                padding: "10px 0",
+                fontFamily: bd,
+                fontSize: 15,
+                color: t.faint,
+                cursor: "pointer",
+              }}
+            >
+              {tr("chat.placeholder")}
+            </div>
+          </div>
         </div>
 
         {/* Auth + bars + footer — pinned to bottom, full width */}
