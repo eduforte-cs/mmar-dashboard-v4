@@ -6,26 +6,26 @@ import { bd, mn } from "../theme/tokens";
 import Orb from "./Orb.jsx";
 
 // Generate contextual suggestions based on market state
-function buildSuggestions(signal, d) {
+function buildSuggestions(signal, d, tr) {
   // Pool of FAQ-style questions people always ask
   const universal = [
-    "Should I buy Bitcoin today?",
-    "Will Bitcoin keep falling?",
-    "Will Bitcoin go up?",
-    "How much will Bitcoin be worth?",
-    "Is Bitcoin overvalued?",
-    "Is it too late to buy Bitcoin?",
-    "Should I sell my Bitcoin?",
-    "Is Bitcoin a bubble?",
-    "What's the worst case?",
-    "Should I DCA into Bitcoin?",
-    "What's Bitcoin's fair price?",
-    "What's Bitcoin's support level?",
-    "What is the Power Law?",
-    "Is Bitcoin a good long-term investment?",
-    "When is the best time to buy?",
-    "When will Bitcoin hit $150K?",
-    "When will Bitcoin hit $1M?",
+    tr("chat.q1"),
+    tr("chat.q2"),
+    tr("chat.q3"),
+    tr("chat.q4"),
+    tr("chat.q5"),
+    tr("chat.q6"),
+    tr("chat.q7"),
+    tr("chat.q8"),
+    tr("chat.q9"),
+    tr("chat.q10"),
+    tr("chat.q11"),
+    tr("chat.q12"),
+    tr("chat.q13"),
+    tr("chat.q14"),
+    tr("chat.q15"),
+    tr("chat.q16"),
+    tr("chat.q17"),
   ];
 
   if (!d) {
@@ -79,7 +79,7 @@ function renderChatText(text) {
 
 export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
   const { t } = useTheme();
-  const { lang } = useI18n();
+  const { t: tr, lang } = useI18n();
   const [phase, setPhase] = useState("expanding");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -198,9 +198,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
       console.error("Chat error:", err);
       setOrbState("idle");
 
-      const errorMsg = lang === "es"
-        ? "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo."
-        : "Sorry, something went wrong. Please try again.";
+      const errorMsg = tr("chat.error");
 
       setMessages(prev => {
         // Remove empty bot message if it was added
@@ -223,7 +221,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
 
   const isClosing = phase === "contracting";
 
-  const suggestions = buildSuggestions(signal, engineData);
+  const suggestions = buildSuggestions(signal, engineData, tr);
 
   return (
     <div style={{
@@ -271,10 +269,10 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Orb state={orbState} signal={signal} size={28} />
           <span style={{ fontFamily: bd, fontSize: 15, fontWeight: 600, color: t.cream }}>
-            CommonSense
+            {tr("chat.brand")}
           </span>
           <span style={{ fontFamily: mn, fontSize: 11, color: t.faint }}>
-            AI
+            {tr("chat.brandSub")}
           </span>
         </div>
         <button
@@ -286,7 +284,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
             padding: "4px 0",
           }}
         >
-          Close
+          {tr("chat.close")}
         </button>
       </div>
 
@@ -313,14 +311,14 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
               lineHeight: 0.95,
               margin: 0,
             }}>
-              Ask me anything about Bitcoin
+              {tr("chat.title")}
             </h2>
             <p style={{
               fontFamily: bd, fontSize: "clamp(14px, 1.3vw, 18px)",
               color: t.faint, lineHeight: 1.6,
               margin: "12px 0 0", maxWidth: 420,
             }}>
-              I answer with real-time data from CommonSense's model. No guesswork — just numbers.
+              {tr("chat.subtitle")}
             </p>
 
             <div style={{
@@ -362,7 +360,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
                       textTransform: "uppercase", letterSpacing: "0.08em",
                       marginBottom: 6,
                     }}>
-                      You
+                      {tr("chat.you")}
                     </div>
                     <div style={{
                       fontFamily: bd, fontSize: "clamp(17px, 2vw, 22px)",
@@ -382,7 +380,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
                         fontFamily: mn, fontSize: 9, color: t.faint,
                         textTransform: "uppercase", letterSpacing: "0.08em",
                       }}>
-                        CommonSense
+                        {tr("chat.brand")}
                       </span>
                     </div>
                     <div style={{
@@ -407,13 +405,13 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
                     fontFamily: mn, fontSize: 9, color: t.faint,
                     textTransform: "uppercase", letterSpacing: "0.08em",
                   }}>
-                    CommonSense
+                    {tr("chat.brand")}
                   </span>
                 </div>
                 <span style={{
                   fontFamily: mn, fontSize: 13, color: t.dim,
                 }}>
-                  Analyzing...
+                  {tr("chat.analyzing")}
                 </span>
               </div>
             )}
@@ -436,7 +434,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Ask about Bitcoin..."
+            placeholder={tr("chat.placeholder")}
             style={{
               flex: 1,
               background: "transparent",
@@ -464,14 +462,14 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
               transition: "color 0.2s",
             }}
           >
-            Send
+            {tr("chat.send")}
           </button>
         </div>
         <div style={{
           textAlign: "center", paddingTop: 10,
           fontFamily: mn, fontSize: 10, color: t.faint,
         }}>
-          Powered by CommonSense · commonsense.finance
+          {tr("chat.powered")}
         </div>
       </div>
     </div>
