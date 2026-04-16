@@ -19,8 +19,6 @@ import Landing from "./sections/Landing";
 import { supabase } from "./lib/supabase";
 import { fetchSpotPrice } from "./data/fetch.js";
 import { trackTabView, trackPageView, trackSignalView } from "./tracking";
-import Orb from "./components/Orb.jsx";
-import ChatOverlay from "./components/ChatOverlay.jsx";
 
 // ─────────────────────────────────────────────────────────────────
 // ErrorScreen — shown when the engine fails.
@@ -178,7 +176,6 @@ function LandingShell({ onAuth }) {
 function AuthedDashboard({ session, onLogout }) {
   const { t } = useTheme();
   const [tab, setTabRaw] = useState("lite");
-  const [chatOpen, setChatOpen] = useState(false);
   const setTab = useCallback((tabId) => { trackTabView(tabId); setTabRaw(tabId); }, []);
   const { phase, msg, d, derived, lastRefresh, retry } = useEngine();
 
@@ -225,26 +222,6 @@ function AuthedDashboard({ session, onLogout }) {
           </div>
           <Footer lastRefresh={lastRefresh} />
         </div>
-      )}
-
-      {/* Floating orb — bottom right */}
-      {!chatOpen && (
-        <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 900 }}>
-          <Orb
-            state="idle"
-            signal={d?.answerLabel === "no" ? "sell" : d?.answerLabel === "hold" ? "hold" : "buy"}
-            size={52}
-            onClick={() => setChatOpen(true)}
-          />
-        </div>
-      )}
-
-      {/* Chat overlay */}
-      {chatOpen && (
-        <ChatOverlay
-          signal={d?.answerLabel === "no" ? "sell" : d?.answerLabel === "hold" ? "hold" : "buy"}
-          onClose={() => setChatOpen(false)}
-        />
       )}
     </div>
   );
