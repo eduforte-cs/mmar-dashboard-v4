@@ -234,7 +234,7 @@ function AuthedDashboard({ session, onLogout }) {
             state="idle"
             signal={d?.answerLabel === "no" ? "sell" : d?.answerLabel === "hold" ? "hold" : "buy"}
             size={56}
-            label="Ask"
+            label="AI"
             onClick={() => setChatOpen(true)}
           />
         </div>
@@ -244,6 +244,7 @@ function AuthedDashboard({ session, onLogout }) {
       {chatOpen && (
         <ChatOverlay
           signal={d?.answerLabel === "no" ? "sell" : d?.answerLabel === "hold" ? "hold" : "buy"}
+          engineData={d}
           onClose={() => setChatOpen(false)}
         />
       )}

@@ -4,7 +4,45 @@ import { useTheme } from "../theme/ThemeContext";
 import { bd, mn } from "../theme/tokens";
 import Orb from "./Orb.jsx";
 
-export default function ChatOverlay({ signal = "buy", onClose }) {
+// Generate contextual suggestions based on market state
+function buildSuggestions(signal, d) {
+  if (!d) return [
+    "Should I buy Bitcoin today?",
+    "What's Bitcoin's fair price?",
+    "Is Bitcoin a bubble?",
+    "When will Bitcoin hit $150K?",
+  ];
+
+  const price = d.S0 ? `$${Math.round(d.S0).toLocaleString("en-US")}` : "current price";
+  const fairValue = d.plToday ? `$${Math.round(d.plToday).toLocaleString("en-US")}` : null;
+  const discount = d.plToday && d.S0 ? Math.abs(Math.round((d.S0 - d.plToday) / d.plToday * 100)) : null;
+
+  if (signal === "buy" || signal === "strongBuy") {
+    return [
+      `Bitcoin is at ${price} — should I buy?`,
+      discount ? `Why is Bitcoin ${discount}% below fair value?` : "Is Bitcoin undervalued?",
+      "Is it going to keep falling?",
+      "Should I invest all at once or DCA?",
+    ];
+  }
+  if (signal === "sell") {
+    return [
+      `Bitcoin is at ${price} — should I sell?`,
+      "Is Bitcoin in a bubble right now?",
+      "How far can it fall from here?",
+      fairValue ? `Will Bitcoin come back to ${fairValue}?` : "When should I buy back?",
+    ];
+  }
+  // hold / caution
+  return [
+    `Bitcoin is at ${price} — what should I do?`,
+    "Is now a good time to start DCA?",
+    fairValue ? `Fair value is ${fairValue} — what does that mean?` : "What's Bitcoin's fair value?",
+    "What's the worst case scenario?",
+  ];
+}
+
+export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
   const { t } = useTheme();
   const [phase, setPhase] = useState("expanding");
   const [messages, setMessages] = useState([]);
@@ -79,12 +117,7 @@ export default function ChatOverlay({ signal = "buy", onClose }) {
     );
   }
 
-  const suggestions = [
-    "Should I buy Bitcoin?",
-    "Is it a bubble?",
-    "What's the fair price?",
-    "When will it hit $150K?",
-  ];
+  const suggestions = buildSuggestions(signal, engineData);
 
   return (
     <div style={{
@@ -144,7 +177,7 @@ export default function ChatOverlay({ signal = "buy", onClose }) {
               lineHeight: 0.95,
               margin: 0,
             }}>
-              Ask me anything
+              Ask me anything about Bitcoin
             </h2>
             <p style={{
               fontFamily: bd, fontSize: "clamp(14px, 1.3vw, 18px)",
