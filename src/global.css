@@ -35,6 +35,54 @@ button:focus-visible { outline: 2px solid rgba(232, 230, 220, 0.4); outline-offs
   50%      { opacity: 0.86; transform: scale(1.04); }
 }
 
+/* ── Orb animations ── */
+/* Idle: slow breathing */
+@keyframes orbBreathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.06); opacity: 0.85; }
+}
+@keyframes orbRingBreathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50%      { transform: scale(1.15); opacity: 0.3; }
+}
+.orb-idle .orb-core { animation: orbBreathe 3s ease-in-out infinite; }
+.orb-idle .orb-ring-2 { animation: orbRingBreathe 3s ease-in-out infinite; }
+.orb-idle .orb-ring-3 { animation: orbRingBreathe 3s ease-in-out 0.5s infinite; }
+
+/* Thinking: fast pulse + ripple */
+@keyframes orbThink {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.1); opacity: 0.7; }
+}
+@keyframes orbRipple {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.orb-thinking .orb-core { animation: orbThink 0.8s ease-in-out infinite; }
+.orb-thinking .orb-ring-2 { animation: orbRipple 1.2s ease-out infinite; }
+.orb-thinking .orb-ring-3 { animation: orbRipple 1.2s ease-out 0.4s infinite; }
+
+/* Responding: steady glow */
+@keyframes orbGlow {
+  0%, 100% { transform: scale(1.02); opacity: 0.95; }
+  50%      { transform: scale(1.05); opacity: 1; }
+}
+.orb-responding .orb-core { animation: orbGlow 2s ease-in-out infinite; }
+.orb-responding .orb-ring-2 { animation: orbRingBreathe 2s ease-in-out infinite; }
+.orb-responding .orb-ring-3 { opacity: 0.4; }
+
+/* Orb expansion to fullscreen */
+@keyframes orbExpand {
+  0%   { transform: scale(1); border-radius: 50%; }
+  60%  { border-radius: 30%; }
+  100% { transform: scale(40); border-radius: 0; }
+}
+@keyframes orbContract {
+  0%   { transform: scale(40); border-radius: 0; opacity: 1; }
+  40%  { border-radius: 30%; }
+  100% { transform: scale(1); border-radius: 50%; opacity: 1; }
+}
+
 /* ── Responsive: mobile-first ── */
 .header-desktop { display: none !important; }
 .header-mobile  { display: flex !important; }
