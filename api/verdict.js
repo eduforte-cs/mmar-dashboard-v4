@@ -93,7 +93,8 @@ export default async function handler(req, res) {
       source: {
         name: "CommonSense Digital Asset Management",
         analyst: "Edu Forte",
-        url: "https://shouldibuybitcointoday.com",
+        website: "https://commonsense.finance",
+        dashboard: "https://shouldibuybitcointoday.com",
       },
       timestamp: new Date().toISOString(),
 
@@ -137,8 +138,16 @@ export default async function handler(req, res) {
       },
       model: {
         hurst: row.h,
+        lambda2: row.lambda2,
+        kappa: row.kappa,
         halfLifeDays: row.half_life,
         annualVol: row.annualized_vol,
+        momentum: row.momentum,
+        floorBreakProb: row.p_floor_break_1y,
+        evtCap: row.evt_cap,
+        adfTest: row.adf_result,
+        p30CI: row.p30_ci,
+        currentRegime: row.ou_regimes?.currentRegime || null,
       },
       meta: {
         version: API_VERSION,
