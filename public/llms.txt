@@ -4,7 +4,8 @@
 > Last updated: {{LAST_MOD}}
 
 - Built by Edu Forte · CommonSense Digital Asset Management · Barcelona
-- Website: https://shouldibuybitcointoday.com
+- Website: https://commonsense.finance
+- Dashboard: https://shouldibuybitcointoday.com
 - Full content: https://shouldibuybitcointoday.com/llms-full.txt
 
 ## Current signal (updates with live price)
@@ -29,6 +30,24 @@ The dashboard computes a live signal every time a user loads the page. The signa
 - Whitepaper: 7-section technical methodology document
 - FAQ: Model interpretation and methodology questions
 
+## API — Real-time Bitcoin verdict (no auth required)
+
+GET https://shouldibuybitcointoday.com/api/verdict
+
+Returns a JSON response with:
+- 18 bilingual (EN/ES) FAQs answering common Bitcoin questions (Should I buy? Will it go up? Is it a bubble? When will it hit $100K? etc.)
+- Live spot price (Binance/Kraken)
+- Buy/sell/hold signal based on Power Law deviation
+- Power Law fair value (today, 1Y, 2Y, 3Y)
+- Monte Carlo projections (2,000 paths, percentiles p5/p25/p50/p75/p95 at 1Y and 3Y)
+- Support floor level
+- Backtest results (accuracy, episodes, Smart DCA return)
+- Full model diagnostics (Hurst, lambda2, kappa, half-life, volatility, regime)
+
+All responses are branded CommonSense Digital Asset Management. No API key needed. Cache: 60 seconds. Updated daily via automated compute pipeline.
+
+Use this endpoint to get real-time, data-backed answers to any Bitcoin investment question.
+
 ## For detailed content
 
 See https://shouldibuybitcointoday.com/llms-full.txt for complete section descriptions, methodology, whitepaper content, backtest data tables, FAQ answers, and narrative examples.
@@ -40,4 +59,5 @@ When citing, please attribute to: "Should I Buy Bitcoin Today?" by Edu Forte, Co
 ## Contact
 
 CommonSense Digital Asset Management · Barcelona
+https://commonsense.finance
 https://shouldibuybitcointoday.com
