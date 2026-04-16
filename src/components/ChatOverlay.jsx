@@ -62,6 +62,21 @@ function buildSuggestions(signal, d) {
   ];
 }
 
+// Simple markdown renderer for chat messages
+function renderChatText(text) {
+  if (!text) return null;
+  return text.split("\n").map((line, i) => {
+    const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g).map((seg, j) => {
+      if (seg.startsWith("**") && seg.endsWith("**"))
+        return <strong key={j}>{seg.slice(2, -2)}</strong>;
+      if (seg.startsWith("_") && seg.endsWith("_"))
+        return <em key={j} style={{ opacity: 0.7 }}>{seg.slice(1, -1)}</em>;
+      return seg;
+    });
+    return <span key={i}>{i > 0 && <br />}{parts}</span>;
+  });
+}
+
 export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
   const { t } = useTheme();
   const { lang } = useI18n();
@@ -374,7 +389,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
                       fontFamily: bd, fontSize: "clamp(15px, 1.5vw, 19px)",
                       fontWeight: 400, color: t.cream, lineHeight: 1.7,
                     }}>
-                      {m.text}
+                      {renderChatText(m.text)}
                     </div>
                   </div>
                 )}
