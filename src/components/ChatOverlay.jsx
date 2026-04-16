@@ -118,16 +118,30 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Slide-up fade transition
+  // Gradient fade transition — orb colors spread then settle into bg
   if (phase === "expanding" || phase === "contracting") {
+    const c1 = signal === "sell" ? "#EB5757" : signal === "hold" ? "#E8A838" : "#27AE60";
+    const c2 = "#BB6BD9";
     return (
       <div style={{
         position: "fixed", inset: 0, zIndex: 9999,
-        background: t.bg,
         animation: phase === "expanding"
           ? "chatFadeIn 0.65s cubic-bezier(0.16,1,0.3,1) forwards"
           : "chatFadeOut 0.45s cubic-bezier(0.16,1,0.3,1) forwards",
-      }} />
+      }}>
+        {/* Gradient layer — fades out to reveal bg */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: `
+            radial-gradient(ellipse 80% 60% at 70% 80%, ${c1}55 0%, transparent 70%),
+            radial-gradient(ellipse 60% 80% at 30% 30%, ${c2}44 0%, transparent 65%),
+            ${t.bg}
+          `,
+          animation: phase === "expanding"
+            ? "chatGradientIn 0.65s cubic-bezier(0.16,1,0.3,1) forwards"
+            : "none",
+        }} />
+      </div>
     );
   }
 
