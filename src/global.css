@@ -36,39 +36,54 @@ button:focus-visible { outline: 2px solid rgba(232, 230, 220, 0.4); outline-offs
 }
 
 /* ── Orb animations ── */
-/* Idle: slow breathing */
+/* Idle: breathe + morph + rotate gradient */
 @keyframes orbBreathe {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.06); opacity: 0.85; }
+  0%   { transform: scale(1) rotate(0deg); border-radius: 50%; opacity: 1; }
+  25%  { transform: scale(1.08) rotate(5deg); border-radius: 48% 52% 50% 50%; opacity: 0.9; }
+  50%  { transform: scale(1.04) rotate(-3deg); border-radius: 52% 48% 48% 52%; opacity: 0.85; }
+  75%  { transform: scale(1.1) rotate(4deg); border-radius: 48% 50% 52% 48%; opacity: 0.92; }
+  100% { transform: scale(1) rotate(0deg); border-radius: 50%; opacity: 1; }
 }
-@keyframes orbRingBreathe {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50%      { transform: scale(1.15); opacity: 0.3; }
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
 }
-.orb-idle .orb-core { animation: orbBreathe 3s ease-in-out infinite; }
-.orb-idle .orb-ring-2 { animation: orbRingBreathe 3s ease-in-out infinite; }
-.orb-idle .orb-ring-3 { animation: orbRingBreathe 3s ease-in-out 0.5s infinite; }
+@keyframes orbRingDrift {
+  0%   { transform: scale(1) rotate(0deg); opacity: 0.5; }
+  33%  { transform: scale(1.2) rotate(120deg); opacity: 0.25; }
+  66%  { transform: scale(1.1) rotate(240deg); opacity: 0.4; }
+  100% { transform: scale(1) rotate(360deg); opacity: 0.5; }
+}
+.orb-idle { animation: orbFloat 4s ease-in-out infinite; }
+.orb-idle .orb-core { animation: orbBreathe 5s ease-in-out infinite; }
+.orb-idle .orb-ring-2 { animation: orbRingDrift 8s linear infinite; }
+.orb-idle .orb-ring-3 { animation: orbRingDrift 12s linear reverse infinite; }
 
-/* Thinking: fast pulse + ripple */
+/* Thinking: fast morph + ripple outward */
 @keyframes orbThink {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.1); opacity: 0.7; }
+  0%   { transform: scale(1) rotate(0deg); border-radius: 50%; }
+  25%  { transform: scale(1.15) rotate(10deg); border-radius: 44% 56% 50% 50%; }
+  50%  { transform: scale(0.95) rotate(-8deg); border-radius: 56% 44% 44% 56%; }
+  75%  { transform: scale(1.12) rotate(6deg); border-radius: 46% 54% 52% 48%; }
+  100% { transform: scale(1) rotate(0deg); border-radius: 50%; }
 }
 @keyframes orbRipple {
   0%   { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
-.orb-thinking .orb-core { animation: orbThink 0.8s ease-in-out infinite; }
-.orb-thinking .orb-ring-2 { animation: orbRipple 1.2s ease-out infinite; }
-.orb-thinking .orb-ring-3 { animation: orbRipple 1.2s ease-out 0.4s infinite; }
+.orb-thinking { animation: none; }
+.orb-thinking .orb-core { animation: orbThink 1s ease-in-out infinite; }
+.orb-thinking .orb-ring-2 { animation: orbRipple 1s ease-out infinite; }
+.orb-thinking .orb-ring-3 { animation: orbRipple 1s ease-out 0.3s infinite; }
 
-/* Responding: steady glow */
+/* Responding: gentle morph + glow */
 @keyframes orbGlow {
-  0%, 100% { transform: scale(1.02); opacity: 0.95; }
-  50%      { transform: scale(1.05); opacity: 1; }
+  0%, 100% { transform: scale(1.02) rotate(0deg); border-radius: 50%; }
+  50%      { transform: scale(1.06) rotate(3deg); border-radius: 48% 52% 50% 50%; }
 }
-.orb-responding .orb-core { animation: orbGlow 2s ease-in-out infinite; }
-.orb-responding .orb-ring-2 { animation: orbRingBreathe 2s ease-in-out infinite; }
+.orb-responding { animation: orbFloat 3s ease-in-out infinite; }
+.orb-responding .orb-core { animation: orbGlow 2.5s ease-in-out infinite; }
+.orb-responding .orb-ring-2 { animation: orbRingDrift 6s linear infinite; }
 .orb-responding .orb-ring-3 { opacity: 0.4; }
 
 /* Orb expansion to fullscreen */

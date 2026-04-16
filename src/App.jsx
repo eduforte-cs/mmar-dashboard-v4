@@ -233,7 +233,8 @@ function AuthedDashboard({ session, onLogout }) {
           <Orb
             state="idle"
             signal={d?.answerLabel === "no" ? "sell" : d?.answerLabel === "hold" ? "hold" : "buy"}
-            size={52}
+            size={56}
+            label="Ask"
             onClick={() => setChatOpen(true)}
           />
         </div>

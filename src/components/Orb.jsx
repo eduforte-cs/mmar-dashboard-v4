@@ -1,5 +1,6 @@
 // ── Orb.jsx — Floating gradient blob, signal-aware ──
 import { useState, useEffect } from "react";
+import { bd } from "../theme/tokens";
 
 const SIGNAL_GRADIENTS = {
   buy:  ["#27AE60", "#1B8A4A", "#0D5C2E"],
@@ -7,7 +8,7 @@ const SIGNAL_GRADIENTS = {
   sell: ["#EB5757", "#C74141", "#9A2B2B"],
 };
 
-export default function Orb({ state = "idle", signal = "buy", size = 48, onClick, style }) {
+export default function Orb({ state = "idle", signal = "buy", size = 48, label, onClick, style }) {
   const [c1, c2, c3] = SIGNAL_GRADIENTS[signal] || SIGNAL_GRADIENTS.buy;
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -63,6 +64,26 @@ export default function Orb({ state = "idle", signal = "buy", size = 48, onClick
         `,
         filter: `blur(${size * 0.03}px)`,
       }} />
+      {/* Label */}
+      {label && (
+        <span style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: bd,
+          fontSize: size * 0.22,
+          fontWeight: 700,
+          color: "#fff",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          zIndex: 1,
+          textShadow: `0 1px ${size * 0.06}px ${c3}88`,
+        }}>
+          {label}
+        </span>
+      )}
     </button>
   );
 }
