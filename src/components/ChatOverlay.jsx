@@ -78,14 +78,14 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
         setPhase("open");
         setOrbState("idle");
         inputRef.current?.focus();
-      }, 500);
+      }, 400);
       return () => clearTimeout(timer);
     }
   }, [phase]);
 
   const handleClose = () => {
     setPhase("contracting");
-    setTimeout(() => onClose(), 450);
+    setTimeout(() => onClose(), 350);
   };
 
   const handleSend = (text) => {
@@ -118,21 +118,16 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Expansion / contraction phase
+  // Fade transition
   if (phase === "expanding" || phase === "contracting") {
     return (
       <div style={{
         position: "fixed", inset: 0, zIndex: 9999,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: "50%",
-          background: `radial-gradient(circle, ${signalColor} 0%, ${t.bg} 70%)`,
-          animation: phase === "expanding"
-            ? "orbExpand 0.5s cubic-bezier(0.22,1,0.36,1) forwards"
-            : "orbContract 0.45s cubic-bezier(0.22,1,0.36,1) forwards",
-        }} />
-      </div>
+        background: t.bg,
+        animation: phase === "expanding"
+          ? "chatFadeIn 0.4s ease forwards"
+          : "chatFadeOut 0.35s ease forwards",
+      }} />
     );
   }
 
