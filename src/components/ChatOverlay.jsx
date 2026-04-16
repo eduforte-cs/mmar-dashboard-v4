@@ -78,14 +78,14 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
         setPhase("open");
         setOrbState("idle");
         inputRef.current?.focus();
-      }, 400);
+      }, 700);
       return () => clearTimeout(timer);
     }
   }, [phase]);
 
   const handleClose = () => {
     setPhase("contracting");
-    setTimeout(() => onClose(), 350);
+    setTimeout(() => onClose(), 500);
   };
 
   const handleSend = (text) => {
@@ -118,15 +118,15 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Fade transition
+  // Slide-up fade transition
   if (phase === "expanding" || phase === "contracting") {
     return (
       <div style={{
         position: "fixed", inset: 0, zIndex: 9999,
         background: t.bg,
         animation: phase === "expanding"
-          ? "chatFadeIn 0.4s ease forwards"
-          : "chatFadeOut 0.35s ease forwards",
+          ? "chatFadeIn 0.65s cubic-bezier(0.16,1,0.3,1) forwards"
+          : "chatFadeOut 0.45s cubic-bezier(0.16,1,0.3,1) forwards",
       }} />
     );
   }
@@ -138,7 +138,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
       position: "fixed", inset: 0, zIndex: 9999,
       display: "flex", flexDirection: "column",
       background: t.bg,
-      animation: "fi 0.3s ease",
+      animation: "chatContentIn 0.5s cubic-bezier(0.16,1,0.3,1) both",
     }}>
       {/* Header — minimal, Lite style */}
       <div style={{
