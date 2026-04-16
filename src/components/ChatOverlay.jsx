@@ -6,39 +6,58 @@ import Orb from "./Orb.jsx";
 
 // Generate contextual suggestions based on market state
 function buildSuggestions(signal, d) {
-  if (!d) return [
+  // Pool of FAQ-style questions people always ask
+  const universal = [
     "Should I buy Bitcoin today?",
-    "What's Bitcoin's fair price?",
+    "Will Bitcoin keep falling?",
+    "Will Bitcoin go up?",
+    "How much will Bitcoin be worth?",
+    "Is Bitcoin overvalued?",
+    "Is it too late to buy Bitcoin?",
+    "Should I sell my Bitcoin?",
     "Is Bitcoin a bubble?",
+    "What's the worst case?",
+    "Should I DCA into Bitcoin?",
+    "What's Bitcoin's fair price?",
+    "What's Bitcoin's support level?",
+    "What is the Power Law?",
+    "Is Bitcoin a good long-term investment?",
+    "When is the best time to buy?",
     "When will Bitcoin hit $150K?",
+    "When will Bitcoin hit $1M?",
   ];
 
-  const price = d.S0 ? `$${Math.round(d.S0).toLocaleString("en-US")}` : "current price";
-  const fairValue = d.plToday ? `$${Math.round(d.plToday).toLocaleString("en-US")}` : null;
-  const discount = d.plToday && d.S0 ? Math.abs(Math.round((d.S0 - d.plToday) / d.plToday * 100)) : null;
+  if (!d) {
+    // No data — pick 5 popular ones
+    return [universal[0], universal[2], universal[10], universal[7], universal[15]];
+  }
 
+  // Pick 5 contextual questions based on market state
   if (signal === "buy" || signal === "strongBuy") {
     return [
-      `Bitcoin is at ${price} — should I buy?`,
-      discount ? `Why is Bitcoin ${discount}% below fair value?` : "Is Bitcoin undervalued?",
-      "Is it going to keep falling?",
-      "Should I invest all at once or DCA?",
+      universal[0],  // Should I buy?
+      universal[1],  // Will it keep falling?
+      universal[9],  // Should I DCA?
+      universal[8],  // Worst case?
+      universal[15], // When will it hit $150K?
     ];
   }
   if (signal === "sell") {
     return [
-      `Bitcoin is at ${price} — should I sell?`,
-      "Is Bitcoin in a bubble right now?",
-      "How far can it fall from here?",
-      fairValue ? `Will Bitcoin come back to ${fairValue}?` : "When should I buy back?",
+      universal[6],  // Should I sell?
+      universal[7],  // Is it a bubble?
+      universal[4],  // Is it overvalued?
+      universal[8],  // Worst case?
+      universal[14], // Best time to buy?
     ];
   }
   // hold / caution
   return [
-    `Bitcoin is at ${price} — what should I do?`,
-    "Is now a good time to start DCA?",
-    fairValue ? `Fair value is ${fairValue} — what does that mean?` : "What's Bitcoin's fair value?",
-    "What's the worst case scenario?",
+    universal[0],  // Should I buy?
+    universal[5],  // Is it too late?
+    universal[10], // Fair price?
+    universal[9],  // Should I DCA?
+    universal[13], // Good long-term investment?
   ];
 }
 
