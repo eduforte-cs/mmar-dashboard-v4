@@ -152,7 +152,7 @@ export default function ChatOverlay({ signal = "buy", engineData, onClose }) {
       position: "fixed", inset: 0, zIndex: 9999,
       display: "flex", flexDirection: "column",
       background: t.bg,
-      animation: "chatContentIn 0.5s cubic-bezier(0.16,1,0.3,1) both",
+      animation: "chatContentIn 0.8s cubic-bezier(0.16,1,0.3,1) both",
     }}>
       {/* Header — minimal, Lite style */}
       <div style={{
