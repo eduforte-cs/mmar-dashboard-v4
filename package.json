@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "compute-engine": "node scripts/compute-engine.mjs",
-    "compute-engine:dry": "node scripts/compute-engine.mjs --dry-run"
+    "compute-engine:dry": "node scripts/compute-engine.mjs --dry-run",
+    "generate-ig-carousel": "node scripts/generate-instagram-carousel.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.89.0",
